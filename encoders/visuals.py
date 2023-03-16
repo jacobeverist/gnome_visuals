@@ -3,12 +3,16 @@ from matplotlib.transforms import Affine2D
 import matplotlib.patches as patches
 import matplotlib.axes
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+
 
 import seaborn as sns
 import string
 
 import numpy as np
 from fractions import Fraction
+
+from .helpers import *
 
 # printing boolean arrays neatly
 np.set_printoptions(
@@ -655,6 +659,170 @@ def draw_delta_count(ax, boundary_x, grid_delta_counts):
     ax.bar(tick_points_x, tick_points_y, color='k')
 
 
+def draw_similarity(ax, encoder, X_gnomes, ref_points, lower_bound, upper_bound, colors, draw_regions=False, draw_h_grid=True, draw_v_values=True):
+
+    boundaries = encoder.region_boundaries
+
+    # reference points for comparison
+    ref_gnomes = encoder.encode(ref_points)
+
+    # sampled points over the space
+    #X_points = np.array(encoder.region_centers).reshape(-1, 1)
+
+    # encodings
+    #X_gnomes = encoder.encode(X_points)
+
+    # count similarity scores
+    scores2 = count_similarity(X_gnomes, ref_gnomes)
+
+
+
+    # for plotting purposes
+    X_point_lower = lower_bound - 0.5
+    X_point_upper = upper_bound + 0.5
+    X_gnome_lower = encoder.encode(X_point_lower).reshape(1, -1)
+    X_gnome_upper = encoder.encode(X_point_upper).reshape(1, -1)
+    X_points_extended = np.concatenate(
+        ([X_point_lower], encoder.region_centers, [X_point_upper]))
+    X_gnomes_extended = np.concatenate(
+        (X_gnome_lower, X_gnomes, X_gnome_upper), axis=0)
+    boundaries_extended = np.concatenate(
+        ([lower_bound - 1.0], encoder.region_boundaries, [upper_bound + 1.0]))
+
+    scores_extended = count_similarity(X_gnomes_extended, ref_gnomes)
+
+
+    # data to plot
+    max_score = np.max(scores2)
+
+    # scale y-axis to maximum of weight
+    ax.set_ylim(-0.1, max_score + 2)
+    ax.yaxis.set_major_locator(ticker.IndexLocator(2, 1))
+    ax.set_ylabel("Similarity of\nExample Values")
+
+
+    # plot similarity scores for each reference value
+    for k in range(len(ref_points)):
+        boundaries_x = boundaries_extended
+        scores_y = np.append(scores_extended[:, k], [scores_extended[-1, k], ])
+
+        ax.step(boundaries_x, scores_y, where='post', color=colors[k], label=float(ref_points[k]))
+        ax.fill_between(boundaries_x, -1, scores_y, step='post', color=colors[k], alpha=0.3, zorder=1)
+
+    if draw_v_values:
+        # draw vertical line indicating reference value on x-axis
+        for k in range(len(ref_points)):
+            ax.axvline(x=ref_points[k], ymax=3.2, alpha=1.0, linewidth=1.5, color=colors[k], linestyle='--', clip_on=False)
+
+    if draw_regions:
+        # draw boundaries between each region
+        for k in range(len(boundaries)):
+           ax.axvline(x=boundaries[k], alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+
+    if draw_h_grid:
+        for k in range(max_score + 3):
+            ax.hlines(y=k, xmin=lower_bound - 0.1, xmax=upper_bound + 0.1, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+
+    # show legend for each example value
+    handles, labels = ax.get_legend_handles_labels()
+    handles.reverse()
+    labels.reverse()
+    legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
+
+
+def draw_features(ax, encoder, lower_bound, upper_bound, colors, markersize=4, draw_regions=False, draw_h_grid=True ):
+    """
+    Features Subplot (Boundaries, Weight, Crossings)
+
+    :param ax:
+    :param encoder:
+    :param lower_bound:
+    :param upper_bound:
+    :param colors:
+    :param markersize:
+    :param draw_regions:
+    :param draw_h_grid:
+    :return:
+    """
+
+
+    # boundaries and crossings
+    boundaries = encoder.region_boundaries
+    deltas = encoder.region_deltas
+
+
+    # Data for Features
+    bin_weights = encoder.region_weights
+    max_bin_weight = max(bin_weights)
+    bin_weights_y = np.append(bin_weights, [bin_weights[-1], ])
+
+    # scale y-axis properties
+    ax.set_ylim(-0.1, max_bin_weight + 2)
+    ax.yaxis.set_major_locator(ticker.IndexLocator(2, 0))
+    ax.set_ylabel("Features of\nEncodings")
+
+    # set central ordinal value on y-axis for swarmplot
+    bottom, top = ax.get_ylim()
+    swarm_ordinal = (top - bottom) / 2.0 + bottom
+
+    # points repeated for each delta count
+    repeat_boundaries = []
+    for k in range(len(deltas)):
+        count = deltas[k]
+        for j in range(count):
+            repeat_boundaries.append(boundaries[k])
+
+    # ordinal number that we want swarm points to be plotted on the y-axis
+    y_vals = [swarm_ordinal for k in range(len(repeat_boundaries))]
+
+    # NOTE: hacked seaborn by adding a second category with ordinal number out of plot range.
+    #  Enables swarm points beyond unit category range
+    #  This point is plotted, but not seen since '-100' is far out of axes y-range
+    repeat_boundaries.append(0.0)
+    y_vals.append(-100)
+
+    # do swarm plot
+    sns.swarmplot(x=repeat_boundaries, y=y_vals, orient='h', color=colors[0], ax=ax, size=markersize, native_scale=True,
+                  legend=False, label="Crossings")
+
+    # remove extra category
+    repeat_boundaries.pop(-1)
+    y_vals.pop(-1)
+
+    if draw_regions:
+        # draw grid lines representing boundaries between regions
+        ax.axvline(x=boundaries[0], alpha=0.2, linewidth=0.5, color='k', zorder=-1, label="Boundary")
+        for k in range(1, len(boundaries)):
+           ax.axvline(x=boundaries[k], alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+
+    if draw_h_grid:
+        for k in range(0, max_bin_weight + 3):
+            ax.hlines(y=k, xmin=lower_bound - 0.1, xmax=upper_bound + 0.1, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+
+    # draw gnome weights
+    ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=0.6, zorder=1, label="Weight")
+    ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.3, zorder=1)
+
+    # legend labels and handles
+    handles1, labels1 = ax.get_legend_handles_labels()
+
+    # remove the hackish category label, so we only have one "Crossings" in the legend
+    min_category = -1
+    min_elements = 1e100
+    for k in range(len(labels1)):
+        if labels1[k] == "Crossings":
+            handle = handles1[k]
+            num_points = len(handle.get_offsets())
+            if num_points < min_elements:
+                min_elements = num_points
+                min_category = k
+    handles1.pop(min_category)
+    labels1.pop(min_category)
+
+    # plot legend for property data
+    legend = ax.legend(handles1, labels1, title="Features", ncol=3, fontsize=8, title_fontsize=9)
+
+
 def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k', fontsize=8,
                   facecolor='none', text_str=None, aligned_text=False, alpha=1.0, text_v_offset=-0.01, clip_on=False,
                   label=None):
@@ -715,3 +883,126 @@ def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.
     # add text box to center of rectangle
     ax.text(text_pos[0], text_pos[1], text_str, rotation=text_angle, rotation_mode='anchor',
             fontsize=fontsize, va='center', ha='center', clip_on=clip_on, alpha=alpha)
+
+
+def plot_interval_multi_encoder(encoder, desc_str="Encoder", lower_bound=0.0, upper_bound=1.0, file_dir="./out"):
+    n_bits = encoder.n
+    markersize = 4
+
+    # file_name = file_dir + "%02u_%02u_" % (w, n_bits) + encoder.__class__.__name__ + ".png"
+    file_name = file_dir + "%02u_" % (n_bits) + desc_str + ".png"
+
+    # reference points for comparison
+    ref_points = np.array([[0.21], [0.69]])
+
+    # sampled points over the space
+    X_points = np.array(encoder.region_centers).reshape(-1, 1)
+
+    # encodings
+    X_gnomes = encoder.encode(X_points)
+
+    # color palette
+    colors = sns.color_palette("Set1", n_colors=len(ref_points))
+
+    ## Draw Plots in Each SubAxes
+
+    # subplot_kw, gridspec_kw, **fig_kw
+    fig, axes = plt.subplots(4, 1, num=1, figsize=(10, 8), dpi=300, constrained_layout=True,
+                             gridspec_kw={'height_ratios': [1, 1, 1, 1]})  # , sharex=True)
+    ax0 = axes[0]
+    ax1 = axes[1]
+    ax2 = axes[2]
+    ax3 = axes[3]
+
+
+
+    ## Encoding Bins Subplot
+    ax0.tick_params(
+        axis='both',
+        which='both',
+        labelbottom=False,
+        bottom=False,
+        left=False,
+        right=True,
+        labelleft=False,
+        labelright=True, labelsize='small')
+
+    ax0.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
+    ax0.set_ylim(-0.1, n_bits + 0.1)
+    ax0.set_ylabel("Encoding Bins\non Interval")
+    ax0.set_title("%s, n=%d" % (desc_str, n_bits))
+
+    # draw encoder bins
+    draw_multi_encoder_bins(ax0, encoder, fontsize=6, xmin=lower_bound - 0.1, xmax=upper_bound + 0.1, clip_on=False)
+
+
+
+    # Features Subplot (Boundaries, Weight, Crossings)
+    ax1.tick_params(
+        axis='both',
+        which='both',
+        labelbottom=False,
+        bottom=False,
+        left=False,
+        right=True,
+        labelleft=False,
+        labelright=True)
+
+    # share ax0 and ax1 x-axis
+    ax1.get_shared_x_axes().join(ax1, ax0)
+
+    # draw weight, crossings, and boundary features
+    draw_features(ax1, encoder, lower_bound, upper_bound, colors, markersize)
+
+
+
+
+    ## Similarity Subplot
+    ax2.tick_params(
+        axis='both',
+        which='both',
+        labelbottom=False,
+        bottom=False,
+        left=False,
+        right=True,
+        labelleft=False,
+        labelright=True)
+
+    # share ax0 and ax2 x-axis
+    ax2.get_shared_x_axes().join(ax2, ax0)
+
+    # draw similarity plot
+    draw_similarity(ax2, encoder, X_gnomes, ref_points, lower_bound, upper_bound, colors, draw_regions=False, draw_h_grid=True, draw_v_values=True)
+
+
+
+
+    ## Encoding Bits Subplot
+    ax3.tick_params(
+        axis='both',
+        which='both',
+        labelbottom=True,
+        bottom=True,
+        left=False,
+        right=True,
+        labelleft=False,
+        labelright=True, labelsize='small')
+
+    # scale y-axis to number of bits
+    ax3.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
+    ax3.set_ylim(-0.5, n_bits + 0.5)
+    ax3.set_ylabel("Bit Encoding vs.\nReal Value")
+
+    # share ax0 and ax3 x-axis
+    ax3.get_shared_x_axes().join(ax3, ax0)
+
+    # draw encoding bits along x-axis values
+    draw_bits_by_data(ax3, encoder, xmin=lower_bound - 0.1, xmax=upper_bound + 0.1, draw_region_bits=True,
+                      draw_uniform_samples=False, permute_bits=False, clip_on=False)
+
+    # set xlim lower and upper bounds for all subplots
+    ax3.set_xlim(lower_bound - 0.1, upper_bound + 0.1)
+
+    if not file_name is None:
+        plt.savefig(file_name, bbox_inches='tight')
+

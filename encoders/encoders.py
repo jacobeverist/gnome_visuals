@@ -663,8 +663,8 @@ class PlaceCellEncoder(CellEncoder):
         region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
         region_boundaries = np.sort(region_boundaries)
         self.region_boundaries = region_boundaries
-        print("region_boundaries:", self.region_boundaries.shape)
-        print(self.region_boundaries)
+        #print("region_boundaries:", self.region_boundaries.shape)
+        #print(self.region_boundaries)
 
         # record region center points
         self.region_centers = self.region_boundaries[:-1] + np.diff(self.region_boundaries) / 2
@@ -676,18 +676,18 @@ class PlaceCellEncoder(CellEncoder):
         self.region_sizes = np.diff(self.region_boundaries) / 2
 
         self.region_codes = self.encode(self.region_centers)
-        print("region_codes:", self.region_codes.shape)
-        print(self.region_codes)
+        #print("region_codes:", self.region_codes.shape)
+        #print(self.region_codes)
 
         self.region_weights = np.count_nonzero(self.region_codes, axis=1)
-        print("region_weights:", self.region_weights.shape)
-        print(self.region_weights)
+        #print("region_weights:", self.region_weights.shape)
+        #print(self.region_weights)
 
         self.region_indices = [tuple(np.nonzero(region)[0]) for region in self.region_codes]
 
         self.region_deltas = np.concatenate(([self.region_weights[0]], np.abs(np.diff(self.region_weights)), [self.region_weights[-1]]))
-        print("region_deltas", self.region_deltas.shape)
-        print(self.region_deltas)
+        #print("region_deltas", self.region_deltas.shape)
+        #print(self.region_deltas)
 
 
 class FixedWeightEncoder(IntervalEncoder):
