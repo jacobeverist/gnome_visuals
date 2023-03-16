@@ -15,11 +15,11 @@ except:
     from encoder_analysis.encoders.helpers import *
 
 
-def plot_heatmap(encoder, desc_str="Encoder", lower_bound=0.0, upper_bound=1.0, file_dir="./out"):
+def plot_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, fontsize=8, annot=True):
     w = encoder.w
     n_bits = encoder.n
 
-    file_name = file_dir + "%02u_%02u_" % (w, n_bits) + "heatmap_" + encoder.__class__.__name__ + ".png"
+    file_name = file_dir + "%02u_" % (n_bits) + "heatmap_by_region" + ".png"
 
     # sampled points over the space
     X_points = np.array(encoder.region_centers).reshape(-1, 1)
@@ -33,7 +33,10 @@ def plot_heatmap(encoder, desc_str="Encoder", lower_bound=0.0, upper_bound=1.0, 
     sns.set_theme(style="white")
 
     # Generate a mask for the upper triangle
-    mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
+    if triangle:
+        mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
+    else:
+        mask = np.zeros_like(diagonal_scores, dtype=bool)
 
     # Set up the matplotlib figure
     f, ax = plt.subplots(figsize=(11, 9))
@@ -45,17 +48,17 @@ def plot_heatmap(encoder, desc_str="Encoder", lower_bound=0.0, upper_bound=1.0, 
 
     # Draw the heatmap with the mask and correct aspect ratio
     sns.heatmap(diagonal_scores, mask=mask, cmap=cmap, vmax=max_count, center=mean_count,
-                square=True, linewidths=.5, cbar_kws={"shrink": .5}, annot=True)
+                square=True, linewidths=.5, cbar_kws={"shrink": .5}, annot=annot, annot_kws={"fontsize": fontsize})
 
     if not file_name is None:
         plt.savefig(file_name, bbox_inches='tight')
 
 
-def plot_pmesh_heatmap(encoder, desc_str="Encoder", lower_bound=0.0, upper_bound=1.0, file_dir="./out"):
+def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, fontsize=8, annot=True):
     w = encoder.w
     n_bits = encoder.n
 
-    file_name = file_dir + "%02u_%02u_" % (w, n_bits) + "pmesh_heatmap_" + encoder.__class__.__name__ + ".png"
+    file_name = file_dir + "%02u_" % (n_bits) + "heatmap_by_value" + ".png"
 
     # sampled points over the space
     X_points = np.array(encoder.region_centers).reshape(-1, 1)
@@ -75,7 +78,11 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", lower_bound=0.0, upper_bound
     sns.set_theme(style="white")
 
     # Generate a mask for the upper triangle
-    mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
+    #mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
+    if triangle:
+        mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
+    else:
+        mask = np.zeros_like(diagonal_scores, dtype=bool)
 
     import numpy.ma as ma
     masked_scores = ma.array(diagonal_scores, mask=mask)
@@ -123,35 +130,30 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", lower_bound=0.0, upper_bound
 
         cmap = new_cmap
 
-    # c = ax.pcolormesh(x_vals, y_vals, diagonal_scores, vmax=max_count, vmin=0, edgecolor='1.0', linewidth=0.3, cmap=cmap)
     c = ax.pcolormesh(x_vals, y_vals, masked_scores, vmax=max_count, vmin=0, edgecolor='1.0', linewidth=0.3, cmap=cmap)
     cb = f.colorbar(c, ax=ax, shrink=0.5)  # , spacing="uniform", drawedges=True)
     cb.outline.set_linewidth(0)
 
-    print("x_vals:", len(x_vals), x_vals)
-    print("y_vals:", len(y_vals), y_vals)
-    print("masked_scores:", masked_scores.shape)
+    # add text box to center of each rectangle indicating count similarity
+    if annot:
 
-    fontsize = 8
+        # code to change the color of the text depending on cell color
+        # lum = relative_luminance(color)
+        # text_color = ".15" if lum > .408 else "w"
 
-    print("x_centers:", len(x_centers), x_centers)
-    print("y_centers:", len(y_centers), y_centers)
+        for i in range(len(x_centers)):
+            x = x_centers[i]
 
-    for i in range(len(x_centers)):
-        x = x_centers[i]
-
-        for j in range(len(y_centers)):
-            y = y_centers[j]
-            score = masked_scores[j, i]
-
-            # if score != "--":
-            if score is not np.ma.masked:
-                # add text box to center of rectangle
-                ax.text(x, y, str(score), horizontalalignment='center', verticalalignment='center',
-                        fontsize=fontsize)  # , color='1.0')
-                # , clip_on=clip_on, alpha=alpha, transfom=ax.transAxes)
+            for j in range(len(y_centers)):
+                y = y_centers[j]
+                score = masked_scores[j, i]
+                if score is not np.ma.masked:
+                    ax.text(x, y, str(score), horizontalalignment='center', verticalalignment='center',
+                            fontsize=fontsize)
 
     """
+    # code to change the color of the text depending on cell color
+    
     def _annotate_heatmap(self, ax, mesh):
         "Add textual labels with the value in each cell."
         mesh.update_scalarmappable()
@@ -168,10 +170,6 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", lower_bound=0.0, upper_bound
                 text_kwargs.update(self.annot_kws)
                 ax.text(x, y, annotation, **text_kwargs)
     """
-
-    # Draw the heatmap with the mask and correct aspect ratio
-    # sns.heatmap(diagonal_scores, mask=mask, cmap=cmap, vmax=max_count, center=mean_count,
-    #            square=True, linewidths=.5, cbar_kws={"shrink": .5}, annot=True)
 
     if not file_name is None:
         plt.savefig(file_name, bbox_inches='tight')
@@ -391,6 +389,114 @@ def plot_interval_encoder(encoder, desc_str="Encoder", lower_bound=0.0, upper_bo
     if not file_name is None:
         plt.savefig(file_name, bbox_inches='tight')
 
+def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x_pad=0.1):
+    n_bits = encoder.n
+    markersize = 4
+    fontsize = 6
+
+    # plot range for this multi encoder
+    xmin = encoder.lower_bound - x_pad
+    xmax = encoder.upper_bound + x_pad
+
+    # filename
+    file_name = file_dir + "%02u_" % (n_bits) + desc_str + ".png"
+
+    # reference points for comparison
+    ref_points = np.array([[0.21], [0.69]])
+
+    # sampled points over the space
+    X_points = np.array(encoder.region_centers).reshape(-1, 1)
+
+    # encodings
+    X_gnomes = encoder.encode(X_points)
+
+    # color palette
+    colors = sns.color_palette("Set1", n_colors=len(ref_points))
+
+    ## Draw Plots in Each SubAxes
+
+    # subplot_kw, gridspec_kw, **fig_kw
+    fig, axes = plt.subplots(4, 1, num=1, figsize=(10, 8), dpi=300, constrained_layout=True,
+                             gridspec_kw={'height_ratios': [1, 1, 1, 1]})  # , sharex=True)
+    ax0 = axes[0]
+    ax1 = axes[1]
+    ax2 = axes[2]
+    ax3 = axes[3]
+
+    # set title of whole figure
+    ax0.set_title("%s, n=%d" % (desc_str, n_bits))
+
+    ## Encoding Bins Subplot
+    ax0.tick_params(
+        axis='both',
+        which='both',
+        labelbottom=False,
+        bottom=False,
+        left=False,
+        right=True,
+        labelleft=False,
+        labelright=True, labelsize='small')
+
+    # draw encoder bins
+    draw_multi_encoder_bins(ax0, encoder, fontsize=fontsize, xmin=xmin, xmax=xmax,
+                            clip_on=False)
+
+    # Features Subplot (Boundaries, Weight, Crossings)
+    ax1.tick_params(
+        axis='both',
+        which='both',
+        labelbottom=False,
+        bottom=False,
+        left=False,
+        right=True,
+        labelleft=False,
+        labelright=True)
+
+    # share ax0 and ax1 x-axis
+    ax1.get_shared_x_axes().join(ax1, ax0)
+
+    # draw weight, crossings, and boundary features
+    draw_features(ax1, encoder, colors, markersize)
+
+    ## Similarity Subplot
+    ax2.tick_params(
+        axis='both',
+        which='both',
+        labelbottom=False,
+        bottom=False,
+        left=False,
+        right=True,
+        labelleft=False,
+        labelright=True)
+
+    # share ax0 and ax2 x-axis
+    ax2.get_shared_x_axes().join(ax2, ax0)
+
+    # draw similarity plot
+    draw_similarity(ax2, encoder, X_gnomes, ref_points, colors, draw_regions=False,
+                    draw_h_grid=True, draw_v_values=True)
+
+    ## Encoding Bits Subplot
+    ax3.tick_params(
+        axis='both',
+        which='both',
+        labelbottom=True,
+        bottom=True,
+        left=False,
+        right=True,
+        labelleft=False,
+        labelright=True, labelsize='small')
+
+    # share ax0 and ax3 x-axis
+    ax3.get_shared_x_axes().join(ax3, ax0)
+
+    # draw encoding bits along x-axis values
+    draw_bits_by_data(ax3, encoder, xmin=xmin, xmax=xmax, draw_region_bits=True,
+                      draw_uniform_samples=False, permute_bits=False, clip_on=False)
+
+    if not file_name is None:
+        plt.savefig(file_name, bbox_inches='tight')
+
 
 if __name__ == "__main__":
     file_dir = "out/"
@@ -422,25 +528,31 @@ if __name__ == "__main__":
     """
     multi_encoder = MultiEncoder()
     multi_encoder.add_encoder(FixedWeightEncoder(n=20, w=3))
-    plot_interval_multi_encoder(multi_encoder, "FixedWeightEncoder", file_dir=file_dir)
+    plot_interval_multi_encoder(multi_encoder, desc_str="FixedWeightEncoder", file_dir=file_dir)
     plt.clf()
 
     multi_encoder = MultiEncoder()
     multi_encoder.add_encoder(TaperingWeightEncoder(n=20, w=3))
-    plot_interval_multi_encoder(multi_encoder, "TaperingWeightEncoder", file_dir=file_dir)
+    plot_interval_multi_encoder(multi_encoder, desc_str="TaperingWeightEncoder", file_dir=file_dir)
     plt.clf()
     """
 
     multi_encoder = MultiEncoder()
-    multi_encoder.add_encoder(PlaceCellEncoder(n=40))
-    plot_interval_multi_encoder(multi_encoder, "PlaceEncoder", file_dir=file_dir)
+    #multi_encoder.add_encoder(PlaceCellEncoder(n=10))
+    #multi_encoder.add_encoder(PlaceCellEncoder(n=10))
+    multi_encoder.add_encoder(FixedWeightEncoder(n=15, w=3))
+    multi_encoder.add_encoder(FixedWeightEncoder(n=10, w=3))
+    multi_encoder.add_encoder(PlaceCellEncoder(n=10))
+    plot_interval_multi_encoder(multi_encoder, desc_str="PlaceEncoder", file_dir=file_dir)
     plt.clf()
 
-    # plot_heatmap(multi_encoder, "MultiEncoder Self-Similarity", file_dir=file_dir)
-    # plt.clf()
 
-    # plot_pmesh_heatmap(multi_encoder, "MultiEncoder Self-Similarity", file_dir=file_dir)
-    # plt.clf()
+
+    plot_heatmap(multi_encoder, desc_str="Similarity_by_Region", file_dir=file_dir, fontsize=6)
+    plt.clf()
+
+    plot_pmesh_heatmap(multi_encoder, desc_str="Similarity_by_Value", file_dir=file_dir, annot=False)
+    plt.clf()
 
     # plot_interval_encoder(taper_encoder, "Tapering Weight Encoder", file_dir=file_dir)
     # plt.clf()

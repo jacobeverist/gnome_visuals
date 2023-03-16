@@ -5,7 +5,6 @@ import matplotlib.axes
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-
 import seaborn as sns
 import string
 
@@ -37,13 +36,21 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
     # TODO: properly clip and no-clip the bits beyond the interval
 
     n_bits = encoder.n
+
     upper_bound = encoder.upper_bound
     lower_bound = encoder.lower_bound
     interval_length = upper_bound - lower_bound
+
     if xmax is None:
         xmax = upper_bound
     if xmin is None:
         xmin = lower_bound
+
+    # scale y-axis to number of bits
+    ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
+    ax.set_ylim(-0.5, n_bits + 0.5)
+    ax.set_ylabel("Bit Encoding vs.\nReal Value")
+    ax.set_xlim(xmin, xmax)
 
     indices = np.random.permutation(np.arange(n_bits))
 
@@ -191,7 +198,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                         else:
                             box_y = j * box_height
 
-                        box_width_shrunk = box_width-x_shrink
+                        box_width_shrunk = box_width - x_shrink
                         x_shrink_adj = x_shrink
                         if box_width_shrunk < x_shrink:
                             x_shrink_adj = 0.4 * box_width
@@ -255,7 +262,6 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                 else:
                     # change nothing
                     pass
-
 
             if do_draw:
 
@@ -418,16 +424,12 @@ def draw_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1
     return max_y, min_y
 
 
-def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8):
-    # def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k', fontsize=8,
-    #              facecolor='none', text_str=None, aligned_text=False, alpha=1.0, text_v_offset=-0.01):
-
+def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8, draw_regions=False,
+                            draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True):
     min_y = 1
     max_y = 0
 
     n_bits = encoder.n
-    boundaries = encoder.region_boundaries
-
     upper_bound = encoder.upper_bound
     lower_bound = encoder.lower_bound
 
@@ -436,11 +438,22 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
     if xmin is None:
         xmin = lower_bound
 
-    keys = [0, ]
-    keys.sort()
+    ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
+    ax.set_ylim(-0.1, n_bits + 0.1)
+    ax.set_ylabel("Encoding Bins\non Interval")
 
-    n_grids = 1
+
+    try:
+        sub_encoders = encoder.encoders
+    except:
+        sub_encoders = [encoder]
+
+
+    n_grids = len(sub_encoders)
     grid_names = string.ascii_uppercase[:n_grids]
+
+    keys = list(range(n_grids))
+    keys.sort()
 
     colors = sns.color_palette("muted", n_colors=n_grids)
     grid_label_templates = [prefix + "%d" for prefix in grid_names]
@@ -451,94 +464,94 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
     encoder_count = 0
     bin_id_count = 0
     draw_y = 0.0
-    # box_height = 0.3
     box_height = 1
-
-    top_right_points_x = []
-    top_right_points_y = []
 
     bin_count = 0
 
-    # for i in range(0, len(encoder.region_boundaries)-1):
-    for bin in encoder.bins:
-        bin_upper_bound = bin.upper
-        bin_lower_bound = bin.lower
-        # lower_bound = encoder.region_boundaries[i]
-        # upper_bound = encoder.region_boundaries[i+1]
 
-        box_x = bin_lower_bound
-        box_y = draw_y
-        box_width = bin_upper_bound - bin_lower_bound
 
-        # print("bin id, bin lower, bin upper, bin size:", bin_id_count, bin_lower_bound, bin_upper_bound, box_width)
+    for e in sub_encoders:
+        for bin in e.bins:
+            bin_upper_bound = bin.upper
+            bin_lower_bound = bin.lower
 
-        if clip_on:
-            # case 1: bin exceeds lower bound
-            if box_x < lower_bound:
-                box_x = lower_bound
-                box_width = bin_upper_bound - box_x
+            box_x = bin_lower_bound
+            box_y = draw_y
+            box_width = bin_upper_bound - bin_lower_bound
 
-            # case 2: bin exceeds interval upper bound
-            elif box_x + box_width > upper_bound:
-                box_width = upper_bound - box_x
+            if clip_on:
+                # case 1: bin exceeds lower bound
+                if box_x < lower_bound:
+                    box_x = lower_bound
+                    box_width = bin_upper_bound - box_x
 
-            # case 3: bin within interval bounds
+                # case 2: bin exceeds interval upper bound
+                elif box_x + box_width > upper_bound:
+                    box_width = upper_bound - box_x
+
+                # case 3: bin within interval bounds
+                else:
+                    # do nothing
+                    pass
+
+            # shrink the the bins by this amount
+            x_shrink = 0.004
+            y_shrink = 0.3
+
+            # only add label to first rectangle of encoder's bins
+            if bin_count == 0:
+                add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                              box_height - y_shrink, alpha=0.8, facecolor=grid_colors[encoder_count],
+                              text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize,
+                              label=grid_labels[encoder_count])
             else:
-                # do nothing
-                pass
+                add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                              box_height - y_shrink, alpha=0.8, facecolor=grid_colors[encoder_count],
+                              text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize)
+            # text_str=grid_label_templates[encoder_count] % bin_count, clip_on=clip_on, linewidth=0.2)
 
-        # shrink the the bins by this amount
-        x_shrink = 0.004
-        y_shrink = 0.3
+            bin_count += 1
+            bin_id_count += 1
+            draw_y += box_height
 
-        # only add label to first rectangle of encoder's bins
-        if bin_count == 0:
-            add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
-                          box_height - y_shrink, alpha=0.8, facecolor=grid_colors[encoder_count],
-                          text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize,
-                          label=grid_labels[encoder_count])
-        else:
-            add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
-                          box_height - y_shrink, alpha=0.8, facecolor=grid_colors[encoder_count],
-                          text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize)
-        # text_str=grid_label_templates[encoder_count] % bin_count, clip_on=clip_on, linewidth=0.2)
+            if box_y < min_y:
+                min_y = box_y
 
-        bin_count += 1
-        bin_id_count += 1
-        draw_y += box_height
+            if box_y + box_height > max_y:
+                max_y = box_y + box_height
 
-        if box_y < min_y:
-            min_y = box_y
-
-        if box_y + box_height > max_y:
-            max_y = box_y + box_height
-
-        # top_right_points_x.append(box_x+box_width)
-        # top_right_points_y.append(box_y+box_height)
-
-    # draw_y += box_height
-    encoder_count += 1
-    draw_y = box_height * encoder_count * spacing
-
-    # ax.scatter(top_right_points_x, top_right_points_y, s=0.01)
+        encoder_count += 1
+        #draw_y = box_height * encoder_count * spacing
 
     draw_bound_y = 0
     prev_bound_y = 0
-    ax.hlines(y=draw_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=0.5, color='k', zorder=-1)
-    for e in encoder.encoders:
+
+    if draw_h_border:
+        ax.hlines(y=draw_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=0.5, color='k', zorder=-1)
+
+    for e in sub_encoders:
         e_boundaries = e.region_boundaries
         draw_bound_y += box_height * len(e.bins)
-        ax.vlines(x=e_boundaries, ymin=prev_bound_y, ymax=draw_bound_y, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
-        #for k in range(len(e.bins)):
-        #    ax.hlines(y=prev_bound_y + k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
-        ax.hlines(y=draw_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=0.5, color='k', zorder=-1)
+
+        if draw_region_by_encoder:
+            ax.vlines(x=e_boundaries, ymin=prev_bound_y, ymax=draw_bound_y, alpha=0.2, linewidth=0.5, color='k',
+                      zorder=-1)
+
+        if draw_h_grid:
+            for k in range(len(e.bins)):
+                ax.hlines(y=prev_bound_y + k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+
+            ax.hlines(y=draw_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=0.5, color='k', zorder=-1)
 
         prev_bound_y = draw_bound_y
 
-    # for k in range(len(boundaries)):
-    #    ax.vlines(x=boundaries[k], ymin=0, ymax=n_bits, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
-    # for k in range(n_bits+1):
-    #    ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+    if draw_regions:
+        boundaries = encoder.region_boundaries
+        n_bits = encoder.n
+        for k in range(len(boundaries)):
+            ax.vlines(x=boundaries[k], ymin=0, ymax=n_bits, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+        for k in range(n_bits + 1):
+            ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
     return max_y, min_y
 
@@ -622,27 +635,29 @@ def draw_decomposition2(ax, boundaries, height=1, text_v_offset=-0.01):
 
 
 def draw_encoding(ax, X_gnomes):
-    # print("encoding:")
-    # print(X_gnomes.shape)
+    """
+    Draw barcode image of encodings
+
+    :param ax:
+    :param X_gnomes:
+    :return:
+    """
 
     state_data = np.rot90(X_gnomes, k=-1, axes=(1, 0))
-    # print(state_data.shape)
-
-    # for k in range(X_gnomes.shape[0]):
-    #    print(X_gnomes[k,:])
-
-    # for k in range(state_data.shape[1]):
-    #    print(state_data[:,k])
-
     barprops = dict(cmap='binary', interpolation='nearest', aspect='auto',
                     extent=[0, state_data.shape[1], 0, state_data.shape[0]])
-    # barprops = dict(cmap='binary')
-    # extent=[0, state_data.shape[1], 0, state_data.shape[0]])
     img = ax.imshow(state_data, **barprops)
 
 
 def draw_delta_count(ax, boundary_x, grid_delta_counts):
-    # ax.vlines(boundary_x, ymin=0, ymax=grid_delta_counts, color='k')
+    """
+    Draw histogram plot of number of crossings
+
+    :param ax:
+    :param boundary_x:
+    :param grid_delta_counts:
+    :return:
+    """
 
     tick_points_x = []
     tick_points_y = []
@@ -659,38 +674,44 @@ def draw_delta_count(ax, boundary_x, grid_delta_counts):
     ax.bar(tick_points_x, tick_points_y, color='k')
 
 
-def draw_similarity(ax, encoder, X_gnomes, ref_points, lower_bound, upper_bound, colors, draw_regions=False, draw_h_grid=True, draw_v_values=True):
+def draw_similarity(ax, encoder, X_gnomes, ref_points, colors, draw_regions=False,
+                    draw_h_grid=True, draw_v_values=True):
+    """
+    Draw count similarity of reference values to existing encodings
 
+    :param ax:
+    :param encoder:
+    :param X_gnomes: encoded points over the space
+    :param ref_points:
+    :param colors:
+    :param draw_regions:
+    :param draw_h_grid:
+    :param draw_v_values:
+    :return:
+    """
     boundaries = encoder.region_boundaries
+    upper_bound = encoder.upper_bound
+    lower_bound = encoder.lower_bound
 
     # reference points for comparison
     ref_gnomes = encoder.encode(ref_points)
 
-    # sampled points over the space
-    #X_points = np.array(encoder.region_centers).reshape(-1, 1)
-
-    # encodings
-    #X_gnomes = encoder.encode(X_points)
-
     # count similarity scores
     scores2 = count_similarity(X_gnomes, ref_gnomes)
-
-
 
     # for plotting purposes
     X_point_lower = lower_bound - 0.5
     X_point_upper = upper_bound + 0.5
     X_gnome_lower = encoder.encode(X_point_lower).reshape(1, -1)
     X_gnome_upper = encoder.encode(X_point_upper).reshape(1, -1)
-    X_points_extended = np.concatenate(
-        ([X_point_lower], encoder.region_centers, [X_point_upper]))
+    # X_points_extended = np.concatenate(
+    #    ([X_point_lower], encoder.region_centers, [X_point_upper]))
     X_gnomes_extended = np.concatenate(
         (X_gnome_lower, X_gnomes, X_gnome_upper), axis=0)
     boundaries_extended = np.concatenate(
         ([lower_bound - 1.0], encoder.region_boundaries, [upper_bound + 1.0]))
 
     scores_extended = count_similarity(X_gnomes_extended, ref_gnomes)
-
 
     # data to plot
     max_score = np.max(scores2)
@@ -699,7 +720,6 @@ def draw_similarity(ax, encoder, X_gnomes, ref_points, lower_bound, upper_bound,
     ax.set_ylim(-0.1, max_score + 2)
     ax.yaxis.set_major_locator(ticker.IndexLocator(2, 1))
     ax.set_ylabel("Similarity of\nExample Values")
-
 
     # plot similarity scores for each reference value
     for k in range(len(ref_points)):
@@ -712,16 +732,18 @@ def draw_similarity(ax, encoder, X_gnomes, ref_points, lower_bound, upper_bound,
     if draw_v_values:
         # draw vertical line indicating reference value on x-axis
         for k in range(len(ref_points)):
-            ax.axvline(x=ref_points[k], ymax=3.2, alpha=1.0, linewidth=1.5, color=colors[k], linestyle='--', clip_on=False)
+            ax.axvline(x=ref_points[k], ymax=3.2, alpha=1.0, linewidth=1.5, color=colors[k], linestyle='--',
+                       clip_on=False)
 
     if draw_regions:
         # draw boundaries between each region
         for k in range(len(boundaries)):
-           ax.axvline(x=boundaries[k], alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+            ax.axvline(x=boundaries[k], alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
     if draw_h_grid:
         for k in range(max_score + 3):
-            ax.hlines(y=k, xmin=lower_bound - 0.1, xmax=upper_bound + 0.1, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+            ax.hlines(y=k, xmin=lower_bound - 0.1, xmax=upper_bound + 0.1, alpha=0.2, linewidth=0.5, color='k',
+                      zorder=-1)
 
     # show legend for each example value
     handles, labels = ax.get_legend_handles_labels()
@@ -730,7 +752,7 @@ def draw_similarity(ax, encoder, X_gnomes, ref_points, lower_bound, upper_bound,
     legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
 
 
-def draw_features(ax, encoder, lower_bound, upper_bound, colors, markersize=4, draw_regions=False, draw_h_grid=True ):
+def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_grid=True):
     """
     Features Subplot (Boundaries, Weight, Crossings)
 
@@ -745,11 +767,11 @@ def draw_features(ax, encoder, lower_bound, upper_bound, colors, markersize=4, d
     :return:
     """
 
-
     # boundaries and crossings
     boundaries = encoder.region_boundaries
     deltas = encoder.region_deltas
-
+    upper_bound = encoder.upper_bound
+    lower_bound = encoder.lower_bound
 
     # Data for Features
     bin_weights = encoder.region_weights
@@ -793,11 +815,12 @@ def draw_features(ax, encoder, lower_bound, upper_bound, colors, markersize=4, d
         # draw grid lines representing boundaries between regions
         ax.axvline(x=boundaries[0], alpha=0.2, linewidth=0.5, color='k', zorder=-1, label="Boundary")
         for k in range(1, len(boundaries)):
-           ax.axvline(x=boundaries[k], alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+            ax.axvline(x=boundaries[k], alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
     if draw_h_grid:
         for k in range(0, max_bin_weight + 3):
-            ax.hlines(y=k, xmin=lower_bound - 0.1, xmax=upper_bound + 0.1, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+            ax.hlines(y=k, xmin=lower_bound - 0.1, xmax=upper_bound + 0.1, alpha=0.2, linewidth=0.5, color='k',
+                      zorder=-1)
 
     # draw gnome weights
     ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=0.6, zorder=1, label="Weight")
@@ -826,12 +849,6 @@ def draw_features(ax, encoder, lower_bound, upper_bound, colors, markersize=4, d
 def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k', fontsize=8,
                   facecolor='none', text_str=None, aligned_text=False, alpha=1.0, text_v_offset=-0.01, clip_on=False,
                   label=None):
-    # print("add_text_rect(args):")
-    # print("box_x:", box_x)
-    # print("box_y:", box_y)
-    # print("box_width:", box_width)
-    # print("box_height:", box_height)
-    # print("angle:", angle)
 
     # data space coordinates to find new point after rotated
     fixed_point_rotation = Affine2D().rotate_deg_around(box_x, box_y, angle)
@@ -884,125 +901,4 @@ def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.
     ax.text(text_pos[0], text_pos[1], text_str, rotation=text_angle, rotation_mode='anchor',
             fontsize=fontsize, va='center', ha='center', clip_on=clip_on, alpha=alpha)
 
-
-def plot_interval_multi_encoder(encoder, desc_str="Encoder", lower_bound=0.0, upper_bound=1.0, file_dir="./out"):
-    n_bits = encoder.n
-    markersize = 4
-
-    # file_name = file_dir + "%02u_%02u_" % (w, n_bits) + encoder.__class__.__name__ + ".png"
-    file_name = file_dir + "%02u_" % (n_bits) + desc_str + ".png"
-
-    # reference points for comparison
-    ref_points = np.array([[0.21], [0.69]])
-
-    # sampled points over the space
-    X_points = np.array(encoder.region_centers).reshape(-1, 1)
-
-    # encodings
-    X_gnomes = encoder.encode(X_points)
-
-    # color palette
-    colors = sns.color_palette("Set1", n_colors=len(ref_points))
-
-    ## Draw Plots in Each SubAxes
-
-    # subplot_kw, gridspec_kw, **fig_kw
-    fig, axes = plt.subplots(4, 1, num=1, figsize=(10, 8), dpi=300, constrained_layout=True,
-                             gridspec_kw={'height_ratios': [1, 1, 1, 1]})  # , sharex=True)
-    ax0 = axes[0]
-    ax1 = axes[1]
-    ax2 = axes[2]
-    ax3 = axes[3]
-
-
-
-    ## Encoding Bins Subplot
-    ax0.tick_params(
-        axis='both',
-        which='both',
-        labelbottom=False,
-        bottom=False,
-        left=False,
-        right=True,
-        labelleft=False,
-        labelright=True, labelsize='small')
-
-    ax0.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
-    ax0.set_ylim(-0.1, n_bits + 0.1)
-    ax0.set_ylabel("Encoding Bins\non Interval")
-    ax0.set_title("%s, n=%d" % (desc_str, n_bits))
-
-    # draw encoder bins
-    draw_multi_encoder_bins(ax0, encoder, fontsize=6, xmin=lower_bound - 0.1, xmax=upper_bound + 0.1, clip_on=False)
-
-
-
-    # Features Subplot (Boundaries, Weight, Crossings)
-    ax1.tick_params(
-        axis='both',
-        which='both',
-        labelbottom=False,
-        bottom=False,
-        left=False,
-        right=True,
-        labelleft=False,
-        labelright=True)
-
-    # share ax0 and ax1 x-axis
-    ax1.get_shared_x_axes().join(ax1, ax0)
-
-    # draw weight, crossings, and boundary features
-    draw_features(ax1, encoder, lower_bound, upper_bound, colors, markersize)
-
-
-
-
-    ## Similarity Subplot
-    ax2.tick_params(
-        axis='both',
-        which='both',
-        labelbottom=False,
-        bottom=False,
-        left=False,
-        right=True,
-        labelleft=False,
-        labelright=True)
-
-    # share ax0 and ax2 x-axis
-    ax2.get_shared_x_axes().join(ax2, ax0)
-
-    # draw similarity plot
-    draw_similarity(ax2, encoder, X_gnomes, ref_points, lower_bound, upper_bound, colors, draw_regions=False, draw_h_grid=True, draw_v_values=True)
-
-
-
-
-    ## Encoding Bits Subplot
-    ax3.tick_params(
-        axis='both',
-        which='both',
-        labelbottom=True,
-        bottom=True,
-        left=False,
-        right=True,
-        labelleft=False,
-        labelright=True, labelsize='small')
-
-    # scale y-axis to number of bits
-    ax3.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
-    ax3.set_ylim(-0.5, n_bits + 0.5)
-    ax3.set_ylabel("Bit Encoding vs.\nReal Value")
-
-    # share ax0 and ax3 x-axis
-    ax3.get_shared_x_axes().join(ax3, ax0)
-
-    # draw encoding bits along x-axis values
-    draw_bits_by_data(ax3, encoder, xmin=lower_bound - 0.1, xmax=upper_bound + 0.1, draw_region_bits=True,
-                      draw_uniform_samples=False, permute_bits=False, clip_on=False)
-
-    # set xlim lower and upper bounds for all subplots
-    ax3.set_xlim(lower_bound - 0.1, upper_bound + 0.1)
-
-    if not file_name is None:
-        plt.savefig(file_name, bbox_inches='tight')
 
