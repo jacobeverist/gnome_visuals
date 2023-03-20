@@ -1,6 +1,7 @@
 from matplotlib import ticker
 from matplotlib.transforms import Affine2D
 import matplotlib.patches as patches
+from matplotlib.collections import PatchCollection
 import matplotlib.axes
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -45,6 +46,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
         xmax = upper_bound
     if xmin is None:
         xmin = lower_bound
+
 
     # scale y-axis to number of bits
     ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
@@ -116,6 +118,9 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                     pass
 
             if do_draw:
+
+                patches = []
+
                 for j in range(len(gnome_code)):
                     gnomelet = gnome_code[j]
 
@@ -131,8 +136,11 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                         h_adj = box_height - y_shrink
 
                         # create box representing the bin
-                        add_text_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on,
-                                      linewidth=0.2)
+                        rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
+                        patches.append(rect)
+
+                ax.add_collection(PatchCollection(patches, match_original=True))
+
     elif draw_region_bits:
 
         # shrink the the boxes by this amount
@@ -143,8 +151,11 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
         sample_points = encoder.region_centers
         X_points = sample_points.reshape(-1, 1)
 
+        print("X_points:", X_points.shape)
+
         # encodings
         X_gnomes = encoder.region_codes
+        print("X_gnomes:", X_gnomes.shape)
 
         region_widths = np.diff(encoder.region_boundaries)
 
@@ -189,6 +200,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                     pass
 
             if do_draw:
+                patches = []
                 for j in range(len(gnome_code)):
                     gnomelet = gnome_code[j]
 
@@ -209,8 +221,10 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                         h_adj = box_height - y_shrink
 
                         # create box representing the bin
-                        add_text_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on,
-                                      linewidth=0.2)
+                        rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
+                        patches.append(rect)
+
+                ax.add_collection(PatchCollection(patches, match_original=True))
 
     else:
         y_index = 0
@@ -218,6 +232,8 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
         # shrink the the bins by this amount
         x_shrink = x_pad * 2.0
         y_shrink = y_pad * 2.0
+
+        patches = []
 
         for bin in encoder.bins:
             bin_upper_bound = bin.upper
@@ -286,9 +302,11 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                 h_adj = box_height - y_shrink
 
                 # create box representing the bin
-                add_text_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
+                rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
+                patches.append(rect)
 
-            y_index += 1
+        ax.add_collection(PatchCollection(patches, match_original=True))
+        y_index += 1
 
     if draw_boundaries:
         boundaries = encoder.region_boundaries
@@ -697,6 +715,7 @@ def draw_similarity(ax, encoder, X_gnomes, ref_points, colors, draw_regions=Fals
     ref_gnomes = encoder.encode(ref_points)
 
     # count similarity scores
+    #scores = gnome_similarity(X_gnomes, ref_gnomes)
     scores2 = count_similarity(X_gnomes, ref_gnomes)
 
     # for plotting purposes
@@ -845,6 +864,14 @@ def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_
     # plot legend for property data
     legend = ax.legend(handles1, labels1, title="Features", ncol=3, fontsize=8, title_fontsize=9)
 
+def add_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k',
+                  facecolor='none', alpha=1.0, clip_on=False, label=None):
+
+    # add rectangle at corner position and rotate by angle
+    rect = patches.Rectangle((box_x, box_y), box_width, box_height, angle=angle, linewidth=linewidth,
+                             edgecolor=edgecolor,
+                             facecolor=facecolor, clip_on=clip_on, alpha=alpha, label=label)
+    return rect
 
 def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k', fontsize=8,
                   facecolor='none', text_str=None, aligned_text=False, alpha=1.0, text_v_offset=-0.01, clip_on=False,
@@ -900,5 +927,8 @@ def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.
     # add text box to center of rectangle
     ax.text(text_pos[0], text_pos[1], text_str, rotation=text_angle, rotation_mode='anchor',
             fontsize=fontsize, va='center', ha='center', clip_on=clip_on, alpha=alpha)
+
+
+    #return rect
 
 

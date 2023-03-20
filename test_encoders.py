@@ -3,7 +3,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-sns.set_theme(style="white", color_codes=True)
+#sns.set_theme(style="white", color_codes=True)
 
 try:
     from encoders.encoders import *
@@ -30,7 +30,9 @@ def plot_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, 
     max_count = np.max(diagonal_scores)
     mean_count = np.mean(diagonal_scores)
 
-    sns.set_theme(style="white")
+    sns.set_style("white")
+    sns.set_style("ticks")
+    #sns.set_theme(style="white")
 
     # Generate a mask for the upper triangle
     if triangle:
@@ -42,6 +44,8 @@ def plot_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, 
     f, ax = plt.subplots(figsize=(11, 9))
 
     ax.set_title(desc_str)
+    #ax.tick_params(axis='both', which='major', labelsize=10)
+    ax.tick_params(axis='both', labelsize=fontsize)
 
     # Generate a custom diverging colormap
     cmap = sns.diverging_palette(230, 20, as_cmap=True)
@@ -75,7 +79,9 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
     max_count = np.max(diagonal_scores)
     mean_count = np.mean(diagonal_scores)
 
-    sns.set_theme(style="white")
+    sns.set_style("white")
+    sns.set_style("ticks")
+    #sns.set_theme(style="white")
 
     # Generate a mask for the upper triangle
     #mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
@@ -89,6 +95,8 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
 
     # Set up the matplotlib figure
     f, ax = plt.subplots(figsize=(11, 9))
+
+    #ax.tick_params(axis='both', labelsize=fontsize)
 
     ax.set_title(desc_str)
     ax.invert_yaxis()
@@ -211,20 +219,6 @@ def plot_interval_encoder(encoder, desc_str="Encoder", lower_bound=0.0, upper_bo
     colors = sns.color_palette("Set1", n_colors=len(ref_points))
 
     # Encoding Plot
-    # ax0.set_title("%s, n=%d, w=%d" % (desc_str,n_bits,w))
-    # ax0.tick_params(
-    #    axis='both',
-    #    which='both',
-    #    bottom=False,
-    #    left=False,
-    #    right=True,
-    #    labelbottom=False,
-    #    labelleft=False,
-    #    labelright = True, labelsize = 'small')
-    # ax0.yaxis.set_major_locator(ticker.IndexLocator(1, 0))
-    # ax0.set_ylim(0, n_bits)
-    # ax0.set_ylabel("Encoded Bits")
-    # draw_encoding(ax0, X_gnomes)
 
     ax0.set_title("%s, n=%d, w=%d" % (desc_str, n_bits, w))
     ax0.tick_params(
@@ -413,6 +407,9 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     # color palette
     colors = sns.color_palette("Set1", n_colors=len(ref_points))
 
+    # seaborn style
+    sns.set_theme(style="white")
+
     ## Draw Plots in Each SubAxes
 
     # subplot_kw, gridspec_kw, **fig_kw
@@ -439,7 +436,7 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
 
     # draw encoder bins
     draw_multi_encoder_bins(ax0, encoder, fontsize=fontsize, xmin=xmin, xmax=xmax,
-                            clip_on=False)
+                            clip_on=False, draw_regions=False, draw_region_by_encoder=False)
 
     # Features Subplot (Boundaries, Weight, Crossings)
     ax1.tick_params(
@@ -491,8 +488,10 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     ax3.get_shared_x_axes().join(ax3, ax0)
 
     # draw encoding bits along x-axis values
-    draw_bits_by_data(ax3, encoder, xmin=xmin, xmax=xmax, draw_region_bits=True,
-                      draw_uniform_samples=False, permute_bits=False, clip_on=False)
+    #draw_bits_by_data(ax3, encoder, xmin=xmin, xmax=xmax, x_pad=0.0, draw_region_bits=False,
+    #                 draw_uniform_samples=True, permute_bits=False, clip_on=False, draw_boundaries=False)
+    draw_bits_by_data(ax3, encoder, xmin=xmin, xmax=xmax, x_pad=0.0, draw_region_bits=True,
+                      draw_uniform_samples=False, permute_bits=False, clip_on=False, draw_boundaries=False)
 
     if not file_name is None:
         plt.savefig(file_name, bbox_inches='tight')
@@ -537,22 +536,29 @@ if __name__ == "__main__":
     plt.clf()
     """
 
+    #foo1 = RandomizedPlaceCellEncoder(n=10)
+    #foo = PeriodicCellEncoder(n=1)
+
     multi_encoder = MultiEncoder()
     #multi_encoder.add_encoder(PlaceCellEncoder(n=10))
     #multi_encoder.add_encoder(PlaceCellEncoder(n=10))
-    multi_encoder.add_encoder(FixedWeightEncoder(n=15, w=3))
-    multi_encoder.add_encoder(FixedWeightEncoder(n=10, w=3))
-    multi_encoder.add_encoder(PlaceCellEncoder(n=10))
-    plot_interval_multi_encoder(multi_encoder, desc_str="PlaceEncoder", file_dir=file_dir)
+    #multi_encoder.add_encoder(FixedWeightEncoder(n=15, w=3))
+    #multi_encoder.add_encoder(FixedWeightEncoder(n=10, w=3))
+    #multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=10))
+
+    multi_encoder.add_encoder(PeriodicCellEncoder(n=40))
+
+    plot_interval_multi_encoder(multi_encoder, desc_str="PeriodicCellEncoder", file_dir=file_dir)
     plt.clf()
 
 
 
-    plot_heatmap(multi_encoder, desc_str="Similarity_by_Region", file_dir=file_dir, fontsize=6)
-    plt.clf()
 
-    plot_pmesh_heatmap(multi_encoder, desc_str="Similarity_by_Value", file_dir=file_dir, annot=False)
-    plt.clf()
+    #plot_heatmap(multi_encoder, desc_str="Similarity_by_Region", file_dir=file_dir, fontsize=6)
+    #plt.clf()
+
+    #plot_pmesh_heatmap(multi_encoder, desc_str="Similarity_by_Value", file_dir=file_dir, annot=False)
+    #plt.clf()
 
     # plot_interval_encoder(taper_encoder, "Tapering Weight Encoder", file_dir=file_dir)
     # plt.clf()
