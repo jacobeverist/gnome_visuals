@@ -336,7 +336,6 @@ if __name__ == "__main__":
     plt.clf()
     """
 
-    foo1 = RandomizedPlaceCellEncoder(n=10)
     #foo = PeriodicCellEncoder(n=1)
 
     multi_encoder = MultiEncoder()
@@ -346,16 +345,20 @@ if __name__ == "__main__":
     #multi_encoder.add_encoder(FixedWeightEncoder(n=10, w=3))
     #multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=10))
 
-    multi_encoder.add_encoder(PeriodicCellEncoder(n=40, oob_method="modulo"))
+    multi_encoder.add_encoder(PeriodicCellEncoder(n=10, oob_method="modulo"))
+    multi_encoder.add_encoder(PeriodicCellEncoder(n=10, oob_method="modulo"))
 
-    #plot_interval_multi_encoder(multi_encoder, desc_str="PeriodicCellEncoder", file_dir=file_dir)
-    plot_interval_multi_encoder(foo1, desc_str="RandomizedPlaceCellEncoder", file_dir=file_dir)
+    plot_interval_multi_encoder(multi_encoder, desc_str="PeriodicCellEncoder", file_dir=file_dir)
     plt.clf()
 
+    #place_encoder = RandomizedPlaceCellEncoder(n=10)
+    #plot_interval_multi_encoder(place_encoder, desc_str="RandomizedPlaceCellEncoder", file_dir=file_dir)
+    #plt.clf()
+
     # TODO:
-    # 1) add base class boundary-handling options (exception, clamp, modulo, silent)
-    # 2) able to plot fundamental regions of periodic cells
-    # 3) plot fundamental bin and congruent bins (with lower alpha)
+    # 1) + add base class boundary-handling options (exception, clamp, modulo, silent)
+    # 2) + able to plot fundamental regions of periodic cells
+    # 3) + plot fundamental bin and congruent bins (with lower alpha)
     # 4) create better grid distribution options, multi-scale, etc
 
 
@@ -366,8 +369,8 @@ if __name__ == "__main__":
     #plot_pmesh_heatmap(multi_encoder, desc_str="Similarity_by_Value", file_dir=file_dir, annot=False)
     #plt.clf()
 
-    taper_encoder = TaperingWeightEncoder(n=10, w=3)
-    plot_interval_multi_encoder(taper_encoder, "Tapering Weight Encoder", file_dir=file_dir)
-    plt.clf()
+    #taper_encoder = TaperingWeightEncoder(n=10, w=3)
+    #plot_interval_multi_encoder(taper_encoder, "Tapering Weight Encoder", file_dir=file_dir)
+    #plt.clf()
     # plot_interval_encoder(fixed_encoder, "Fixed Weight Encoder", file_dir=file_dir)
     # plt.clf()

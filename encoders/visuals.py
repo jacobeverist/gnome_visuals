@@ -20,6 +20,26 @@ np.set_printoptions(
     formatter={'bool': lambda bin_val: 'X' if bin_val else '-'})
 
 
+def clip_bin(box_x, box_width, lower_bound, upper_bound, bin_upper_bound):
+
+    # box_x, box_width = self._clip(box_x, box_width, lower_bound, upper_bound, bin_upper_bound)
+    # case 1: bin exceeds lower bound
+    if box_x < lower_bound:
+        box_x = lower_bound
+        box_width = bin_upper_bound - box_x
+
+    # case 2: bin exceeds interval upper bound
+    elif box_x + box_width > upper_bound:
+        box_width = upper_bound - box_x
+
+    # case 3: bin within interval bounds
+    else:
+        # do nothing
+        pass
+
+    return box_x, box_width
+
+
 def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, draw_region_bits=False,
                       draw_boundaries=True, draw_bit_grid=True, permute_bits=False, xmin=None, xmax=None, clip_on=True,
                       box_height=1, num_samples=150, x_pad=0.002, y_pad=0.15):
@@ -46,7 +66,6 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
         xmax = upper_bound
     if xmin is None:
         xmin = lower_bound
-
 
     # scale y-axis to number of bits
     ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
@@ -136,7 +155,8 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                         h_adj = box_height - y_shrink
 
                         # create box representing the bin
-                        rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
+                        rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on,
+                                        linewidth=0.2)
                         patches.append(rect)
 
                 ax.add_collection(PatchCollection(patches, match_original=True))
@@ -151,11 +171,11 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
         sample_points = encoder.region_centers
         X_points = sample_points.reshape(-1, 1)
 
-        #print("X_points:", X_points.shape)
+        # print("X_points:", X_points.shape)
 
         # encodings
         X_gnomes = encoder.region_codes
-        #print("X_gnomes:", X_gnomes.shape)
+        # print("X_gnomes:", X_gnomes.shape)
 
         region_widths = np.diff(encoder.region_boundaries)
 
@@ -221,7 +241,8 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                         h_adj = box_height - y_shrink
 
                         # create box representing the bin
-                        rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
+                        rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on,
+                                        linewidth=0.2)
                         patches.append(rect)
 
                 ax.add_collection(PatchCollection(patches, match_original=True))
@@ -336,12 +357,10 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
     ax.set_ylim(-0.1, n_bits + 0.1)
     ax.set_ylabel("Encoding Bins\non Interval")
 
-
     try:
         sub_encoders = encoder.encoders
     except:
         sub_encoders = [encoder]
-
 
     n_grids = len(sub_encoders)
     grid_names = string.ascii_uppercase[:n_grids]
@@ -362,47 +381,98 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
 
     bin_count = 0
 
-
-
     for e in sub_encoders:
-        for bin in e.bins:
+
+        # look to see if there are fundamental regions to plot
+        try:
+            foo = e.fund_regions
+            do_fund_regions = True
+        except:
+            do_fund_regions = False
+
+        # look to see if there are congruent bins to plot
+        try:
+            foo = e.bin_congruence
+            do_cong_bins = True
+        except:
+            do_cong_bins = False
+
+        for k in range(len(e.bins)):
+            bin = e.bins[k]
             bin_upper_bound = bin.upper
             bin_lower_bound = bin.lower
+
 
             box_x = bin_lower_bound
             box_y = draw_y
             box_width = bin_upper_bound - bin_lower_bound
 
             if clip_on:
-                # case 1: bin exceeds lower bound
-                if box_x < lower_bound:
-                    box_x = lower_bound
-                    box_width = bin_upper_bound - box_x
-
-                # case 2: bin exceeds interval upper bound
-                elif box_x + box_width > upper_bound:
-                    box_width = upper_bound - box_x
-
-                # case 3: bin within interval bounds
-                else:
-                    # do nothing
-                    pass
+                box_x, box_width = clip_bin(box_x, box_width, lower_bound, upper_bound, bin_upper_bound)
 
             # shrink the the bins by this amount
             x_shrink = 0.004
             y_shrink = 0.3
 
             # only add label to first rectangle of encoder's bins
+            grid_label = None
             if bin_count == 0:
-                add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
-                              box_height - y_shrink, alpha=0.8, facecolor=grid_colors[encoder_count],
-                              text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize,
-                              label=grid_labels[encoder_count])
-            else:
-                add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
-                              box_height - y_shrink, alpha=0.8, facecolor=grid_colors[encoder_count],
-                              text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize)
-            # text_str=grid_label_templates[encoder_count] % bin_count, clip_on=clip_on, linewidth=0.2)
+                grid_label = grid_labels[encoder_count]
+
+            # draw bin
+            add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                          box_height - y_shrink, alpha=0.8, facecolor=grid_colors[encoder_count],
+                          text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize,
+                          label=grid_label)
+
+            # draw congruent bins if exist
+            if do_cong_bins:
+                congruent_bins = e.bin_congruence[k]
+                for j in range(len(congruent_bins)):
+                    bin = congruent_bins[j]
+                    bin_upper_bound = bin.upper
+                    bin_lower_bound = bin.lower
+
+                    box_x = bin_lower_bound
+                    box_y = draw_y
+                    box_width = bin_upper_bound - bin_lower_bound
+
+                    if clip_on:
+                        box_x, box_width = clip_bin(box_x, box_width, lower_bound, upper_bound, bin_upper_bound)
+
+                    # shrink the the bins by this amount
+                    x_shrink = 0.004
+                    y_shrink = 0.3
+
+                    # only add label to first rectangle of encoder's bins
+                    grid_label = None
+                    if bin_count == 0:
+                        grid_label = grid_labels[encoder_count]
+
+                    # draw bin
+                    add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                                  box_height - y_shrink, alpha=0.3, facecolor=grid_colors[encoder_count],
+                                  text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize,
+                                  label=grid_label)
+
+
+            # draw fundamental region if exist
+            if do_fund_regions:
+                fund_region = e.fund_regions[k]
+                fund_upper_bound = fund_region.upper
+                fund_lower_bound = fund_region.lower
+
+                box_x = fund_lower_bound
+                box_y = draw_y
+                box_width = fund_upper_bound - fund_lower_bound
+
+                if clip_on:
+                    box_x, box_width = clip_bin(box_x, box_width, lower_bound, upper_bound, bin_upper_bound)
+
+
+                rect = add_rect(ax, box_x, box_y, box_width, box_height, alpha=0.3,
+                                facecolor=grid_colors[encoder_count], clip_on=clip_on, linewidth=0.2)
+                ax.add_patch(rect)
 
             bin_count += 1
             bin_id_count += 1
@@ -415,7 +485,7 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                 max_y = box_y + box_height
 
         encoder_count += 1
-        #draw_y = box_height * encoder_count * spacing
+        # draw_y = box_height * encoder_count * spacing
 
     draw_bound_y = 0
     prev_bound_y = 0
@@ -450,8 +520,9 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
     return max_y, min_y
 
 
-def draw_periodic_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8, draw_regions=False,
-                            draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True):
+def draw_periodic_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8,
+                               draw_regions=False,
+                               draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True):
     min_y = 1
     max_y = 0
 
@@ -468,12 +539,10 @@ def draw_periodic_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, 
     ax.set_ylim(-0.1, n_bits + 0.1)
     ax.set_ylabel("Encoding Bins\non Interval")
 
-
     try:
         sub_encoders = encoder.encoders
     except:
         sub_encoders = [encoder]
-
 
     n_grids = len(sub_encoders)
     grid_names = string.ascii_uppercase[:n_grids]
@@ -494,8 +563,6 @@ def draw_periodic_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, 
 
     bin_count = 0
 
-
-
     for e in sub_encoders:
         for bin in e.bins:
             bin_upper_bound = bin.upper
@@ -506,19 +573,7 @@ def draw_periodic_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, 
             box_width = bin_upper_bound - bin_lower_bound
 
             if clip_on:
-                # case 1: bin exceeds lower bound
-                if box_x < lower_bound:
-                    box_x = lower_bound
-                    box_width = bin_upper_bound - box_x
-
-                # case 2: bin exceeds interval upper bound
-                elif box_x + box_width > upper_bound:
-                    box_width = upper_bound - box_x
-
-                # case 3: bin within interval bounds
-                else:
-                    # do nothing
-                    pass
+                box_x, box_width = clip_bin(box_x, box_width, lower_bound, upper_bound, bin_upper_bound)
 
             # shrink the the bins by this amount
             x_shrink = 0.004
@@ -536,10 +591,10 @@ def draw_periodic_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, 
                               text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize)
             # text_str=grid_label_templates[encoder_count] % bin_count, clip_on=clip_on, linewidth=0.2)
 
-            #rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
+            # rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
 
             # box_width = self.perdiods[k]
-            #rect = add_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+            # rect = add_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
             #              box_height - y_shrink, alpha=0.3, facecolor=grid_colors[encoder_count],
             #              linewidth=0.2)
 
@@ -554,7 +609,7 @@ def draw_periodic_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, 
                 max_y = box_y + box_height
 
         encoder_count += 1
-        #draw_y = box_height * encoder_count * spacing
+        # draw_y = box_height * encoder_count * spacing
 
     draw_bound_y = 0
     prev_bound_y = 0
@@ -691,7 +746,7 @@ def draw_similarity(ax, encoder, X_gnomes, ref_points, colors, draw_regions=Fals
     ref_gnomes = encoder.encode(ref_points)
 
     # count similarity scores
-    #scores = gnome_similarity(X_gnomes, ref_gnomes)
+    # scores = gnome_similarity(X_gnomes, ref_gnomes)
     scores2 = count_similarity(X_gnomes, ref_gnomes)
 
     # for plotting purposes
@@ -840,19 +895,19 @@ def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_
     # plot legend for property data
     legend = ax.legend(handles1, labels1, title="Features", ncol=3, fontsize=8, title_fontsize=9)
 
-def add_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k',
-                  facecolor='none', alpha=1.0, clip_on=False, label=None):
 
+def add_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k',
+             facecolor='none', alpha=1.0, clip_on=False, label=None):
     # add rectangle at corner position and rotate by angle
     rect = patches.Rectangle((box_x, box_y), box_width, box_height, angle=angle, linewidth=linewidth,
                              edgecolor=edgecolor,
                              facecolor=facecolor, clip_on=clip_on, alpha=alpha, label=label)
     return rect
 
+
 def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k', fontsize=8,
                   facecolor='none', text_str=None, aligned_text=False, alpha=1.0, text_v_offset=-0.01, clip_on=False,
                   label=None):
-
     # data space coordinates to find new point after rotated
     fixed_point_rotation = Affine2D().rotate_deg_around(box_x, box_y, angle)
 
@@ -904,7 +959,4 @@ def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.
     ax.text(text_pos[0], text_pos[1], text_str, rotation=text_angle, rotation_mode='anchor',
             fontsize=fontsize, va='center', ha='center', clip_on=clip_on, alpha=alpha)
 
-
-    #return rect
-
-
+    # return rect

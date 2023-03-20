@@ -550,7 +550,7 @@ class PeriodicCellEncoder(EncoderBase):
 
     """
 
-    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, seed=0, **kwargs):
+    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, seed=None, **kwargs):
         """
         :param n: number of bins, number of bits
         :param l: size of bin, if unspecified, l is random for each bin
@@ -600,6 +600,7 @@ class PeriodicCellEncoder(EncoderBase):
         self.straddles = []
 
         self.fund_regions = []
+        self.bin_congruence = []
 
         self.bins = []
         self.region_boundaries = []
@@ -693,7 +694,10 @@ class PeriodicCellEncoder(EncoderBase):
         :return:
         """
 
-        rand = np.random.RandomState(seed=self.seed)
+        if self.seed is None:
+            rand = np.random.RandomState()
+        else:
+            rand = np.random.RandomState(seed=self.seed)
 
         # random modulus for each grid cell
         self.periods = rand.uniform(2 * self.l, self.max_period, self.n)
@@ -721,30 +725,39 @@ class PeriodicCellEncoder(EncoderBase):
         if len(self.bins) < 1:
             raise Exception("Encoder as configured doesn't allocate any bins")
 
-        # print("input interval:", self.lower_bound, self.upper_bound)
+        # generating congruent bins
+        self.bin_congruence = []
+
         # multiply boundary points for each cell outside of fundamental region
         bin_lower_multiples = []
         for k in range(self.n):
-            # print("bin", k)
-            # print("period", self.periods[k])
-            # print("fund_region:", self.fund_regions[k].lower, self.fund_regions[k].upper)
+            bin_multiples = []
             bin = self.bins[k]
             x_lower = bin.lower
-            bin_lower_multiples.append(x_lower)
-            # print("add", x_lower)
 
             x_lower = x_lower + self.periods[k]
             while x_lower < self.upper_bound:
-                bin_lower_multiples.append(x_lower)
-                # print("add", x_lower)
+                bin_multiples.append(x_lower)
                 x_lower = x_lower + self.periods[k]
 
             x_lower = bin.lower
             x_lower = x_lower - self.periods[k]
             while x_lower >= self.lower_bound:
-                bin_lower_multiples.append(x_lower)
-                # print("add", x_lower)
+                bin_multiples.append(x_lower)
                 x_lower = x_lower - self.periods[k]
+
+            # copy congruent bins without original
+            congruent_bins = []
+            for cong_lower in bin_multiples:
+                congruent_bins.append(I.closed_open(cong_lower, cong_lower + self.l))
+            self.bin_congruence.append(congruent_bins)
+
+            # add original
+            x_lower = bin.lower
+            bin_multiples.append(x_lower)
+
+            # add to complete collection of bins
+            bin_lower_multiples += bin_multiples
 
         bin_lower_multiples = np.array(bin_lower_multiples)
 
@@ -794,7 +807,7 @@ class PlaceCellEncoder(EncoderBase):
 
     """
 
-    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, seed=0, **kwargs):
+    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, seed=None, **kwargs):
         """
         :param n: number of bins, number of bits
         :param l: size of bin, if unspecified, l is random for each bin
@@ -872,7 +885,10 @@ class RandomizedPlaceCellEncoder(PlaceCellEncoder):
         :return:
         """
 
-        rand = np.random.RandomState(seed=self.seed)
+        if self.seed is None:
+            rand = np.random.RandomState()
+        else:
+            rand = np.random.RandomState(seed=self.seed)
 
         # create n random points in interval as bin centroids
         # bin_centers = np.random.uniform(self.lower_bound, self.upper_bound, self.n)
