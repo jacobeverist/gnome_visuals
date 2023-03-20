@@ -17,11 +17,50 @@ class EncoderBase:
 
     """
 
-    def __init__(self):
+    def __init__(self, oob_method="silent"):
         """
         Constructor code
 
         """
+
+        # Out-Of-Bound methods: ["clamp", "exception", "modulo", "silent"]
+        self.oob_method = oob_method
+        self.lower_bound = 0
+        self.upper_bound = 1
+        self.L = self.upper_bound - self.lower_bound
+
+    def _input(self, X):
+
+        if self.oob_method == "exception" and (np.any(X > self.upper_bound) or np.any(X < self.lower_bound)):
+            raise Exception("Attempting to encode input value out of bounds of interval [%.2f,%.2f)" % (
+                self.lower_bound, self.upper_bound))
+
+        elif self.oob_method == "clamp":
+            x_clamp = X
+            x_clamp = np.where(x_clamp >= self.upper_bound, self.upper_bound - 1e-10, x_clamp)
+            x_clamp = np.where(x_clamp < self.lower_bound, self.lower_bound + 1e-10, x_clamp)
+            X = x_clamp
+
+        elif self.oob_method == "modulo":
+            # value with respect to lower bound
+            x_rel = X - self.lower_bound
+
+            # values modulo this input interval length
+            x_modulo = np.mod(x_rel, self.L)
+
+            # back into real coordinates within fund. region
+            x_fund_region = x_modulo + self.lower_bound
+
+            X = x_fund_region
+
+        elif self.oob_method == "silent":
+            # do nothing
+            pass
+
+        else:
+            raise Exception("Undefined out-of-bounds method: '%s'" % self.oob_method)
+
+        return X
 
     def config(self):
         """
@@ -385,8 +424,7 @@ class IntervalEncoder(EncoderBase):
         - w>1: l=(w*L)/(n+w-1)
     """
 
-    def __init__(self, n=None, l=None, L=1.0, w=1, lower_bound=0, upper_bound=None, clamped_input=False,
-                 raise_out_of_bounds=False):
+    def __init__(self, n=None, l=None, L=1.0, w=1, lower_bound=0, upper_bound=None, **kwargs):
         """
         Required: must provide either 'n' or 'l', but not both.
 
@@ -401,10 +439,7 @@ class IntervalEncoder(EncoderBase):
         """
 
         # superclass constructor
-        super().__init__()
-
-        self.clamped_input = clamped_input
-        self.raise_out_of_bounds = raise_out_of_bounds
+        super().__init__(**kwargs)
 
         # weight
         if not isinstance(w, int) or w < 1:
@@ -464,62 +499,18 @@ class IntervalEncoder(EncoderBase):
         # enforces well-formed input with options,
         # here input should be 2D array where X.shape == (num_samples, num_features)
         # X = check_array(X, ensure_2d=True)
+        X = self._input(X)
 
-        if self.raise_out_of_bounds and (np.any(X > self.upper_bound) or np.any(X < self.lower_bound)):
-            raise Exception("Attempting to encode input value out of bounds of interval [%.2f,%.2f)" % (
-                self.lower_bound, self.upper_bound))
 
-        x_clamp = X
-        if self.clamped_input:
-            x_clamp = np.where(x_clamp >= self.upper_bound, self.region_centers[-1], x_clamp)
-            x_clamp = np.where(x_clamp < self.lower_bound, self.region_centers[0], x_clamp)
-
-        # list of values to encode
-        if isinstance(X, Iterable):
-            gnomes = []
-            for x in x_clamp:
-                gnomes.append(np.array([1 if x in b else 0 for b in self.bins]))
-            return np.array(gnomes)
-        else:
-            gnome = np.array([1 if x_clamp in b else 0 for b in self.bins])
-            return gnome
-
-        """
         # list of values to encode
         if isinstance(X, Iterable):
             gnomes = []
             for x in X:
-
-                if self.raise_out_of_bounds and (x > self.upper_bound or x < self.lower_bound):
-                    raise Exception("Attempting to encode input value out of bounds of interval")
-
-                x_clamp = x
-                if self.clamped_input:
-                    if x >= self.upper_bound:
-                        x_clamp = self.region_centers[-1]
-                    elif x < self.lower_bound:
-                        x_clamp = self.region_centers[0]
-
-                gnomes.append(np.array([1 if x_clamp in b else 0 for b in self.bins]))
-
+                gnomes.append(np.array([1 if x in b else 0 for b in self.bins]))
             return np.array(gnomes)
-
-        # single value to encode
         else:
-            x = X
-            if self.raise_out_of_bounds and (x > self.upper_bound or x < self.lower_bound):
-                raise Exception("Attempting to encode input value out of bounds of interval")
-
-            x_clamp = x
-            if self.clamped_input:
-                if x >= self.upper_bound:
-                    x_clamp = self.region_centers[-1]
-                elif x < self.lower_bound:
-                    x_clamp = self.region_centers[0]
-
-            gnome = np.array([1 if x_clamp in b else 0 for b in self.bins])
+            gnome = np.array([1 if X in b else 0 for b in self.bins])
             return gnome
-        """
 
     def custom(self):
         """
@@ -559,8 +550,7 @@ class PeriodicCellEncoder(EncoderBase):
 
     """
 
-    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, clamped_input=False,
-                 raise_out_of_bounds=False, seed=0):
+    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, seed=0, **kwargs):
         """
         :param n: number of bins, number of bits
         :param l: size of bin, if unspecified, l is random for each bin
@@ -571,12 +561,9 @@ class PeriodicCellEncoder(EncoderBase):
         """
 
         # superclass constructor
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.seed = seed
-
-        self.clamped_input = clamped_input
-        self.raise_out_of_bounds = raise_out_of_bounds
 
         # interval size and bounds
         if upper_bound <= lower_bound:
@@ -612,6 +599,8 @@ class PeriodicCellEncoder(EncoderBase):
         # whether bin straddles the boundaries of their fundamental region
         self.straddles = []
 
+        self.fund_regions = []
+
         self.bins = []
         self.region_boundaries = []
         self.region_centers = []
@@ -631,35 +620,15 @@ class PeriodicCellEncoder(EncoderBase):
         # enforces well-formed input with options,
         # here input should be 2D array where X.shape == (num_samples, num_features)
         # X = check_array(X, ensure_2d=True)
-
-        if self.raise_out_of_bounds and (np.any(X > self.upper_bound) or np.any(X < self.lower_bound)):
-            raise Exception("Attempting to encode input value out of bounds of interval [%.2f,%.2f)" % (
-                self.lower_bound, self.upper_bound))
-
-        #try:
-        #    print("X:", X.shape)
-        #except:
-        #    print("X:", 1)
-
-        x_clamp = X
-        if self.clamped_input:
-            x_clamp = np.where(x_clamp >= self.upper_bound, self.region_centers[-1], x_clamp)
-            x_clamp = np.where(x_clamp < self.lower_bound, self.region_centers[0], x_clamp)
-
-
-        #try:
-        #    print("x_clamp:", x_clamp.shape)
-        #except:
-        #    print("x_clamp:", 1)
+        X = self._input(X)
 
         # values with respect to an origin
-        x_origin = x_clamp - self.origin
+        x_origin = X - self.origin
 
-        #try:
+        # try:
         #    print("x_origin:", x_origin.shape)
-        #except:
+        # except:
         #    print("x_origin:", 1)
-
 
         # list of values to encode
         if isinstance(X, Iterable):
@@ -687,7 +656,7 @@ class PeriodicCellEncoder(EncoderBase):
                         vals.append(0)
                 gnomes.append(np.array(vals))
 
-                #gnomes.append(np.array(
+                # gnomes.append(np.array(
                 #    [1 if x in self.bins[k] or self.straddles[k] and (x + self.periods[k]) in self.bins[k] else 0 for k
                 #     in range(self.n)]))
 
@@ -727,20 +696,17 @@ class PeriodicCellEncoder(EncoderBase):
         rand = np.random.RandomState(seed=self.seed)
 
         # random modulus for each grid cell
-        self.periods = rand.uniform(2*self.l, self.max_period, self.n)
+        self.periods = rand.uniform(2 * self.l, self.max_period, self.n)
 
         # fundamental regions for each period
         # [self.origin, self.periods]
         # self.fund_regions = [(self.origin, period) for period in self.periods]
-        self.fund_regions = [I.closed_open(self.origin, self.origin+self.periods[c]) for c in range(self.n)]
+        self.fund_regions = [I.closed_open(self.origin, self.origin + self.periods[c]) for c in range(self.n)]
 
         # create n random points in interval as bin centroids
         # bin_centers = rand.uniform(self.origin, self.max_period, self.n)
         # bin_mins = rand.uniform(self.origin-self.l, self.periods-self.l, self.n)
-        bin_lowers = rand.uniform(self.origin, self.origin+self.periods, self.n)
-
-        for k in range(self.n):
-            print(self.l, self.periods[k])
+        bin_lowers = rand.uniform(self.origin, self.origin + self.periods, self.n)
 
         # True/False whether bin straddles fund. region boundary
         # self.straddles = np.array([True if (self.bin_lowers[k] + self.l) >= (self.origin + self.periods[k])
@@ -755,35 +721,35 @@ class PeriodicCellEncoder(EncoderBase):
         if len(self.bins) < 1:
             raise Exception("Encoder as configured doesn't allocate any bins")
 
-        #print("input interval:", self.lower_bound, self.upper_bound)
+        # print("input interval:", self.lower_bound, self.upper_bound)
         # multiply boundary points for each cell outside of fundamental region
         bin_lower_multiples = []
         for k in range(self.n):
-            #print("bin", k)
-            #print("period", self.periods[k])
-            #print("fund_region:", self.fund_regions[k].lower, self.fund_regions[k].upper)
+            # print("bin", k)
+            # print("period", self.periods[k])
+            # print("fund_region:", self.fund_regions[k].lower, self.fund_regions[k].upper)
             bin = self.bins[k]
             x_lower = bin.lower
             bin_lower_multiples.append(x_lower)
-            #print("add", x_lower)
+            # print("add", x_lower)
 
             x_lower = x_lower + self.periods[k]
             while x_lower < self.upper_bound:
                 bin_lower_multiples.append(x_lower)
-                #print("add", x_lower)
+                # print("add", x_lower)
                 x_lower = x_lower + self.periods[k]
 
             x_lower = bin.lower
             x_lower = x_lower - self.periods[k]
             while x_lower >= self.lower_bound:
                 bin_lower_multiples.append(x_lower)
-                #print("add", x_lower)
+                # print("add", x_lower)
                 x_lower = x_lower - self.periods[k]
 
         bin_lower_multiples = np.array(bin_lower_multiples)
 
-        #print("bin_lower_multiples")
-        #print(type(bin_lower_multiples), bin_lower_multiples.shape)
+        # print("bin_lower_multiples")
+        # print(type(bin_lower_multiples), bin_lower_multiples.shape)
 
         # record region boundary points
         get_boundaries = lambda x: (x, x + self.l)
@@ -792,8 +758,8 @@ class PeriodicCellEncoder(EncoderBase):
         region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
         region_boundaries = np.sort(region_boundaries)
         self.region_boundaries = region_boundaries
-        #print("region_boundaries:", self.region_boundaries.shape)
-        #print(self.region_boundaries)
+        # print("region_boundaries:", self.region_boundaries.shape)
+        # print(self.region_boundaries)
 
         # record region center points
         self.region_centers = self.region_boundaries[:-1] + np.diff(self.region_boundaries) / 2
@@ -828,8 +794,7 @@ class PlaceCellEncoder(EncoderBase):
 
     """
 
-    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, clamped_input=False,
-                 raise_out_of_bounds=False, seed=0):
+    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, seed=0, **kwargs):
         """
         :param n: number of bins, number of bits
         :param l: size of bin, if unspecified, l is random for each bin
@@ -840,12 +805,9 @@ class PlaceCellEncoder(EncoderBase):
         """
 
         # superclass constructor
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.seed = seed
-
-        self.clamped_input = clamped_input
-        self.raise_out_of_bounds = raise_out_of_bounds
 
         # interval size and bounds
         if upper_bound <= lower_bound:
@@ -887,24 +849,17 @@ class PlaceCellEncoder(EncoderBase):
         # enforces well-formed input with options,
         # here input should be 2D array where X.shape == (num_samples, num_features)
         # X = check_array(X, ensure_2d=True)
+        X = self._input(X)
 
-        if self.raise_out_of_bounds and (np.any(X > self.upper_bound) or np.any(X < self.lower_bound)):
-            raise Exception("Attempting to encode input value out of bounds of interval [%.2f,%.2f)" % (
-                self.lower_bound, self.upper_bound))
-
-        x_clamp = X
-        if self.clamped_input:
-            x_clamp = np.where(x_clamp >= self.upper_bound, self.region_centers[-1], x_clamp)
-            x_clamp = np.where(x_clamp < self.lower_bound, self.region_centers[0], x_clamp)
 
         # list of values to encode
         if isinstance(X, Iterable):
             gnomes = []
-            for x in x_clamp:
+            for x in X:
                 gnomes.append(np.array([1 if x in b else 0 for b in self.bins]))
             return np.array(gnomes)
         else:
-            gnome = np.array([1 if x_clamp in b else 0 for b in self.bins])
+            gnome = np.array([1 if X in b else 0 for b in self.bins])
             return gnome
 
 
@@ -922,9 +877,6 @@ class RandomizedPlaceCellEncoder(PlaceCellEncoder):
         # create n random points in interval as bin centroids
         # bin_centers = np.random.uniform(self.lower_bound, self.upper_bound, self.n)
         bin_centers = rand.uniform(self.lower_bound, self.upper_bound, self.n)
-
-        print("bin_centers")
-        print(type(bin_centers), bin_centers.shape)
 
         # compute bins
         self.bins = [I.closed_open(bin_centers[c] - self.l / 2.0, bin_centers[c] + self.l / 2.0) for c

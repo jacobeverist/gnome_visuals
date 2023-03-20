@@ -151,11 +151,11 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
         sample_points = encoder.region_centers
         X_points = sample_points.reshape(-1, 1)
 
-        print("X_points:", X_points.shape)
+        #print("X_points:", X_points.shape)
 
         # encodings
         X_gnomes = encoder.region_codes
-        print("X_gnomes:", X_gnomes.shape)
+        #print("X_gnomes:", X_gnomes.shape)
 
         region_widths = np.diff(encoder.region_boundaries)
 
@@ -318,130 +318,6 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
             ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
 
-def draw_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8):
-    # def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k', fontsize=8,
-    #              facecolor='none', text_str=None, aligned_text=False, alpha=1.0, text_v_offset=-0.01):
-
-    min_y = 1
-    max_y = 0
-
-    n_bits = encoder.n
-    boundaries = encoder.region_boundaries
-
-    upper_bound = encoder.upper_bound
-    lower_bound = encoder.lower_bound
-
-    if xmax is None:
-        xmax = upper_bound
-    if xmin is None:
-        xmin = lower_bound
-
-    keys = [0, ]
-    keys.sort()
-
-    n_grids = 1
-    grid_names = string.ascii_uppercase[:n_grids]
-
-    colors = sns.color_palette("muted", n_colors=n_grids)
-    grid_label_templates = [prefix + "%d" for prefix in grid_names]
-    grid_colors = [colors[j] for j in range(n_grids)]
-
-    grid_labels = ["%d,%d" % (keys[j], spacing) for j in range(n_grids)]
-
-    encoder_count = 0
-    bin_id_count = 0
-    draw_y = 0.0
-    # box_height = 0.3
-    box_height = 1
-
-    top_right_points_x = []
-    top_right_points_y = []
-
-    bin_count = 0
-
-    # for i in range(0, len(encoder.region_boundaries)-1):
-    for bin in encoder.bins:
-        bin_upper_bound = bin.upper
-        bin_lower_bound = bin.lower
-        # lower_bound = encoder.region_boundaries[i]
-        # upper_bound = encoder.region_boundaries[i+1]
-
-        box_x = bin_lower_bound
-        box_y = draw_y
-        box_width = bin_upper_bound - bin_lower_bound
-
-        # print("bin id, bin lower, bin upper, bin size:", bin_id_count, bin_lower_bound, bin_upper_bound, box_width)
-
-        if clip_on:
-            # case 1: bin exceeds lower bound
-            if box_x < lower_bound:
-                box_x = lower_bound
-                box_width = bin_upper_bound - box_x
-
-            # case 2: bin exceeds interval upper bound
-            elif box_x + box_width > upper_bound:
-                box_width = upper_bound - box_x
-
-            # case 3: bin within interval bounds
-            else:
-                # do nothing
-                pass
-
-        """
-        # only add label to first rectangle of encoder's bins
-        if bin_count == 0:
-            add_text_rect(ax, box_x, box_y, box_width, box_height, alpha=1, facecolor=grid_colors[encoder_count],
-                          text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize,
-                          label=grid_labels[encoder_count])
-        else:
-            add_text_rect(ax, box_x, box_y, box_width, box_height, alpha=1, facecolor=grid_colors[encoder_count],
-                          text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize)
-        # text_str=grid_label_templates[encoder_count] % bin_count, clip_on=clip_on, linewidth=0.2)
-        """
-
-        # shrink the the bins by this amount
-        x_shrink = 0.004
-        y_shrink = 0.3
-
-        # only add label to first rectangle of encoder's bins
-        if bin_count == 0:
-            add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
-                          box_height - y_shrink, alpha=0.8, facecolor=grid_colors[encoder_count],
-                          text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize,
-                          label=grid_labels[encoder_count])
-        else:
-            add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
-                          box_height - y_shrink, alpha=0.8, facecolor=grid_colors[encoder_count],
-                          text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize)
-        # text_str=grid_label_templates[encoder_count] % bin_count, clip_on=clip_on, linewidth=0.2)
-
-        bin_count += 1
-        bin_id_count += 1
-        draw_y += box_height
-
-        if box_y < min_y:
-            min_y = box_y
-
-        if box_y + box_height > max_y:
-            max_y = box_y + box_height
-
-        # top_right_points_x.append(box_x+box_width)
-        # top_right_points_y.append(box_y+box_height)
-
-    # draw_y += box_height
-    encoder_count += 1
-    draw_y = box_height * encoder_count * spacing
-
-    # ax.scatter(top_right_points_x, top_right_points_y, s=0.01)
-
-    for k in range(len(boundaries)):
-        ax.vlines(x=boundaries[k], ymin=0, ymax=n_bits, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
-    for k in range(n_bits + 1):
-        ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
-
-    return max_y, min_y
-
-
 def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8, draw_regions=False,
                             draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True):
     min_y = 1
@@ -574,6 +450,145 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
     return max_y, min_y
 
 
+def draw_periodic_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8, draw_regions=False,
+                            draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True):
+    min_y = 1
+    max_y = 0
+
+    n_bits = encoder.n
+    upper_bound = encoder.upper_bound
+    lower_bound = encoder.lower_bound
+
+    if xmax is None:
+        xmax = upper_bound
+    if xmin is None:
+        xmin = lower_bound
+
+    ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
+    ax.set_ylim(-0.1, n_bits + 0.1)
+    ax.set_ylabel("Encoding Bins\non Interval")
+
+
+    try:
+        sub_encoders = encoder.encoders
+    except:
+        sub_encoders = [encoder]
+
+
+    n_grids = len(sub_encoders)
+    grid_names = string.ascii_uppercase[:n_grids]
+
+    keys = list(range(n_grids))
+    keys.sort()
+
+    colors = sns.color_palette("muted", n_colors=n_grids)
+    grid_label_templates = [prefix + "%d" for prefix in grid_names]
+    grid_colors = [colors[j] for j in range(n_grids)]
+
+    grid_labels = ["%d,%d" % (keys[j], spacing) for j in range(n_grids)]
+
+    encoder_count = 0
+    bin_id_count = 0
+    draw_y = 0.0
+    box_height = 1
+
+    bin_count = 0
+
+
+
+    for e in sub_encoders:
+        for bin in e.bins:
+            bin_upper_bound = bin.upper
+            bin_lower_bound = bin.lower
+
+            box_x = bin_lower_bound
+            box_y = draw_y
+            box_width = bin_upper_bound - bin_lower_bound
+
+            if clip_on:
+                # case 1: bin exceeds lower bound
+                if box_x < lower_bound:
+                    box_x = lower_bound
+                    box_width = bin_upper_bound - box_x
+
+                # case 2: bin exceeds interval upper bound
+                elif box_x + box_width > upper_bound:
+                    box_width = upper_bound - box_x
+
+                # case 3: bin within interval bounds
+                else:
+                    # do nothing
+                    pass
+
+            # shrink the the bins by this amount
+            x_shrink = 0.004
+            y_shrink = 0.3
+
+            # only add label to first rectangle of encoder's bins
+            if bin_count == 0:
+                add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                              box_height - y_shrink, alpha=0.8, facecolor=grid_colors[encoder_count],
+                              text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize,
+                              label=grid_labels[encoder_count])
+            else:
+                add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                              box_height - y_shrink, alpha=0.8, facecolor=grid_colors[encoder_count],
+                              text_str=str(bin_id_count), clip_on=clip_on, linewidth=0.2, fontsize=fontsize)
+            # text_str=grid_label_templates[encoder_count] % bin_count, clip_on=clip_on, linewidth=0.2)
+
+            #rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
+
+            # box_width = self.perdiods[k]
+            #rect = add_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+            #              box_height - y_shrink, alpha=0.3, facecolor=grid_colors[encoder_count],
+            #              linewidth=0.2)
+
+            bin_count += 1
+            bin_id_count += 1
+            draw_y += box_height
+
+            if box_y < min_y:
+                min_y = box_y
+
+            if box_y + box_height > max_y:
+                max_y = box_y + box_height
+
+        encoder_count += 1
+        #draw_y = box_height * encoder_count * spacing
+
+    draw_bound_y = 0
+    prev_bound_y = 0
+
+    if draw_h_border:
+        ax.hlines(y=draw_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=0.5, color='k', zorder=-1)
+
+    for e in sub_encoders:
+        e_boundaries = e.region_boundaries
+        draw_bound_y += box_height * len(e.bins)
+
+        if draw_region_by_encoder:
+            ax.vlines(x=e_boundaries, ymin=prev_bound_y, ymax=draw_bound_y, alpha=0.2, linewidth=0.5, color='k',
+                      zorder=-1)
+
+        if draw_h_grid:
+            for k in range(len(e.bins)):
+                ax.hlines(y=prev_bound_y + k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+
+            ax.hlines(y=draw_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=0.5, color='k', zorder=-1)
+
+        prev_bound_y = draw_bound_y
+
+    if draw_regions:
+        boundaries = encoder.region_boundaries
+        n_bits = encoder.n
+        for k in range(len(boundaries)):
+            ax.vlines(x=boundaries[k], ymin=0, ymax=n_bits, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+        for k in range(n_bits + 1):
+            ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+
+    return max_y, min_y
+
+
 def draw_decomposition(ax, boundaries, text_v_offset=-0.01):
     x_point_vals = []
     y_point_vals = []
@@ -613,46 +628,7 @@ def draw_decomposition(ax, boundaries, text_v_offset=-0.01):
     # print("total sum = %s" % str(frac_sum))
 
 
-def draw_decomposition2(ax, boundaries, height=1, text_v_offset=-0.01):
-    x_point_vals = []
-    y_point_vals = []
-    for j in range(0, len(boundaries)):
-        x_point_vals.append(boundaries[j])
-        y_point_vals.append(boundaries[j])
-
-    # number of points
-    num_points = len(x_point_vals)
-
-    frac_sum = Fraction(0)
-
-    for j in range(1, num_points):
-        origin_point = (x_point_vals[j - 1], 0.0)
-        width = x_point_vals[j] - x_point_vals[j - 1]
-
-        # text_v_offset = min(-0.1, -height / 1.2)
-        # text_v_offset = min(-0.1, -height*0.55)
-        # text_v_offset = 0.0
-
-        frac = Fraction(str(width)).limit_denominator(1000)
-        # print("%s" % str(frac))
-        frac_sum = frac_sum + frac
-        text_str = "%d\n--\n%d" % (frac.numerator, frac.denominator)
-        # text_str += "\n\n\n%.2f" % width
-        # text_str = "%d\n\u2014\n%d" % (frac.numerator, frac.denominator)
-
-        # create rectangle with text inside
-        # add_text_rect(ax1, origin_point[0], origin_point[1], width, height, angle=0, linewidth=1.5, edgecolor='k',
-        #              fontsize=8, facecolor='none', text_str="%.2f" % width, alpha=1.0,
-        #              text_v_offset=text_v_offset)
-
-        # add_text_rect(ax, origin_point[0], origin_point[1], width, height, angle=0, linewidth=1.5, edgecolor='k',
-        add_text_rect(ax, origin_point[0], origin_point[1], width, height, angle=0, linewidth=0, edgecolor='k',
-                      fontsize=8, facecolor='none', alpha=1.0, text_str=text_str, text_v_offset=text_v_offset)
-
-    # print("total sum = %s" % str(frac_sum))
-
-
-def draw_encoding(ax, X_gnomes):
+def draw_barcode(ax, X_gnomes):
     """
     Draw barcode image of encodings
 
