@@ -2,6 +2,7 @@
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy.ma as ma
 
 # sns.set_theme(style="white", color_codes=True)
 
@@ -37,9 +38,14 @@ def plot_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, 
 
     # Generate a mask for the upper triangle
     if triangle:
-        mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
+        shape_mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
     else:
-        mask = np.zeros_like(diagonal_scores, dtype=bool)
+        shape_mask = np.zeros_like(diagonal_scores, dtype=bool)
+    mask = shape_mask
+
+    # omit zero text data
+    scores_text = diagonal_scores.astype('|S10')
+    annot_data = np.where(diagonal_scores > 0, scores_text, '')
 
     # Set up the matplotlib figure
     f, ax = plt.subplots(figsize=(11, 9))
@@ -49,27 +55,33 @@ def plot_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, 
     ax.tick_params(axis='both', labelsize=fontsize)
 
     # Generate a custom diverging colormap
-    cmap = sns.diverging_palette(230, 20, as_cmap=True)
+    #cmap = sns.diverging_palette(230, 20, as_cmap=True)
+    #cmap = sns.color_palette("rocket_r", as_cmap=True)
+    cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
+
+    #print(f"{np.array2string(means, formatter={'float': lambda x: f'{x:.2f}'})}")
 
     num_points = X_points.shape[0]
-    print("num_points:", num_points)
+    #print("num_points:", num_points)
 
     if num_points < 80:
         linewidths = 2. / num_points
         fontsize = 32. * 8. / num_points
+
     else:
         linewidths = 0
         fontsize = 0
-        annot = False
+        annot_data = False
 
-    print("line_widths:", linewidths)
-    print("fontsize:", fontsize)
+    #print("line_widths:", linewidths)
+    #print("fontsize:", fontsize)
 
     # Draw the heatmap with the mask and correct aspect ratio
     #sns.heatmap(diagonal_scores, mask=mask, cmap=cmap, vmax=max_count, center=mean_count,
     #            square=True, linewidths=.5, cbar_kws={"shrink": .5}, annot=annot, annot_kws={"fontsize": fontsize})
-    sns.heatmap(diagonal_scores, mask=mask, cmap=cmap, vmax=max_count, center=mean_count,
-                square=True, linewidths=linewidths, cbar_kws={"shrink": .5}, annot=annot, annot_kws={"fontsize": fontsize})
+    #sns.heatmap(diagonal_scores, mask=mask, cmap=cmap, vmax=max_count, center=mean_count,
+    sns.heatmap(diagonal_scores, mask=mask, cmap=cmap, vmax=max_count, fmt="s",
+                square=True, linewidths=linewidths, cbar_kws={"shrink": .5}, annot=annot_data, annot_kws={"fontsize": fontsize})
                 #square=True, cbar_kws={"shrink": .5}, annot=annot)
                 #square = True, linewidths = .5, cbar_kws = {"shrink": .5}, annot = annot)
 
@@ -101,6 +113,8 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
 
     diagonal_scores = count_similarity(X_gnomes1, X_gnomes2)
     max_count = np.max(diagonal_scores)
+    #max_count = 15
+    #max_count = 6
     mean_count = np.mean(diagonal_scores)
 
     sns.set_style("white")
@@ -114,8 +128,20 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
     else:
         mask = np.zeros_like(diagonal_scores, dtype=bool)
 
-    import numpy.ma as ma
+    #mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
     masked_scores = ma.array(diagonal_scores, mask=mask)
+    #print(masked_scores.mask)
+    #print(masked_scores.data)
+
+    #shape_mask = np.zeros_like(diagonal_scores, dtype=bool)
+
+    # omit zero text data
+    #gt0_mask = np.where(diagonal_scores > 0, False, True).astype(dtype=bool)
+    #mask = gt0_mask
+    #scores_text = diagonal_scores.astype('|S10')
+    #annot_data = np.where(diagonal_scores > 0, scores_text, '')
+
+    #masked_scores = ma.array(diagonal_scores, mask=mask)
 
     # Set up the matplotlib figure
     f, ax = plt.subplots(figsize=(11, 9))
@@ -130,13 +156,26 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
     ax.spines['left'].set_visible(False)
 
     # Generate a custom diverging colormap
-    cmap = sns.diverging_palette(230, 20, as_cmap=True)
+    #cmap = sns.diverging_palette(230, 20, s=75, l=50, as_cmap=True)
+    #cmap = sns.diverging_palette(230, 20, s=100, as_cmap=True)
+    #cmap = sns.color_palette("rocket_r", as_cmap=True)
+    #cmap = sns.color_palette("Reds", as_cmap=True)
+
+
+    #print(type(cmap), cmap.__dict__)
+
+    #print(max_count, cmap.N, cmap(0), cmap(128), cmap(256))
+
+    cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
+
+    #cmap = sns.light_palette("red", as_cmap=True)
 
     # Recenter a divergent colormap
-    if True:
+    if False:
         vmax = max_count
         vmin = 0
-        center = mean_count
+        #center = mean_count
+        center = 0
         # Copy bad values
         # in mpl<3.2 only masked values are honored with "bad" color spec
         # (see https://github.com/matplotlib/matplotlib/pull/14257)
@@ -163,14 +202,14 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
         cmap = new_cmap
 
     num_points = X_points.shape[0]
-    print("num_points:", num_points)
+    #print("num_points:", num_points)
 
     if num_points < 80:
         linewidth = 2. / num_points
     else:
         linewidth = 0
 
-    print("line_width:", linewidth)
+    #print("line_width:", linewidth)
 
 
     c = ax.pcolormesh(x_vals, y_vals, masked_scores, vmax=max_count, vmin=0, edgecolor='1.0', linewidth=linewidth, cmap=cmap)
@@ -183,6 +222,8 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
         # code to change the color of the text depending on cell color
         # lum = relative_luminance(color)
         # text_color = ".15" if lum > .408 else "w"
+        text_color = ".15"
+        #text_color = "w"
 
         for i in range(len(x_centers)):
             x = x_centers[i]
@@ -204,7 +245,7 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
 
                 if draw_text and score is not np.ma.masked and score > 0:
                     ax.text(x, y, str(score), horizontalalignment='center', verticalalignment='center',
-                            fontsize=fontsize)
+                            fontsize=fontsize, color=text_color)
 
     """
     # code to change the color of the text depending on cell color
@@ -374,9 +415,8 @@ if __name__ == "__main__":
         #plt.clf()
 
         # self-similarity matrix projected to real space
-        #plot_pmesh_heatmap(multi_encoder, desc_str=desc_str+"Similarity_Matrix_Projected_to_Real_Space", file_dir=file_dir, annot=True)
-        #plt.close()
-        #plt.clf()
+        plot_pmesh_heatmap(multi_encoder, desc_str=desc_str+"Similarity_Matrix_Projected_to_Real_Space", file_dir=file_dir, annot=True)
+        plt.close()
 
     # TODO:
     # 1) + add base class boundary-handling options (exception, clamp, modulo, silent)
