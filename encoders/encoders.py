@@ -221,12 +221,12 @@ class MultiEncoder(EncoderBase):
 
         # print("unique_delta_count")
         # print(unique_delta_count)
-        # print(len(unique_boundaries), "unique_boundaries")
-        # print(unique_boundaries)
+        #print(len(unique_boundaries), "unique_boundaries")
+        #print(unique_boundaries)
 
         # self.region_boundaries = sorted_boundaries
         self.region_boundaries = unique_boundaries
-        # print("boundaries:", type(self.region_boundaries))
+        #print("boundaries:", type(self.region_boundaries))
         # self.region_deltas = [delta_count[k] for k in self.region_boundaries]
         self.region_deltas = [unique_delta_count[k] for k in self.region_boundaries]
         # print("deltas:")
@@ -501,6 +501,7 @@ class IntervalEncoder(EncoderBase):
         # X = check_array(X, ensure_2d=True)
         X = self._input(X)
 
+        #print("input:", X)
 
         # list of values to encode
         if isinstance(X, Iterable):
@@ -737,36 +738,51 @@ class PeriodicCellEncoder(EncoderBase):
 
             x_lower = x_lower + self.periods[k]
             while x_lower < self.upper_bound:
-                bin_multiples.append(x_lower)
+                x_upper = x_lower + self.l
+                if x_upper > self.upper_bound:
+                    x_upper = self.upper_bound
+                bin_multiples.append((x_lower, x_upper))
                 x_lower = x_lower + self.periods[k]
 
-            x_lower = bin.lower
-            x_lower = x_lower - self.periods[k]
-            while x_lower >= self.lower_bound:
-                bin_multiples.append(x_lower)
-                x_lower = x_lower - self.periods[k]
+            x_upper = bin.upper
+            x_upper = x_upper - self.periods[k]
+            while x_upper >= self.lower_bound:
+                x_lower = x_upper - self.l
+                if x_lower < self.lower_bound:
+                    x_lower = self.lower_bound
+                bin_multiples.append((x_lower, x_upper))
+                x_upper = x_upper - self.periods[k]
+
+            #x_lower = bin.lower
+            #x_lower = x_lower - self.periods[k]
+            #while x_lower >= self.lower_bound:
+            #    bin_multiples.append(x_lower)
+            #    x_lower = x_lower - self.periods[k]
 
             # copy congruent bins without original
             congruent_bins = []
-            for cong_lower in bin_multiples:
-                congruent_bins.append(I.closed_open(cong_lower, cong_lower + self.l))
+            for cong_bounds in bin_multiples:
+                congruent_bins.append(I.closed_open(cong_bounds[0], cong_bounds[1]))
+
             self.bin_congruence.append(congruent_bins)
 
             # add original
             x_lower = bin.lower
-            bin_multiples.append(x_lower)
+            x_upper = bin.upper
+            bin_multiples.append((x_lower, x_upper))
 
             # add to complete collection of bins
             bin_lower_multiples += bin_multiples
 
-        bin_lower_multiples = np.array(bin_lower_multiples)
+        region_boundaries = np.array(bin_lower_multiples)
+        #bin_lower_multiples = np.array(bin_lower_multiples)
 
-        # print("bin_lower_multiples")
-        # print(type(bin_lower_multiples), bin_lower_multiples.shape)
+        #print("bin_lower_multiples")
+        #print(type(bin_lower_multiples), bin_lower_multiples.shape)
 
         # record region boundary points
-        get_boundaries = lambda x: (x, x + self.l)
-        region_boundaries = get_boundaries(bin_lower_multiples)
+        #get_boundaries = lambda x: (x, x + self.l)
+        #region_boundaries = get_boundaries(bin_lower_multiples)
         region_boundaries = np.concatenate(region_boundaries)
         region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
         region_boundaries = np.sort(region_boundaries)
@@ -902,8 +918,10 @@ class RandomizedPlaceCellEncoder(PlaceCellEncoder):
             raise Exception("Encoder as configured doesn't allocate any bins")
 
         # record region boundary points
-        get_boundaries = lambda x: (x - self.l / 2.0, x + self.l / 2.0)
+        get_boundaries = lambda x: (np.maximum(x - self.l / 2.0, self.lower_bound), np.minimum(x + self.l / 2.0, self.upper_bound))
+        #get_boundaries = lambda x: (x - self.l / 2.0, x + self.l / 2.0)
         region_boundaries = get_boundaries(bin_centers)
+        ##print(region_boundaries)
         region_boundaries = np.concatenate(region_boundaries)
         region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
         region_boundaries = np.sort(region_boundaries)
