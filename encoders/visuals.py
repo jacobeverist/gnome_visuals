@@ -844,6 +844,154 @@ def draw_similarity(ax, encoder, X_gnomes, ref_points, colors, draw_regions=Fals
     legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
 
 
+#def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, draw_region_bits=False,
+#                      draw_boundaries=True, draw_bit_grid=True, permute_bits=False, xmin=None, xmax=None, clip_on=True,
+#                      box_height=1, num_samples=150, x_pad=0.002, y_pad=0.15):
+def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regions=True,
+                            draw_v_values=True, clip_on=True, box_height=1, xmin=None, xmax=None, x_pad=0.002):
+    """
+    Draw count similarity of reference values to existing encodings
+
+    :param ax:
+    :param encoder:
+    :param X_gnomes: encoded points over the space
+    :param ref_point:
+    :param colors:
+    :param draw_regions:
+    :param draw_v_values:
+    :return:
+    """
+
+    boundaries = encoder.region_boundaries
+    upper_bound = encoder.upper_bound
+    lower_bound = encoder.lower_bound
+
+    if xmax is None:
+        xmax = upper_bound
+    if xmin is None:
+        xmin = lower_bound
+
+    # reference points for comparison
+    ref_gnome = encoder.encode(ref_point)
+
+    # count similarity scores
+    scores2 = count_similarity(X_gnomes, ref_gnome)
+
+    # for plotting purposes
+    #X_point_lower = lower_bound - 0.5
+    #X_point_upper = upper_bound + 0.5
+    #X_gnome_lower = encoder.encode(X_point_lower).reshape(1, -1)
+    #X_gnome_upper = encoder.encode(X_point_upper).reshape(1, -1)
+    # X_points_extended = np.concatenate(
+    #    ([X_point_lower], encoder.region_centers, [X_point_upper]))
+    # X_gnomes_extended = np.concatenate(
+    #    (X_gnome_lower, X_gnomes, X_gnome_upper), axis=0)
+    # boundaries_extended = np.concatenate(
+    #    ([lower_bound - 1.0], encoder.region_boundaries, [upper_bound + 1.0]))
+    # scores_extended = count_similarity(X_gnomes_extended, ref_gnome)
+
+    # maximum data score for normalization
+    max_score = np.max(scores2)
+
+    # scale y-axis to boundaries of axes
+    #ax.set_ylim(0, 1)
+    #ax.yaxis.set_major_locator(ticker.IndexLocator(2, 1))
+    ax.tick_params(**{'right': False, 'labelright': False})
+    ax.set_ylabel("Similarity of\nExample Values")
+
+    ymin, ymax = ax.get_ybound()
+    ax.set_ylim(ymin, ymax)
+
+    box_height = ymax-ymin
+
+    cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
+
+    # shrink the the boxes by this amount
+    #x_shrink = x_pad * 2.0
+    x_shrink = 0
+
+    # record region center points
+    sample_points = encoder.region_centers
+    X_points = sample_points.reshape(-1, 1)
+
+    # print("X_points:", X_points.shape)
+
+    # encodings
+    # X_gnomes = encoder.region_codes
+    # print("X_gnomes:", X_gnomes.shape)
+
+    region_widths = np.diff(encoder.region_boundaries)
+
+
+
+    patches = []
+    for k in range(len(X_points)):
+        x_val = float(X_points[k])
+        score = scores2[k][0]/max_score
+
+        sample_upper_bound = x_val + region_widths[k] / 2.0
+        sample_lower_bound = x_val - region_widths[k] / 2.0
+        box_x = sample_lower_bound
+        box_width = region_widths[k]
+
+        do_draw = True
+
+        # check there's a positive width rectangle to draw within axes bounds
+        if clip_on:
+            try:
+                box_x, box_width = clip_bin(sample_lower_bound, sample_upper_bound, xmin, xmax)
+            except:
+                do_draw = False
+
+        if do_draw:
+            #box_y = 0
+            box_y = ymin
+
+            box_width_shrunk = box_width - x_shrink
+            x_shrink_adj = x_shrink
+            if box_width_shrunk < x_shrink:
+                x_shrink_adj = 0.4 * box_width
+
+            x_adj = box_x + x_shrink_adj / 2.0
+            y_adj = box_y
+            w_adj = box_width - x_shrink_adj
+            #h_adj = box_height
+            h_adj = box_height
+
+            #print("color:", score, cmap(score))
+
+            # create box representing the bin
+            rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor=cmap(score), clip_on=clip_on, linewidth=0)
+            patches.append(rect)
+
+    ax.add_collection(PatchCollection(patches, match_original=True))
+
+    # plot similarity scores for each reference value
+    #boundaries_x = boundaries_extended
+    #scores_y = np.append(scores_extended, [scores_extended[-1], ])
+    #ax.step(boundaries_x, scores_y, where='post', color=colors[0], label=float(ref_point))
+    #ax.fill_between(boundaries_x, -1, scores_y, step='post', color=colors[0], alpha=0.3, zorder=1)
+
+    if draw_v_values:
+        # draw vertical line indicating reference value on x-axis
+        ax.axvline(x=ref_point, ymin=ymin, ymax=3.2, alpha=1.0, linewidth=1.5, color=colors[0], linestyle='--',
+                   clip_on=False, zorder=23)
+
+        #ax.axvline(x=encoder.upper_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
+
+    if draw_regions:
+        # draw boundaries between each region
+        for k in range(len(boundaries)):
+            ax.axvline(x=boundaries[k], alpha=0.9, linewidth=0.5, color='k', zorder=3)
+            #ax.axvline(x=boundaries[k], alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+
+    # show legend for each example value
+    #handles, labels = ax.get_legend_handles_labels()
+    #handles.reverse()
+    #labels.reverse()
+    #legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
+
+
 def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_grid=True):
     """
     Features Subplot (Boundaries, Weight, Crossings)

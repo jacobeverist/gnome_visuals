@@ -22,7 +22,6 @@ def plot_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, 
 
     file_name = file_dir + "%03u_%04u_" % (n_bits, n_regions) + desc_str + ".png"
 
-
     # sampled points over the space
     X_points = np.array(encoder.region_centers).reshape(-1, 1)
     X_gnomes1 = encoder.region_codes
@@ -55,14 +54,14 @@ def plot_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, 
     ax.tick_params(axis='both', labelsize=fontsize)
 
     # Generate a custom diverging colormap
-    #cmap = sns.diverging_palette(230, 20, as_cmap=True)
-    #cmap = sns.color_palette("rocket_r", as_cmap=True)
+    # cmap = sns.diverging_palette(230, 20, as_cmap=True)
+    # cmap = sns.color_palette("rocket_r", as_cmap=True)
     cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
 
-    #print(f"{np.array2string(means, formatter={'float': lambda x: f'{x:.2f}'})}")
+    # print(f"{np.array2string(means, formatter={'float': lambda x: f'{x:.2f}'})}")
 
     num_points = X_points.shape[0]
-    #print("num_points:", num_points)
+    # print("num_points:", num_points)
 
     if num_points < 80:
         linewidths = 2. / num_points
@@ -73,17 +72,18 @@ def plot_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, 
         fontsize = 0
         annot_data = False
 
-    #print("line_widths:", linewidths)
-    #print("fontsize:", fontsize)
+    # print("line_widths:", linewidths)
+    # print("fontsize:", fontsize)
 
     # Draw the heatmap with the mask and correct aspect ratio
-    #sns.heatmap(diagonal_scores, mask=mask, cmap=cmap, vmax=max_count, center=mean_count,
+    # sns.heatmap(diagonal_scores, mask=mask, cmap=cmap, vmax=max_count, center=mean_count,
     #            square=True, linewidths=.5, cbar_kws={"shrink": .5}, annot=annot, annot_kws={"fontsize": fontsize})
-    #sns.heatmap(diagonal_scores, mask=mask, cmap=cmap, vmax=max_count, center=mean_count,
+    # sns.heatmap(diagonal_scores, mask=mask, cmap=cmap, vmax=max_count, center=mean_count,
     sns.heatmap(diagonal_scores, mask=mask, cmap=cmap, vmax=max_count, fmt="s",
-                square=True, linewidths=linewidths, cbar_kws={"shrink": .5}, annot=annot_data, annot_kws={"fontsize": fontsize})
-                #square=True, cbar_kws={"shrink": .5}, annot=annot)
-                #square = True, linewidths = .5, cbar_kws = {"shrink": .5}, annot = annot)
+                square=True, linewidths=linewidths, cbar_kws={"shrink": .5}, annot=annot_data,
+                annot_kws={"fontsize": fontsize})
+    # square=True, cbar_kws={"shrink": .5}, annot=annot)
+    # square = True, linewidths = .5, cbar_kws = {"shrink": .5}, annot = annot)
 
     if not file_name is None:
         plt.savefig(file_name, bbox_inches='tight')
@@ -94,7 +94,7 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
 
     n_regions = len(encoder.region_centers)
 
-    #file_name = file_dir + "%02u_" % (n_bits) + "heatmap_by_value" + ".png"
+    # file_name = file_dir + "%02u_" % (n_bits) + "heatmap_by_value" + ".png"
     file_name = file_dir + "%03u_%04u_" % (n_bits, n_regions) + desc_str + ".png"
 
     # sampled points over the space
@@ -113,8 +113,8 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
 
     diagonal_scores = count_similarity(X_gnomes1, X_gnomes2)
     max_count = np.max(diagonal_scores)
-    #max_count = 15
-    #max_count = 6
+    # max_count = 15
+    # max_count = 6
     mean_count = np.mean(diagonal_scores)
 
     sns.set_style("white")
@@ -128,20 +128,20 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
     else:
         mask = np.zeros_like(diagonal_scores, dtype=bool)
 
-    #mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
+    # mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
     masked_scores = ma.array(diagonal_scores, mask=mask)
-    #print(masked_scores.mask)
-    #print(masked_scores.data)
+    # print(masked_scores.mask)
+    # print(masked_scores.data)
 
-    #shape_mask = np.zeros_like(diagonal_scores, dtype=bool)
+    # shape_mask = np.zeros_like(diagonal_scores, dtype=bool)
 
     # omit zero text data
-    #gt0_mask = np.where(diagonal_scores > 0, False, True).astype(dtype=bool)
-    #mask = gt0_mask
-    #scores_text = diagonal_scores.astype('|S10')
-    #annot_data = np.where(diagonal_scores > 0, scores_text, '')
+    # gt0_mask = np.where(diagonal_scores > 0, False, True).astype(dtype=bool)
+    # mask = gt0_mask
+    # scores_text = diagonal_scores.astype('|S10')
+    # annot_data = np.where(diagonal_scores > 0, scores_text, '')
 
-    #masked_scores = ma.array(diagonal_scores, mask=mask)
+    # masked_scores = ma.array(diagonal_scores, mask=mask)
 
     # Set up the matplotlib figure
     f, ax = plt.subplots(figsize=(11, 9))
@@ -156,25 +156,24 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
     ax.spines['left'].set_visible(False)
 
     # Generate a custom diverging colormap
-    #cmap = sns.diverging_palette(230, 20, s=75, l=50, as_cmap=True)
-    #cmap = sns.diverging_palette(230, 20, s=100, as_cmap=True)
-    #cmap = sns.color_palette("rocket_r", as_cmap=True)
-    #cmap = sns.color_palette("Reds", as_cmap=True)
+    # cmap = sns.diverging_palette(230, 20, s=75, l=50, as_cmap=True)
+    # cmap = sns.diverging_palette(230, 20, s=100, as_cmap=True)
+    # cmap = sns.color_palette("rocket_r", as_cmap=True)
+    # cmap = sns.color_palette("Reds", as_cmap=True)
 
+    # print(type(cmap), cmap.__dict__)
 
-    #print(type(cmap), cmap.__dict__)
-
-    #print(max_count, cmap.N, cmap(0), cmap(128), cmap(256))
+    # print(max_count, cmap.N, cmap(0), cmap(128), cmap(256))
 
     cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
 
-    #cmap = sns.light_palette("red", as_cmap=True)
+    # cmap = sns.light_palette("red", as_cmap=True)
 
     # Recenter a divergent colormap
     if False:
         vmax = max_count
         vmin = 0
-        #center = mean_count
+        # center = mean_count
         center = 0
         # Copy bad values
         # in mpl<3.2 only masked values are honored with "bad" color spec
@@ -202,17 +201,17 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
         cmap = new_cmap
 
     num_points = X_points.shape[0]
-    #print("num_points:", num_points)
+    # print("num_points:", num_points)
 
     if num_points < 80:
         linewidth = 2. / num_points
     else:
         linewidth = 0
 
-    #print("line_width:", linewidth)
+    # print("line_width:", linewidth)
 
-
-    c = ax.pcolormesh(x_vals, y_vals, masked_scores, vmax=max_count, vmin=0, edgecolor='1.0', linewidth=linewidth, cmap=cmap)
+    c = ax.pcolormesh(x_vals, y_vals, masked_scores, vmax=max_count, vmin=0, edgecolor='1.0', linewidth=linewidth,
+                      cmap=cmap)
     cb = f.colorbar(c, ax=ax, shrink=0.5)  # , spacing="uniform", drawedges=True)
     cb.outline.set_linewidth(0)
 
@@ -223,7 +222,7 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
         # lum = relative_luminance(color)
         # text_color = ".15" if lum > .408 else "w"
         text_color = ".15"
-        #text_color = "w"
+        # text_color = "w"
 
         for i in range(len(x_centers)):
             x = x_centers[i]
@@ -312,11 +311,11 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     ax0.set_title("%s, n=%d" % (desc_str, n_bits))
 
     # same tick configuration for each axes
-    tick_args = { 'axis': 'both', 'which': 'both',
-        'labelsize': 'small',
-        'labelbottom': False, 'bottom': False,
-        'left': False, 'labelleft': False,
-        'right': True, 'labelright': True}
+    tick_args = {'axis': 'both', 'which': 'both',
+                 'labelsize': 'small',
+                 'labelbottom': False, 'bottom': False,
+                 'left': False, 'labelleft': False,
+                 'right': True, 'labelright': True}
 
     ## Encoding Bins Subplot
     ax0.tick_params(**tick_args)
@@ -332,7 +331,7 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     ax1.get_shared_x_axes().join(ax1, ax0)
 
     # draw weight, crossings, and boundary features
-    draw_features(ax1, encoder, colors, markersize)
+    draw_features(ax1, encoder, colors, markersize, draw_regions=True)
 
     ## Similarity Subplot
     ax2.tick_params(**tick_args)
@@ -344,6 +343,9 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     draw_similarity(ax2, encoder, X_gnomes, ref_points, colors, draw_regions=False,
                     draw_h_grid=True, draw_v_values=True)
 
+    #draw_similarity_heatmap(ax2, encoder, X_gnomes, ref_points[0], colors, draw_regions=True, draw_v_values=True,
+    #                        clip_on=False, xmin=xmin, xmax=xmax)
+
     ## Encoding Bits Subplot
     tick_args['labelbottom'] = True
     tick_args['bottom'] = True
@@ -352,16 +354,22 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     # share ax0 and ax3 x-axis
     ax3.get_shared_x_axes().join(ax3, ax0)
 
-    # draw encoding bits along x-axis values
-    # draw_bits_by_data(ax3, encoder, xmin=xmin, xmax=xmax, x_pad=0.0, draw_region_bits=False,
-    #                 draw_uniform_samples=True, permute_bits=False, clip_on=False, draw_boundaries=False)
-    draw_bits_by_data(ax3, encoder, xmin=xmin, xmax=xmax, x_pad=0.0, draw_region_bits=False,
-                      draw_uniform_samples=True, permute_bits=False, clip_on=True, draw_boundaries=False)
+    ax3.set_xlim(xmin, xmax)
 
+    draw_similarity_heatmap(ax3, encoder, X_gnomes, ref_points[0], colors, draw_regions=True, draw_v_values=True,
+                            clip_on=False, xmin=xmin, xmax=xmax)
+
+
+    # draw encoding bits along x-axis values
+    # FIXME: still some encoding bin errors
+    #draw_bits_by_data(ax3, encoder, xmin=xmin, xmax=xmax, x_pad=0.0, draw_region_bits=False,
+    #                  draw_uniform_samples=True, permute_bits=False, clip_on=True, draw_boundaries=False)
 
     # draw input interval boundary lines across axes with vertical lines
     ax3.axvline(x=encoder.lower_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
     ax3.axvline(x=encoder.upper_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
+
+
 
     if not file_name is None:
         plt.savefig(file_name, bbox_inches='tight')
@@ -369,7 +377,6 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
 
 if __name__ == "__main__":
     file_dir = "out/"
-
 
     # test numpy array input (n,1)
     # X = np.array([[0.21], [0.69], [0.91]])
@@ -392,31 +399,33 @@ if __name__ == "__main__":
     # test oob_method 'exception'
 
     multi_encoder = MultiEncoder()
-    for i in range(1, 41):
+    for i in range(10, 11):
+        # desc_str = "RandomizedPlaceCellEncoder"
+        # multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=1, seed=i))
 
-        #desc_str = "RandomizedPlaceCellEncoder"
-        #multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=1, seed=i))
+        # desc_str = "Fixed_Weight_MultiEncoder"
+        # multi_encoder.add_encoder(FixedWeightEncoder(n=6+i, w=3))
 
-        #desc_str = "Fixed_Weight_MultiEncoder"
-        #multi_encoder.add_encoder(FixedWeightEncoder(n=6+i, w=3))
-
-        #desc_str = "Tapering_Weight_MultiEncoder"
-        #multi_encoder.add_encoder(TaperingWeightEncoder(n=6+i, w=3))
+        # desc_str = "Tapering_Weight_MultiEncoder"
+        # multi_encoder.add_encoder(TaperingWeightEncoder(n=6+i, w=3))
 
         desc_str = "PeriodicCellEncoder"
-        multi_encoder.add_encoder(PeriodicCellEncoder(n=1, oob_method="modulo", seed=i))
+        multi_encoder.add_encoder(PeriodicCellEncoder(n=i, oob_method="modulo", seed=i))
 
-        #plot_interval_multi_encoder(multi_encoder, desc_str=desc_str, file_dir=file_dir)
-        #plt.clf()
+        plot_interval_multi_encoder(multi_encoder, desc_str=desc_str, file_dir=file_dir)
+        plt.close()
+        # plt.clf()
 
         # self-similarity matrix by region code
-        plot_heatmap(multi_encoder, desc_str=desc_str+"Similarity_Matrix_by_Region_Code", file_dir=file_dir, fontsize=6)
-        plt.close()
-        #plt.clf()
+        #plot_heatmap(multi_encoder, desc_str=desc_str + "Similarity_Matrix_by_Region_Code", file_dir=file_dir,
+        #             fontsize=6)
+        #plt.close()
+        # plt.clf()
 
         # self-similarity matrix projected to real space
-        plot_pmesh_heatmap(multi_encoder, desc_str=desc_str+"Similarity_Matrix_Projected_to_Real_Space", file_dir=file_dir, annot=True)
-        plt.close()
+        #plot_pmesh_heatmap(multi_encoder, desc_str=desc_str + "Similarity_Matrix_Projected_to_Real_Space",
+        #                   file_dir=file_dir, annot=True)
+        #plt.close()
 
     # TODO:
     # 1) + add base class boundary-handling options (exception, clamp, modulo, silent)
@@ -425,4 +434,3 @@ if __name__ == "__main__":
     # 4) create better grid distribution options, multi-scale, etc
     # 5) center fund. region for each bin
     # 6) illustrative plots for each step of discussion (Properties of Discrete Encodings of Binary Population)
-

@@ -753,12 +753,6 @@ class PeriodicCellEncoder(EncoderBase):
                 bin_multiples.append((x_lower, x_upper))
                 x_upper = x_upper - self.periods[k]
 
-            #x_lower = bin.lower
-            #x_lower = x_lower - self.periods[k]
-            #while x_lower >= self.lower_bound:
-            #    bin_multiples.append(x_lower)
-            #    x_lower = x_lower - self.periods[k]
-
             # copy congruent bins without original
             congruent_bins = []
             for cong_bounds in bin_multiples:
@@ -775,18 +769,15 @@ class PeriodicCellEncoder(EncoderBase):
             bin_lower_multiples += bin_multiples
 
         region_boundaries = np.array(bin_lower_multiples)
-        #bin_lower_multiples = np.array(bin_lower_multiples)
-
-        #print("bin_lower_multiples")
-        #print(type(bin_lower_multiples), bin_lower_multiples.shape)
 
         # record region boundary points
-        #get_boundaries = lambda x: (x, x + self.l)
-        #region_boundaries = get_boundaries(bin_lower_multiples)
         region_boundaries = np.concatenate(region_boundaries)
         region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
         region_boundaries = np.sort(region_boundaries)
-        self.region_boundaries = region_boundaries
+        #self.region_boundaries = region_boundaries
+
+        self.region_boundaries = self.generate_periodic_boundaries()
+        #self.region_boundaries = region_boundaries
         # print("region_boundaries:", self.region_boundaries.shape)
         # print(self.region_boundaries)
 
@@ -814,6 +805,63 @@ class PeriodicCellEncoder(EncoderBase):
         # print("region_deltas", self.region_deltas.shape)
         # print(self.region_deltas)
 
+    def generate_periodic_boundaries(self, xmin=None, xmax=None):
+
+        if xmax is None:
+            xmax = self.upper_bound
+        if xmin is None:
+            xmin = self.lower_bound
+
+        # generating congruent bins
+        bin_congruence = []
+
+        # multiply boundary points for each cell outside of fundamental region
+        bin_lower_multiples = []
+        for k in range(self.n):
+            bin_multiples = []
+            bin = self.bins[k]
+            x_lower = bin.lower
+
+            x_lower = x_lower + self.periods[k]
+            while x_lower < xmax:
+                x_upper = x_lower + self.l
+                if x_upper > xmax:
+                    x_upper = xmax
+                bin_multiples.append((x_lower, x_upper))
+                x_lower = x_lower + self.periods[k]
+
+            x_upper = bin.upper
+            x_upper = x_upper - self.periods[k]
+            while x_upper >= xmin:
+                x_lower = x_upper - self.l
+                if x_lower < xmin:
+                    x_lower = xmin
+                bin_multiples.append((x_lower, x_upper))
+                x_upper = x_upper - self.periods[k]
+
+            # copy congruent bins without original
+            congruent_bins = []
+            for cong_bounds in bin_multiples:
+                congruent_bins.append(I.closed_open(cong_bounds[0], cong_bounds[1]))
+
+            bin_congruence.append(congruent_bins)
+
+            # add original
+            x_lower = bin.lower
+            x_upper = bin.upper
+            bin_multiples.append((x_lower, x_upper))
+
+            # add to complete collection of bins
+            bin_lower_multiples += bin_multiples
+
+        region_boundaries = np.array(bin_lower_multiples)
+
+        # record region boundary points
+        region_boundaries = np.concatenate(region_boundaries)
+        region_boundaries = np.concatenate(([xmin], region_boundaries, [xmax]))
+        region_boundaries = np.sort(region_boundaries)
+
+        return region_boundaries
 
 class PlaceCellEncoder(EncoderBase):
     """
