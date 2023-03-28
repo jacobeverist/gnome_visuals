@@ -71,4 +71,4 @@ class SquareScene(Scene):
         for _ in range(10):
             old_val = int(square_tracker.get_value())
             new_val = 0 if old_val else 1
-            self.play(square_tracker.animate.set_value(new_val), square_tracker2.animate.set_value(old_val), run_time=1)
+            self.play(square_tracker.animate.set_value(new_val), square_tracker2.animate.set_value(old_val), run_time=0.25)
