@@ -450,10 +450,29 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
             ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
 
-def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8, draw_regions=False,
-                            draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True):
-    min_y = 1
-    max_y = 0
+def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8, bin_linewidth=1, draw_regions=False,
+                            draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True, label_bins=False):
+
+    # constants
+    bin_alpha = 1
+    cong_alpha = 0.3
+    fund_alpha = 0.1
+    box_height = 1
+
+    # FIXME: find and optimize bottleneck for large n
+
+    # OTHER VISUALS
+    # grid horizontal lines
+    # grid border horizontal lines
+    # interval boundary vertical lines
+    # region vertical lines by individual encoder
+    # region vertical lines by multi-encoder combinations
+
+    # bin labels
+    # bin borders
+    # bin colors
+    # generate boundaries and region codes and scores outside interval bounds, up to (xmin, xmax)
+    # y-axis tick locator resolution (count by x)
 
     n_bits = encoder.n
     upper_bound = encoder.upper_bound
@@ -485,12 +504,16 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
     grid_label_templates = [prefix + "%d" for prefix in grid_names]
     grid_colors = [colors[j] for j in range(n_grids)]
 
+    #grid_colors = ['k',] + grid_colors
+
+
     grid_labels = ["%d,%d" % (keys[j], spacing) for j in range(n_grids)]
 
     encoder_count = 0
     bin_id_count = 0
     draw_y = 0.0
-    box_height = 1
+    min_y = 1
+    max_y = 0
 
     bin_count = 0
     patches = []
@@ -531,7 +554,6 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
             # shrink the the bins by this amount
             x_shrink = 0.004
             y_shrink = 0.3
-            linewidth = 1
 
             # only add label to first rectangle of encoder's bins
             grid_label = None
@@ -540,10 +562,16 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
 
             # draw bin
             if draw_bin:
-                add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
-                              box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
-                              text_str=str(bin_id_count), clip_on=clip_on, linewidth=linewidth, fontsize=fontsize,
-                              label=grid_label)
+                if label_bins:
+                    add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                                  box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
+                                  text_str=str(bin_id_count), clip_on=clip_on, linewidth=bin_linewidth, fontsize=fontsize,
+                                  label=grid_label)
+                else:
+                    rect = add_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                                  box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
+                                  clip_on=clip_on, linewidth=bin_linewidth)
+                    patches.append(rect)
 
             # draw congruent bins if exist
             if do_cong_bins:
@@ -555,14 +583,14 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                 # generate congruent bins instead of using encoder generated versions (e.bin_congruence)
                 x_lower = x_lower + e.periods[k]
                 while x_lower < xmax:
-                    congruent_bins.append(I.closed_open(x_lower, x_lower + e.l))
+                    congruent_bins.append(I.closed_open(x_lower, x_lower + e.bin_sizes[k]))
                     x_lower = x_lower + e.periods[k]
 
                 x_upper = bin.upper
                 x_upper = x_upper - e.periods[k]
 
                 while x_upper >= xmin:
-                    congruent_bins.append(I.closed_open(x_upper - e.l, x_upper))
+                    congruent_bins.append(I.closed_open(x_upper - e.bin_sizes[k], x_upper))
                     x_upper = x_upper - e.periods[k]
 
                 for j in range(len(congruent_bins)):
@@ -585,13 +613,18 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                     # shrink the the bins by this amount
                     x_shrink = 0.004
                     y_shrink = 0.3
-                    linewidth = 1
 
                     # draw bin
                     if draw_cong_bin:
-                        add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
-                                      box_height - y_shrink, alpha=0.3, facecolor=grid_colors[encoder_count],
-                                      clip_on=True, linewidth=linewidth, fontsize=fontsize, zorder=10)
+                        if label_bins:
+                            add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                                          box_height - y_shrink, alpha=cong_alpha, facecolor=grid_colors[encoder_count],
+                                          clip_on=True, linewidth=bin_linewidth, fontsize=fontsize, zorder=10)
+                        else:
+                            rect = add_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                                          box_height - y_shrink, alpha=cong_alpha, facecolor=grid_colors[encoder_count],
+                                          clip_on=True, linewidth=bin_linewidth, zorder=10)
+                            patches.append(rect)
 
             # draw fundamental region if exist
             if do_fund_regions:
@@ -612,31 +645,32 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                         draw_fund_bin = False
 
                 if draw_fund_bin:
-                    rect = add_rect(ax, box_x, box_y, box_width, box_height, alpha=0.1,
+                    rect = add_rect(ax, box_x, box_y, box_width, box_height, alpha=fund_alpha,
                                     facecolor='k', clip_on=clip_on, linewidth=0.0, zorder=9)
                     patches.append(rect)
 
-                # add vertical line for each congruence region boundary
-                # multiply boundary points for each cell outside of fundamental region
-                region_multiples = []
-                x_lower = fund_region.lower
+                if draw_region_by_encoder:
+                    # add vertical line for each congruence region boundary
+                    # multiply boundary points for each cell outside of fundamental region
+                    region_multiples = []
+                    x_lower = fund_region.lower
 
-                # add original
-                region_multiples.append(x_lower)
-
-                x_lower = x_lower + e.periods[k]
-                while x_lower < xmax:
+                    # add original
                     region_multiples.append(x_lower)
+
                     x_lower = x_lower + e.periods[k]
+                    while x_lower < xmax:
+                        region_multiples.append(x_lower)
+                        x_lower = x_lower + e.periods[k]
 
-                x_lower = fund_region.lower
-                x_lower = x_lower - e.periods[k]
-                while x_lower >= xmin:
-                    region_multiples.append(x_lower)
+                    x_lower = fund_region.lower
                     x_lower = x_lower - e.periods[k]
+                    while x_lower >= xmin:
+                        region_multiples.append(x_lower)
+                        x_lower = x_lower - e.periods[k]
 
-                ax.vlines(x=region_multiples, ymin=box_y, ymax=box_y + box_height, alpha=1.0, linewidth=1, color='k',
-                          zorder=9)
+                    ax.vlines(x=region_multiples, ymin=box_y, ymax=box_y + box_height, alpha=1.0, linewidth=1, color='k',
+                              zorder=9)
 
             bin_count += 1
             bin_id_count += 1
@@ -848,7 +882,7 @@ def draw_similarity(ax, encoder, X_gnomes, ref_points, colors, draw_regions=Fals
 #                      draw_boundaries=True, draw_bit_grid=True, permute_bits=False, xmin=None, xmax=None, clip_on=True,
 #                      box_height=1, num_samples=150, x_pad=0.002, y_pad=0.15):
 def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regions=True,
-                            draw_v_values=True, clip_on=True, box_height=1, xmin=None, xmax=None, x_pad=0.002):
+                            draw_v_values=True, clip_on=True, xmin=None, xmax=None):
     """
     Draw count similarity of reference values to existing encodings
 
@@ -861,6 +895,8 @@ def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regio
     :param draw_v_values:
     :return:
     """
+
+    # FIXME: generate extra regions and similarity scores up to xmin and xmax
 
     boundaries = encoder.region_boundaries
     upper_bound = encoder.upper_bound

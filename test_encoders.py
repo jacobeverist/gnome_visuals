@@ -171,6 +171,7 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
 
     # Recenter a divergent colormap
     if False:
+        # noinspection PyUnreachableCode
         vmax = max_count
         vmin = 0
         # center = mean_count
@@ -275,6 +276,8 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     markersize = 4
     fontsize = 6
 
+    # TODO: plot distribution of periods, bin sizes, offsets, duty cycles, of a multi-encoder
+
     # plot range for this multi encoder
     xmin = encoder.lower_bound - x_pad
     xmax = encoder.upper_bound + x_pad
@@ -321,8 +324,8 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     ax0.tick_params(**tick_args)
 
     # draw encoder bins
-    draw_multi_encoder_bins(ax0, encoder, fontsize=fontsize, xmin=xmin, xmax=xmax,
-                            clip_on=True, draw_regions=False, draw_region_by_encoder=False)
+    draw_multi_encoder_bins(ax0, encoder, fontsize=fontsize, xmin=xmin, xmax=xmax, draw_h_grid=False, bin_linewidth=0,
+                            clip_on=True, draw_regions=False, draw_region_by_encoder=False, draw_h_border=False)
 
     # Features Subplot (Boundaries, Weight, Crossings)
     ax1.tick_params(**tick_args)
@@ -356,7 +359,7 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
 
     ax3.set_xlim(xmin, xmax)
 
-    draw_similarity_heatmap(ax3, encoder, X_gnomes, ref_points[0], colors, draw_regions=True, draw_v_values=True,
+    draw_similarity_heatmap(ax3, encoder, X_gnomes, ref_points[0], colors, draw_regions=False, draw_v_values=False,
                             clip_on=False, xmin=xmin, xmax=xmax)
 
 
@@ -399,7 +402,8 @@ if __name__ == "__main__":
     # test oob_method 'exception'
 
     multi_encoder = MultiEncoder()
-    for i in range(10, 11):
+    #for i in range(40, 41):
+    for i in range(200, 201):
         # desc_str = "RandomizedPlaceCellEncoder"
         # multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=1, seed=i))
 

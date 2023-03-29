@@ -549,22 +549,40 @@ class PeriodicCellEncoder(EncoderBase):
     - Encoder Type Options
         - grid cell
 
+    # TODO: create variants with different distributions of offset, periods, and bin sizes, either uniform or random
+
+    # TODO: bin sizes must be less than region period, distribute either by fraction of region, absolute size,
+    # TODO: or bin size drives region period
+
+    # TODO: offset = where in fund. region the center of the bin is situated
+    # TODO: origin = where the lower bound of the fundamental region is located
+    # TODO: period = length of fundamental region
+    # TODO: bin_size = length of bin, less than period
+    # TODO: duty_cycle = percent of region that bin fills
+
+    # TODO: types of distribution
+    # TODO: n samples between min and max of values using some random distribution
+    # TODO: linear uniform distribution of n values between min and max
+    # TODO: vary periods but constant bin size, or vice versa
+
     """
 
-    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, seed=None, **kwargs):
+    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, min_period = None, max_period=None, seed=None, **kwargs):
         """
         :param n: number of bins, number of bits
         :param l: size of bin, if unspecified, l is random for each bin
         :param lower_bound: lower bound of interval, default '0'
         :param upper_bound: upper bound of interval, default '1'
-        :param clamped_input: if True, input out-of-interval is rounded to nearest bound
-        :param raise_out_of_bounds: if True, raise exception if input out-of-interval
         """
 
         # superclass constructor
         super().__init__(**kwargs)
 
         self.seed = seed
+
+
+
+
 
         # interval size and bounds
         if upper_bound <= lower_bound:
@@ -574,14 +592,19 @@ class PeriodicCellEncoder(EncoderBase):
         self.L = self.upper_bound - self.lower_bound
 
         # size of bins
+
+        self.l_frac = 0.25
+
         if l is not None:
             if l <= 0 or l > self.L:
                 raise Exception("Bin size 'l' must be greater than 0, but less than 'L'.")
-            self.l = l
+            self.min_l = l - 1e-100
+            self.max_l = l + 1e-100
+            # self.l = l
         else:
+            self.min_l = self.L * 0.05
+            self.max_l = self.L * 0.10
             # 5% of size of input interval
-            # self.l = self.L * 0.1
-            self.l = self.L * 0.05
 
         # number of bins
         if not isinstance(n, int) or n < 1:
@@ -591,11 +614,28 @@ class PeriodicCellEncoder(EncoderBase):
         # origin mid-point of input interval
         self.origin = self.lower_bound + self.L / 2.0
 
-        # max period 50% of input input interval
-        self.max_period = 0.5 * self.L
+        # max period 50% of input interval
+        self.max_period = max_period
+        if self.max_period is None:
+            self.max_period = 0.5 * self.L
+
+        self.min_period = min_period
+        if self.min_period is None:
+            self.min_period = self.min_l
+
+        # check max and min period constraints
+        if self.max_period <= self.min_period:
+            raise Exception("Max period must be greater than min period")
+
+        if self.max_period <= 0 or self.min_period <= 0:
+            raise Exception("Period max and min must be positive")
+
 
         # modulus of grid cell, period
         self.periods = []
+
+        # sizes of bins
+        self.bin_sizes = []
 
         # whether bin straddles the boundaries of their fundamental region
         self.straddles = []
@@ -701,12 +741,27 @@ class PeriodicCellEncoder(EncoderBase):
             rand = np.random.RandomState(seed=self.seed)
 
         # random modulus for each grid cell
-        self.periods = rand.uniform(2 * self.l, self.max_period, self.n)
+        #self.periods = rand.uniform(2 * self.l, self.max_period, self.n)
+        #self.periods = rand.uniform(self.l, self.max_period, self.n)
+        #self.periods = rand.uniform(self.min_period, self.max_period, self.n)
+
+        self.periods = np.linspace(self.min_period, self.max_period, self.n)
 
         # fundamental regions for each period
         # [self.origin, self.periods]
         # self.fund_regions = [(self.origin, period) for period in self.periods]
         self.fund_regions = [I.closed_open(self.origin, self.origin + self.periods[c]) for c in range(self.n)]
+
+        # sizes of bins
+        #self.bin_sizes = rand.uniform(self.min_l, self.max_l, self.n)
+        #self.bin_sizes = np.linspace(self.min_l, self.max_l, self.n)
+        #self.bin_sizes = np.linspace(self.min_l, self.max_l, self.n)
+
+        #region_frac = np.flip(np.linspace(0.05, 0.5, self.n))
+        region_frac = np.repeat(self.l_frac, self.n)
+        self.bin_sizes = np.multiply(region_frac, self.periods)
+
+
 
         # create n random points in interval as bin centroids
         # bin_centers = rand.uniform(self.origin, self.max_period, self.n)
@@ -718,10 +773,11 @@ class PeriodicCellEncoder(EncoderBase):
         #                           else False for k in range(self.n)])
         # self.straddles = np.where((self.bin_lowers + self.l) >= (self.origin + self.periods), True, False)
         self.straddles = np.array(
-            [False if (bin_lowers[k] + self.l) in self.fund_regions[k] else True for k in range(self.n)])
+            [False if (bin_lowers[k] + self.bin_sizes[k]) in self.fund_regions[k] else True for k in range(self.n)])
+        #[False if (bin_lowers[k] + self.l) in self.fund_regions[k] else True for k in range(self.n)])
 
         # compute bins in their fundamental regions
-        self.bins = [I.closed_open(bin_lowers[c], bin_lowers[c] + self.l) for c in range(0, self.n)]
+        self.bins = [I.closed_open(bin_lowers[k], bin_lowers[k] + self.bin_sizes[k]) for k in range(0, self.n)]
 
         if len(self.bins) < 1:
             raise Exception("Encoder as configured doesn't allocate any bins")
@@ -738,7 +794,8 @@ class PeriodicCellEncoder(EncoderBase):
 
             x_lower = x_lower + self.periods[k]
             while x_lower < self.upper_bound:
-                x_upper = x_lower + self.l
+                #x_upper = x_lower + self.l
+                x_upper = x_lower + self.bin_sizes[k]
                 if x_upper > self.upper_bound:
                     x_upper = self.upper_bound
                 bin_multiples.append((x_lower, x_upper))
@@ -747,7 +804,7 @@ class PeriodicCellEncoder(EncoderBase):
             x_upper = bin.upper
             x_upper = x_upper - self.periods[k]
             while x_upper >= self.lower_bound:
-                x_lower = x_upper - self.l
+                x_lower = x_upper - self.bin_sizes[k]
                 if x_lower < self.lower_bound:
                     x_lower = self.lower_bound
                 bin_multiples.append((x_lower, x_upper))
@@ -824,7 +881,7 @@ class PeriodicCellEncoder(EncoderBase):
 
             x_lower = x_lower + self.periods[k]
             while x_lower < xmax:
-                x_upper = x_lower + self.l
+                x_upper = x_lower + self.bin_sizes[k]
                 if x_upper > xmax:
                     x_upper = xmax
                 bin_multiples.append((x_lower, x_upper))
@@ -833,7 +890,7 @@ class PeriodicCellEncoder(EncoderBase):
             x_upper = bin.upper
             x_upper = x_upper - self.periods[k]
             while x_upper >= xmin:
-                x_lower = x_upper - self.l
+                x_lower = x_upper - self.bin_sizes[k]
                 if x_lower < xmin:
                     x_lower = xmin
                 bin_multiples.append((x_lower, x_upper))
