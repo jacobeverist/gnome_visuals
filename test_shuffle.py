@@ -12,7 +12,7 @@ class GnomeCode(VGroup):
         super().__init__(**kwargs)
 
         self.num_bins = 32
-        self.w = 10
+        self.w = 8
         self.trackers = []
         self.bins = []
         self.rng = np.random.default_rng(0)
@@ -93,9 +93,9 @@ class GnomeCode(VGroup):
 
         ## move bins to their new index positions, but preserve index labels
         for i in range(self.num_bins):
-            bin = self.bins[i]
+            bin = permutated_bins[i]
             bin.generate_target()
-            bin.target.move_to(permutated_bins[i].get_center())
+            bin.target.move_to(self.bins[i].get_center())
 
         self.bins = permutated_bins
         self.submobjects = permutated_bins
@@ -121,10 +121,10 @@ class GnomeShuffle(Scene):
         self.add(code)
 
         # group bins into array, arranged from left to right, and center it to screen
-        num_cols = 8
+        num_cols = 6
         code.arrange_in_grid(cols=num_cols, buff=0.1).center()
 
-        self.wait(1)
+        self.wait(0.5)
 
         for j in range(2):
 
@@ -136,10 +136,11 @@ class GnomeShuffle(Scene):
             self.play(code.set_value(new_code), run_time=0.5)
             self.wait(0.5)
 
+            # permutate the array
+            self.play(code.permutate(), run_time=1)
+            self.wait(0.5)
+
             # rearrange grid layout
             self.play(code.animate.arrange_in_grid(cols=num_cols - 1 - j, buff=0.1).center(), run_time=1)
             self.wait(0.5)
 
-            # permutate the array
-            self.play(code.permutate(), run_time=1)
-            self.wait(0.5)
