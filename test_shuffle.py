@@ -1,11 +1,11 @@
 from manim import *
 import numpy as np
 
-
 # printing boolean arrays neatly
 np.set_printoptions(
     precision=3, suppress=True, threshold=1000000, linewidth=400,
     formatter={'bool': lambda bin_val: 'X' if bin_val else '-'})
+
 
 class GnomeCode(VGroup):
     def __init__(self, **kwargs):
@@ -23,23 +23,23 @@ class GnomeCode(VGroup):
         """updater member function called by inline-defined 'updater_func(mob)' in '__add_updater(self)' """
 
         for bin in self.bins:
-            number = bin[0]
-            square = bin[1]
+            cell = bin["cell"]
+            label = bin["label"]
 
             # value trackers for bit value of element
-            val = number.tracker.get_value()
+            val = label.tracker.get_value()
 
-            # change square background color
-            square_rgb = [(1.0 - val) for _ in range(3)]
-            square_color = rgb_to_color(square_rgb)
+            # change cell background color
+            cell_rgb = [(1.0 - val) for _ in range(3)]
+            cell_color = rgb_to_color(cell_rgb)
 
             # change text value and color by "becoming" one of two different saved text mobjects
             text_rgb = [val for _ in range(3)]
             text_color = rgb_to_color(text_rgb)
 
-            # update colors
-            number.set_color(text_color)
-            square.set_fill(color=square_color, opacity=1).set_stroke(color=BLACK, opacity=1)
+            # update colors based on value
+            label.set_color(text_color)
+            cell.set_fill(color=cell_color, opacity=1)
 
     def __add_updater(self) -> None:
         """Attaches the value tracker updater function to array animation"""
@@ -54,16 +54,23 @@ class GnomeCode(VGroup):
         """ gnome code animation of mobjects """
 
         # array of values from 0 to 1 for each textbox
-        self.trackers = [ValueTracker(0).set(index=_) for _ in range(self.num_bins)]
+        self.trackers = [ValueTracker(0).set(index=k) for k in range(self.num_bins)]
 
-        # square and text grouped to textbox
+        # cell and text grouped to textbox
         for k in range(0, self.num_bins):
-            square = Square(side_length=1.0, stroke_color=BLACK, fill_color=WHITE, fill_opacity=1)
-            num = Integer(number=k, color=BLACK, font_size=DEFAULT_FONT_SIZE, fill_opacity=1)\
-                .set(index=k, z_index=1, tracker=self.trackers[k]).scale(1.5)
 
-            # create VGroup to associate this number and square
-            vgroup = VGroup(num, square)
+            # cell of a binary array
+            cell = Square(side_length=1.0, stroke_color=BLACK, stroke_opacity=1, fill_color=WHITE, fill_opacity=1)#.set(z_index=2)
+
+            # cell index label
+            label = Integer(number=k, font_size=DEFAULT_FONT_SIZE).set_color(BLACK).scale(1.5)
+
+            # book-keeping attributes to control each cell's state
+            label = label.set(index=k, tracker=self.trackers[k])
+
+            # create VGroup to associate this label and cell
+            #vgroup = VGroup(cell, label)
+            vgroup = VDict(dict(cell=cell, label=label))
 
             # add to book-keeping list of bins
             self.bins.append(vgroup)
@@ -72,10 +79,10 @@ class GnomeCode(VGroup):
         # add updater function to mobjects
         self.__add_updater()
 
-    def set_code(self):
-        # activate w random bits
-        new_code = self.rng.choice([0, ] * (self.num_bins - self.w) + [1, ] * self.w, self.num_bins, replace=False, shuffle=True)
-        return [self.trackers[k].animate.set_value(new_code[k]) for k in range(self.num_bins)]
+
+    def set_value(self, new_code):
+        anims = AnimationGroup(*[self.trackers[k].animate.set_value(new_code[k]) for k in range(self.num_bins)])
+        return anims
 
     def permutate(self):
 
@@ -84,13 +91,17 @@ class GnomeCode(VGroup):
         np.random.shuffle(permutated_indices)
         permutated_bins = [self.bins[i] for i in permutated_indices]
 
-        # move bins to their new index positions, but preserve index numbers
+        ## move bins to their new index positions, but preserve index labels
         for i in range(self.num_bins):
             bin = self.bins[i]
             bin.generate_target()
             bin.target.move_to(permutated_bins[i].get_center())
 
-        return [MoveToTarget(bin) for bin in self.bins]
+        self.bins = permutated_bins
+        self.submobjects = permutated_bins
+
+        anims = AnimationGroup(*[MoveToTarget(bin) for bin in self.bins])
+        return anims
 
 
 class GnomeShuffle(Scene):
@@ -99,6 +110,8 @@ class GnomeShuffle(Scene):
         super().__init__(**kwargs)
 
     def construct(self):
+
+        self.rng = np.random.default_rng(0)
 
         # frame configuration
         self.camera.background_color = GREY_C
@@ -111,16 +124,22 @@ class GnomeShuffle(Scene):
         num_cols = 8
         code.arrange_in_grid(cols=num_cols, buff=0.1).center()
 
+        self.wait(1)
+
         for j in range(2):
 
-            # permutate the array
-            self.play(*code.permutate(), run_time=0.5)
+            # generate new code with w random activated bits
+            sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
+            new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
 
             # set encoding
-            self.play(*code.set_code(), run_time=0.5)
+            self.play(code.set_value(new_code), run_time=0.5)
+            self.wait(0.5)
 
             # rearrange grid layout
-            self.play(code.animate.arrange_in_grid(cols=num_cols-1-j, buff=0.1).center(), run_time=0.5)
+            self.play(code.animate.arrange_in_grid(cols=num_cols - 1 - j, buff=0.1).center(), run_time=1)
+            self.wait(0.5)
 
-            self.wait(1)
-
+            # permutate the array
+            self.play(code.permutate(), run_time=1)
+            self.wait(0.5)
