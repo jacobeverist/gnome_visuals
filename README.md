@@ -32,7 +32,9 @@ We use `matplotlib` for most of our quantitative plots.  The main plotting scrip
 python test_encoders.py
 ```
 
-Many function calls can be uncommented and executed to plot various types of visualizations.  
+The resulting plotted images can be found in `out/`.
+
+This test script has many function calls that can be uncommented and run to plot various types of visualizations.  
 
 
 ## Python Module
