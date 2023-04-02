@@ -10,10 +10,15 @@ import seaborn as sns
 import string
 
 import numpy as np
+import numpy.ma as ma
 from fractions import Fraction
 from intervals import FloatInterval as I
 
 from .helpers import *
+
+__all__ = ["draw_bits_by_data", "draw_multi_encoder_bins", "draw_decomposition", "draw_barcode", "draw_delta_count",
+           "draw_similarity", "draw_similarity_heatmap", "draw_projected_self_similarity", "draw_code_self_similarity",
+           "draw_features"]
 
 # printing boolean arrays neatly
 np.set_printoptions(
@@ -147,7 +152,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
     if xmin is None:
         xmin = lower_bound
 
-    #print("draw_bits:", xmin, xmax)
+    # print("draw_bits:", xmin, xmax)
 
     # scale y-axis to number of bits
     ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
@@ -162,8 +167,8 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
 
     if draw_uniform_samples:
         # 150 samples is about right for square-ish bit plotting
-        #sample_spacing = interval_length / num_samples
-        sample_spacing = (xmax-xmin) / num_samples
+        # sample_spacing = interval_length / num_samples
+        sample_spacing = (xmax - xmin) / num_samples
 
         # shrink the the boxes by this amount
         y_shrink = y_pad * 2.0
@@ -191,7 +196,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
 
             if clip_on:
                 try:
-                    #box_x, box_width = clip_bin(sample_lower_bound, sample_upper_bound, lower_bound, upper_bound)
+                    # box_x, box_width = clip_bin(sample_lower_bound, sample_upper_bound, lower_bound, upper_bound)
                     box_x, box_width = clip_bin(sample_lower_bound, sample_upper_bound, xmin, xmax)
                 except:
                     do_draw = False
@@ -273,7 +278,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
         for k in range(len(X_points)):
             x_val = float(X_points[k])
             gnome_code = X_gnomes[k]
-            #print("point, width, region_lower, region_upper:", x_val, region_widths[k], encoder.region_boundaries[k], encoder.region_boundaries[k+1])
+            # print("point, width, region_lower, region_upper:", x_val, region_widths[k], encoder.region_boundaries[k], encoder.region_boundaries[k+1])
 
             sample_upper_bound = x_val + region_widths[k] / 2.0
             sample_lower_bound = x_val - region_widths[k] / 2.0
@@ -284,10 +289,10 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
 
             if clip_on:
                 try:
-                    #print("clip region:", box_x, box_width)
-                    #box_x, box_width = clip_bin(sample_lower_bound, sample_upper_bound, lower_bound, upper_bound)
+                    # print("clip region:", box_x, box_width)
+                    # box_x, box_width = clip_bin(sample_lower_bound, sample_upper_bound, lower_bound, upper_bound)
                     box_x, box_width = clip_bin(sample_lower_bound, sample_upper_bound, xmin, xmax)
-                    #print("clipped:", box_x, box_width)
+                    # print("clipped:", box_x, box_width)
                 except:
                     do_draw = False
 
@@ -374,11 +379,10 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
 
             if clip_on:
                 try:
-                    #box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, lower_bound, upper_bound)
+                    # box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, lower_bound, upper_bound)
                     box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, xmin, xmax)
                 except:
                     do_draw = False
-
 
                 """
                 # case 1: bin exceeds lower bound
@@ -450,9 +454,9 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
             ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
 
-def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8, bin_linewidth=1, draw_regions=False,
+def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8, bin_linewidth=1,
+                            draw_regions=False,
                             draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True, label_bins=False):
-
     # constants
     bin_alpha = 1
     cong_alpha = 0.3
@@ -483,7 +487,7 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
     if xmin is None:
         xmin = lower_bound
 
-    #print("draw_multi_encoder_bins:", xmin, xmax)
+    # print("draw_multi_encoder_bins:", xmin, xmax)
 
     ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
     ax.set_ylim(-0.1, n_bits + 0.1)
@@ -504,8 +508,7 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
     grid_label_templates = [prefix + "%d" for prefix in grid_names]
     grid_colors = [colors[j] for j in range(n_grids)]
 
-    #grid_colors = ['k',] + grid_colors
-
+    # grid_colors = ['k',] + grid_colors
 
     grid_labels = ["%d,%d" % (keys[j], spacing) for j in range(n_grids)]
 
@@ -546,7 +549,7 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
             draw_bin = True
             if clip_on:
                 try:
-                    #box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, lower_bound, upper_bound)
+                    # box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, lower_bound, upper_bound)
                     box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, xmin, xmax)
                 except:
                     draw_bin = False
@@ -565,12 +568,13 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                 if label_bins:
                     add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
                                   box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
-                                  text_str=str(bin_id_count), clip_on=clip_on, linewidth=bin_linewidth, fontsize=fontsize,
+                                  text_str=str(bin_id_count), clip_on=clip_on, linewidth=bin_linewidth,
+                                  fontsize=fontsize,
                                   label=grid_label)
                 else:
                     rect = add_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
-                                  box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
-                                  clip_on=clip_on, linewidth=bin_linewidth)
+                                    box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
+                                    clip_on=clip_on, linewidth=bin_linewidth)
                     patches.append(rect)
 
             # draw congruent bins if exist
@@ -605,7 +609,7 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                     draw_cong_bin = True
                     if clip_on:
                         try:
-                            #box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, lower_bound, upper_bound)
+                            # box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, lower_bound, upper_bound)
                             box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, xmin, xmax)
                         except:
                             draw_cong_bin = False
@@ -622,8 +626,9 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                                           clip_on=True, linewidth=bin_linewidth, fontsize=fontsize, zorder=10)
                         else:
                             rect = add_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
-                                          box_height - y_shrink, alpha=cong_alpha, facecolor=grid_colors[encoder_count],
-                                          clip_on=True, linewidth=bin_linewidth, zorder=10)
+                                            box_height - y_shrink, alpha=cong_alpha,
+                                            facecolor=grid_colors[encoder_count],
+                                            clip_on=True, linewidth=bin_linewidth, zorder=10)
                             patches.append(rect)
 
             # draw fundamental region if exist
@@ -639,7 +644,7 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                 draw_fund_bin = True
                 if clip_on:
                     try:
-                        #box_x, box_width = clip_bin(fund_lower_bound, fund_upper_bound, lower_bound, upper_bound)
+                        # box_x, box_width = clip_bin(fund_lower_bound, fund_upper_bound, lower_bound, upper_bound)
                         box_x, box_width = clip_bin(fund_lower_bound, fund_upper_bound, xmin, xmax)
                     except:
                         draw_fund_bin = False
@@ -669,7 +674,8 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                         region_multiples.append(x_lower)
                         x_lower = x_lower - e.periods[k]
 
-                    ax.vlines(x=region_multiples, ymin=box_y, ymax=box_y + box_height, alpha=1.0, linewidth=1, color='k',
+                    ax.vlines(x=region_multiples, ymin=box_y, ymax=box_y + box_height, alpha=1.0, linewidth=1,
+                              color='k',
                               zorder=9)
 
             bin_count += 1
@@ -878,7 +884,7 @@ def draw_similarity(ax, encoder, X_gnomes, ref_points, colors, draw_regions=Fals
     legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
 
 
-#def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, draw_region_bits=False,
+# def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, draw_region_bits=False,
 #                      draw_boundaries=True, draw_bit_grid=True, permute_bits=False, xmin=None, xmax=None, clip_on=True,
 #                      box_height=1, num_samples=150, x_pad=0.002, y_pad=0.15):
 def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regions=True,
@@ -914,10 +920,10 @@ def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regio
     scores2 = count_similarity(X_gnomes, ref_gnome)
 
     # for plotting purposes
-    #X_point_lower = lower_bound - 0.5
-    #X_point_upper = upper_bound + 0.5
-    #X_gnome_lower = encoder.encode(X_point_lower).reshape(1, -1)
-    #X_gnome_upper = encoder.encode(X_point_upper).reshape(1, -1)
+    # X_point_lower = lower_bound - 0.5
+    # X_point_upper = upper_bound + 0.5
+    # X_gnome_lower = encoder.encode(X_point_lower).reshape(1, -1)
+    # X_gnome_upper = encoder.encode(X_point_upper).reshape(1, -1)
     # X_points_extended = np.concatenate(
     #    ([X_point_lower], encoder.region_centers, [X_point_upper]))
     # X_gnomes_extended = np.concatenate(
@@ -930,20 +936,20 @@ def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regio
     max_score = np.max(scores2)
 
     # scale y-axis to boundaries of axes
-    #ax.set_ylim(0, 1)
-    #ax.yaxis.set_major_locator(ticker.IndexLocator(2, 1))
+    # ax.set_ylim(0, 1)
+    # ax.yaxis.set_major_locator(ticker.IndexLocator(2, 1))
     ax.tick_params(**{'right': False, 'labelright': False})
     ax.set_ylabel("Similarity of\nExample Values")
 
     ymin, ymax = ax.get_ybound()
     ax.set_ylim(ymin, ymax)
 
-    box_height = ymax-ymin
+    box_height = ymax - ymin
 
     cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
 
     # shrink the the boxes by this amount
-    #x_shrink = x_pad * 2.0
+    # x_shrink = x_pad * 2.0
     x_shrink = 0
 
     # record region center points
@@ -958,12 +964,10 @@ def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regio
 
     region_widths = np.diff(encoder.region_boundaries)
 
-
-
     patches = []
     for k in range(len(X_points)):
         x_val = float(X_points[k])
-        score = scores2[k][0]/max_score
+        score = scores2[k][0] / max_score
 
         sample_upper_bound = x_val + region_widths[k] / 2.0
         sample_lower_bound = x_val - region_widths[k] / 2.0
@@ -980,7 +984,7 @@ def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regio
                 do_draw = False
 
         if do_draw:
-            #box_y = 0
+            # box_y = 0
             box_y = ymin
 
             box_width_shrunk = box_width - x_shrink
@@ -991,41 +995,42 @@ def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regio
             x_adj = box_x + x_shrink_adj / 2.0
             y_adj = box_y
             w_adj = box_width - x_shrink_adj
-            #h_adj = box_height
+            # h_adj = box_height
             h_adj = box_height
 
-            #print("color:", score, cmap(score))
+            # print("color:", score, cmap(score))
 
             # create box representing the bin
-            rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor=cmap(score), clip_on=clip_on, linewidth=0)
+            rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor=cmap(score), clip_on=clip_on,
+                            linewidth=0)
             patches.append(rect)
 
     ax.add_collection(PatchCollection(patches, match_original=True))
 
     # plot similarity scores for each reference value
-    #boundaries_x = boundaries_extended
-    #scores_y = np.append(scores_extended, [scores_extended[-1], ])
-    #ax.step(boundaries_x, scores_y, where='post', color=colors[0], label=float(ref_point))
-    #ax.fill_between(boundaries_x, -1, scores_y, step='post', color=colors[0], alpha=0.3, zorder=1)
+    # boundaries_x = boundaries_extended
+    # scores_y = np.append(scores_extended, [scores_extended[-1], ])
+    # ax.step(boundaries_x, scores_y, where='post', color=colors[0], label=float(ref_point))
+    # ax.fill_between(boundaries_x, -1, scores_y, step='post', color=colors[0], alpha=0.3, zorder=1)
 
     if draw_v_values:
         # draw vertical line indicating reference value on x-axis
         ax.axvline(x=ref_point, ymin=ymin, ymax=3.2, alpha=1.0, linewidth=1.5, color=colors[0], linestyle='--',
                    clip_on=False, zorder=23)
 
-        #ax.axvline(x=encoder.upper_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
+        # ax.axvline(x=encoder.upper_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
 
     if draw_regions:
         # draw boundaries between each region
         for k in range(len(boundaries)):
             ax.axvline(x=boundaries[k], alpha=0.9, linewidth=0.5, color='k', zorder=3)
-            #ax.axvline(x=boundaries[k], alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+            # ax.axvline(x=boundaries[k], alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
     # show legend for each example value
-    #handles, labels = ax.get_legend_handles_labels()
-    #handles.reverse()
-    #labels.reverse()
-    #legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
+    # handles, labels = ax.get_legend_handles_labels()
+    # handles.reverse()
+    # labels.reverse()
+    # legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
 
 
 def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_grid=True):
@@ -1120,6 +1125,181 @@ def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_
 
     # plot legend for property data
     legend = ax.legend(handles1, labels1, title="Features", ncol=3, fontsize=8, title_fontsize=9)
+
+
+def draw_code_self_similarity(ax, encoder, triangle=False, annot=True):
+    # sampled points over the space
+    X_points = np.array(encoder.region_centers).reshape(-1, 1)
+    X_gnomes1 = encoder.region_codes
+    X_gnomes2 = encoder.encode(X_points)
+
+    diagonal_scores = count_similarity(X_gnomes1, X_gnomes2)
+    max_count = np.max(diagonal_scores)
+
+    # Generate a mask for the upper triangle
+    if triangle:
+        shape_mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
+    else:
+        shape_mask = np.zeros_like(diagonal_scores, dtype=bool)
+    mask = shape_mask
+
+    # omit zero text data
+    scores_text = diagonal_scores.astype('|S10')
+    if annot:
+        annot_data = np.where(diagonal_scores > 0, scores_text, '')
+    else:
+        annot_data = False
+
+    # Generate a custom diverging colormap
+    # cmap = sns.diverging_palette(230, 20, as_cmap=True)
+    # cmap = sns.color_palette("rocket_r", as_cmap=True)
+    cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
+
+    num_points = X_points.shape[0]
+
+    linewidths = 0
+    fontsize = 0
+
+    if num_points < 80:
+        linewidths = 2. / num_points
+        fontsize = 32. * 8. / num_points
+    else:
+        annot_data = False
+
+    # Draw the heatmap with the mask and correct aspect ratio
+    sns.heatmap(diagonal_scores, ax=ax, mask=mask, cmap=cmap, vmax=max_count, fmt="s",
+                square=True, linewidths=linewidths, cbar_kws={"shrink": .5}, annot=annot_data,
+                annot_kws={"fontsize": fontsize})
+
+
+def draw_projected_self_similarity(ax, encoder, triangle=False, annot=True, cbar=True, cbar_ax=None):
+    # sampled points over the space
+    X_points = np.array(encoder.region_centers).reshape(-1, 1)
+    X_gnomes1 = encoder.region_codes
+    X_gnomes2 = encoder.encode(X_points)
+
+    x_vals = encoder.region_boundaries
+    y_vals = encoder.region_boundaries
+
+    x_centers = encoder.region_centers
+    y_centers = encoder.region_centers
+
+    x_sizes = encoder.region_sizes
+    y_sizes = encoder.region_sizes
+
+    diagonal_scores = count_similarity(X_gnomes1, X_gnomes2)
+    max_count = np.max(diagonal_scores)
+
+    # Generate a mask for the upper triangle
+    if triangle:
+        mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
+    else:
+        mask = np.zeros_like(diagonal_scores, dtype=bool)
+
+    masked_scores = ma.array(diagonal_scores, mask=mask)
+
+    # Generate a custom diverging colormap
+    # cmap = sns.diverging_palette(230, 20, s=75, l=50, as_cmap=True)
+    # cmap = sns.diverging_palette(230, 20, s=100, as_cmap=True)
+    # cmap = sns.color_palette("rocket_r", as_cmap=True)
+    # cmap = sns.color_palette("Reds", as_cmap=True)
+    # cmap = sns.light_palette("red", as_cmap=True)
+    cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
+
+    # Recenter a divergent colormap
+    """
+    if True:
+        # noinspection PyUnreachableCode
+        vmax = max_count
+        vmin = 0
+        # center = mean_count
+        center = 0
+        # Copy bad values
+        # in mpl<3.2 only masked values are honored with "bad" color spec
+        # (see https://github.com/matplotlib/matplotlib/pull/14257)
+        bad = cmap(np.ma.masked_invalid([np.nan]))[0]
+
+        # under/over values are set for sure when cmap extremes
+        # do not map to the same color as +-inf
+        under = cmap(-np.inf)
+        over = cmap(np.inf)
+        under_set = under != cmap(0)
+        over_set = over != cmap(cmap.N - 1)
+
+        vrange = max(vmax - center, center - vmin)
+        normlize = mpl.colors.Normalize(center - vrange, center + vrange)
+        cmin, cmax = normlize([vmin, vmax])
+        cc = np.linspace(cmin, cmax, 256)
+        new_cmap = mpl.colors.ListedColormap(cmap(cc))
+        new_cmap.set_bad(bad)
+        if under_set:
+            new_cmap.set_under(under)
+        if over_set:
+            new_cmap.set_over(over)
+
+        cmap = new_cmap
+    """
+
+    num_points = X_points.shape[0]
+
+    if num_points < 80:
+        linewidth = 2. / num_points
+    else:
+        linewidth = 0
+
+
+    # seaborn data-mangling (converts to dataframe everything)
+    #plot_data = np.asarray(data)
+    #data = pd.DataFrame(plot_data)
+    #mask = _matrix_mask(data, mask) # Validate the mask and convert to DataFrame
+    #plot_data = np.ma.masked_where(np.asarray(mask), plot_data)
+    #mesh = ax.pcolormesh(plot_data, cmap=cmap, **kws)
+    #sns.heatmap(diagonal_scores, ax=ax, mask=mask, cmap=cmap, vmax=max_count, fmt="s",
+    #            square=True, linewidths=linewidths, cbar_kws={"shrink": .5}, annot=annot_data,
+    #            annot_kws={"fontsize": fontsize})
+
+    mesh = ax.pcolormesh(x_vals, y_vals, masked_scores, vmax=max_count, vmin=0, edgecolor='1.0', linewidth=linewidth,
+                      cmap=cmap)
+
+    if cbar:
+        # add colorbar to the figure, creating a separate axes and repositioning original axes
+        cb = ax.figure.colorbar(mesh, ax=ax, cax=cbar_ax, shrink=0.5) # , spacing="uniform", drawedges=True)
+        cb.outline.set_linewidth(0)
+        #print("axes:")
+        #print(cb.ax)
+        #print(cbar_ax)
+        #print(ax)
+
+    # add text box to center of each rectangle indicating count similarity
+    if annot:
+
+        # code to change the color of the text depending on cell color
+        # lum = relative_luminance(color)
+        # text_color = ".15" if lum > .408 else "w"
+        text_color = ".15"
+        # text_color = "w"
+
+        for i in range(len(x_centers)):
+            x = x_centers[i]
+            x_size = x_sizes[i]
+
+            for j in range(len(y_centers)):
+                y = y_centers[j]
+                y_size = y_sizes[j]
+                score = masked_scores[j, i]
+
+                min_size = min(x_size, y_size)
+
+                draw_text = True
+                if num_points < 80:
+                    fontsize = min_size * 4. * 32. / 0.2
+                else:
+                    fontsize = 0
+                    draw_text = False
+
+                if draw_text and score is not np.ma.masked and score > 0:
+                    ax.text(x, y, str(score), horizontalalignment='center', verticalalignment='center',
+                            fontsize=fontsize, color=text_color)
 
 
 def add_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k',

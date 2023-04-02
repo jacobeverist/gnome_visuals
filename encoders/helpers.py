@@ -1,5 +1,6 @@
 import numpy as np
 
+__all__ = ["gnome_similarity", "count_similarity"]
 
 def gnome_similarity(X_gnomes, ref_gnomes):
     """Gnome similarity score.

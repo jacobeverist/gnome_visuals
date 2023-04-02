@@ -1,9 +1,12 @@
 from intervals import FloatInterval as I
 import numpy as np
 from collections.abc import Iterable
-
 from sklearn.utils.validation import check_X_y, check_array
 from heapq import merge
+
+__all__ = [
+    "EncoderBase", "MultiEncoder", "IntervalEncoder", "PeriodicCellEncoder", "PlaceCellEncoder",
+    "RandomizedPlaceCellEncoder", "FixedWeightEncoder", "TaperingWeightEncoder"]
 
 
 # abstract superclass of all encoders
@@ -221,12 +224,12 @@ class MultiEncoder(EncoderBase):
 
         # print("unique_delta_count")
         # print(unique_delta_count)
-        #print(len(unique_boundaries), "unique_boundaries")
-        #print(unique_boundaries)
+        # print(len(unique_boundaries), "unique_boundaries")
+        # print(unique_boundaries)
 
         # self.region_boundaries = sorted_boundaries
         self.region_boundaries = unique_boundaries
-        #print("boundaries:", type(self.region_boundaries))
+        # print("boundaries:", type(self.region_boundaries))
         # self.region_deltas = [delta_count[k] for k in self.region_boundaries]
         self.region_deltas = [unique_delta_count[k] for k in self.region_boundaries]
         # print("deltas:")
@@ -501,7 +504,7 @@ class IntervalEncoder(EncoderBase):
         # X = check_array(X, ensure_2d=True)
         X = self._input(X)
 
-        #print("input:", X)
+        # print("input:", X)
 
         # list of values to encode
         if isinstance(X, Iterable):
@@ -567,7 +570,8 @@ class PeriodicCellEncoder(EncoderBase):
 
     """
 
-    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, min_period = None, max_period=None, seed=None, **kwargs):
+    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, min_period=None, max_period=None, seed=None,
+                 **kwargs):
         """
         :param n: number of bins, number of bits
         :param l: size of bin, if unspecified, l is random for each bin
@@ -579,10 +583,6 @@ class PeriodicCellEncoder(EncoderBase):
         super().__init__(**kwargs)
 
         self.seed = seed
-
-
-
-
 
         # interval size and bounds
         if upper_bound <= lower_bound:
@@ -629,7 +629,6 @@ class PeriodicCellEncoder(EncoderBase):
 
         if self.max_period <= 0 or self.min_period <= 0:
             raise Exception("Period max and min must be positive")
-
 
         # modulus of grid cell, period
         self.periods = []
@@ -741,9 +740,9 @@ class PeriodicCellEncoder(EncoderBase):
             rand = np.random.RandomState(seed=self.seed)
 
         # random modulus for each grid cell
-        #self.periods = rand.uniform(2 * self.l, self.max_period, self.n)
-        #self.periods = rand.uniform(self.l, self.max_period, self.n)
-        #self.periods = rand.uniform(self.min_period, self.max_period, self.n)
+        # self.periods = rand.uniform(2 * self.l, self.max_period, self.n)
+        # self.periods = rand.uniform(self.l, self.max_period, self.n)
+        # self.periods = rand.uniform(self.min_period, self.max_period, self.n)
 
         self.periods = np.linspace(self.min_period, self.max_period, self.n)
 
@@ -753,15 +752,13 @@ class PeriodicCellEncoder(EncoderBase):
         self.fund_regions = [I.closed_open(self.origin, self.origin + self.periods[c]) for c in range(self.n)]
 
         # sizes of bins
-        #self.bin_sizes = rand.uniform(self.min_l, self.max_l, self.n)
-        #self.bin_sizes = np.linspace(self.min_l, self.max_l, self.n)
-        #self.bin_sizes = np.linspace(self.min_l, self.max_l, self.n)
+        # self.bin_sizes = rand.uniform(self.min_l, self.max_l, self.n)
+        # self.bin_sizes = np.linspace(self.min_l, self.max_l, self.n)
+        # self.bin_sizes = np.linspace(self.min_l, self.max_l, self.n)
 
-        #region_frac = np.flip(np.linspace(0.05, 0.5, self.n))
+        # region_frac = np.flip(np.linspace(0.05, 0.5, self.n))
         region_frac = np.repeat(self.l_frac, self.n)
         self.bin_sizes = np.multiply(region_frac, self.periods)
-
-
 
         # create n random points in interval as bin centroids
         # bin_centers = rand.uniform(self.origin, self.max_period, self.n)
@@ -774,7 +771,7 @@ class PeriodicCellEncoder(EncoderBase):
         # self.straddles = np.where((self.bin_lowers + self.l) >= (self.origin + self.periods), True, False)
         self.straddles = np.array(
             [False if (bin_lowers[k] + self.bin_sizes[k]) in self.fund_regions[k] else True for k in range(self.n)])
-        #[False if (bin_lowers[k] + self.l) in self.fund_regions[k] else True for k in range(self.n)])
+        # [False if (bin_lowers[k] + self.l) in self.fund_regions[k] else True for k in range(self.n)])
 
         # compute bins in their fundamental regions
         self.bins = [I.closed_open(bin_lowers[k], bin_lowers[k] + self.bin_sizes[k]) for k in range(0, self.n)]
@@ -794,7 +791,7 @@ class PeriodicCellEncoder(EncoderBase):
 
             x_lower = x_lower + self.periods[k]
             while x_lower < self.upper_bound:
-                #x_upper = x_lower + self.l
+                # x_upper = x_lower + self.l
                 x_upper = x_lower + self.bin_sizes[k]
                 if x_upper > self.upper_bound:
                     x_upper = self.upper_bound
@@ -831,10 +828,10 @@ class PeriodicCellEncoder(EncoderBase):
         region_boundaries = np.concatenate(region_boundaries)
         region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
         region_boundaries = np.sort(region_boundaries)
-        #self.region_boundaries = region_boundaries
+        # self.region_boundaries = region_boundaries
 
         self.region_boundaries = self.generate_periodic_boundaries()
-        #self.region_boundaries = region_boundaries
+        # self.region_boundaries = region_boundaries
         # print("region_boundaries:", self.region_boundaries.shape)
         # print(self.region_boundaries)
 
@@ -920,6 +917,7 @@ class PeriodicCellEncoder(EncoderBase):
 
         return region_boundaries
 
+
 class PlaceCellEncoder(EncoderBase):
     """
     arbitrary collection of single bins in a specified input domain
@@ -985,7 +983,6 @@ class PlaceCellEncoder(EncoderBase):
         # X = check_array(X, ensure_2d=True)
         X = self._input(X)
 
-
         # list of values to encode
         if isinstance(X, Iterable):
             gnomes = []
@@ -1023,8 +1020,9 @@ class RandomizedPlaceCellEncoder(PlaceCellEncoder):
             raise Exception("Encoder as configured doesn't allocate any bins")
 
         # record region boundary points
-        get_boundaries = lambda x: (np.maximum(x - self.l / 2.0, self.lower_bound), np.minimum(x + self.l / 2.0, self.upper_bound))
-        #get_boundaries = lambda x: (x - self.l / 2.0, x + self.l / 2.0)
+        get_boundaries = lambda x: (
+            np.maximum(x - self.l / 2.0, self.lower_bound), np.minimum(x + self.l / 2.0, self.upper_bound))
+        # get_boundaries = lambda x: (x - self.l / 2.0, x + self.l / 2.0)
         region_boundaries = get_boundaries(bin_centers)
         ##print(region_boundaries)
         region_boundaries = np.concatenate(region_boundaries)
