@@ -74,8 +74,8 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
     ax_features = None
     ax_colorbar = None
 
-    do_sns_jointgrid = True
-    do_inset_axes = False
+    do_sns_jointgrid = False
+    do_inset_axes = True
     do_gridspec_axes = False
     do_subgridspec_axes = False
     do_gridspec_inset_axes = False
