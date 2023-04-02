@@ -1,0 +1,8 @@
+seaborn==0.12.2
+matplotlib>=3.3.4
+numpy>=1.23.5
+scikit-learn>=0.24.1
+intervals>=0.9.2
+manim>=0.17.2
+manim-data-structures==0.1.7
+
