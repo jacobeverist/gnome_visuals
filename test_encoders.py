@@ -15,11 +15,6 @@ from encoders import *
 
 # sns.set_theme(style="white", color_codes=True)
 
-# FIXME:
-# 1) replace original self-similarity plots with plot_heatmap2 and plot_pmesh_heatmap2, figure out style issues (add seaborn layout)
-# 2) remove plot_heatmap and plot_pmesh_heatmap code
-# 3) test_encoders.py should be figure-level and axes-level styling code, and visuals.py should be axes-level plotting
-
 # TODO:
 # 1) + add base class boundary-handling options (exception, clamp, modulo, silent)
 # 2) + able to plot fundamental regions of periodic cells
@@ -27,7 +22,10 @@ from encoders import *
 # 4) + create better grid distribution options, multi-scale, etc
 # 5) center fund. region for each bin
 # 6) illustrative plots for each step of discussion (Properties of Discrete Encodings of Binary Population)
-
+# 7) + try to use the seaborn facet features to align heatmap x-axis with a graph plot x-axis
+# 8) + replace original self-similarity plots with plot_heatmap2 and plot_pmesh_heatmap2, figure out style issues (add seaborn layout)
+# 9) + remove plot_heatmap and plot_pmesh_heatmap code
+# 10)+ test_encoders.py should be figure-level and axes-level styling code, and visuals.py should be axes-level plotting
 
 def plot_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, fontsize=8, annot=True):
     n_bits = encoder.n
@@ -94,18 +92,17 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
         #ax_marg_x = f.add_subplot(gs[0, :-1], sharex=ax_joint)
         #ax_marg_y = f.add_subplot(gs[1:, -1], sharey=ax_joint)
 
-        g = sns.JointGrid(xlim=(0, 1), ylim=(0, 1))
+        g = sns.JointGrid(ratio=4, xlim=(0, 1), ylim=(0, 1))
 
-        # fig = g._figure
+        fig = g._figure
         ax_heatmap = g.ax_joint
         ax_features = g.ax_marg_x
         ax_colorbar = g.ax_marg_y
 
-        #ax_colorbar.set(visible=False)
 
-        #ax_colorbar.set_position
+        # Unshare y-axis of colorbar
+
         # Now remove axes from the grouper for xaxis
-
         ax_colorbar.get_shared_y_axes().remove(ax_colorbar)
 
         # Create and assign new ticker
@@ -118,9 +115,7 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
         ax_colorbar.yaxis.set_major_locator(yloc)
         ax_colorbar.yaxis.set_major_formatter(yfmt)
 
-
-        #ax.update_params()
-        #ax.set_position(ax.figbox)
+        fig.set_tight_layout(True)
 
     elif do_inset_axes:
         # Start with a square Figure and add a couple extra inches to top
@@ -240,16 +235,16 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
 
     # do_subplots_axes
     else:
-        f, axes = plt.subplots(2, 1, figsize=(9, 11), gridspec_kw={'height_ratios': [4, 1], 'width_ratios': [1, ]})
+        fig, axes = plt.subplots(2, 1, figsize=(9, 11), gridspec_kw={'height_ratios': [4, 1], 'width_ratios': [1, ]})
         ax_heatmap = axes[0]
         ax_features = axes[1]
 
     ax0 = ax_heatmap
     ax1 = ax_features
 
-    # FIXME:  try to use the seaborn facet features to align heatmap x-axis with a graph plot x-axis
 
-    ax0.set_title(desc_str)
+    fig.suptitle(desc_str)
+    #ax0.set_title(desc_str)
     ax0.invert_yaxis()
     ax0.spines['top'].set_visible(False)
     ax0.spines['right'].set_visible(False)
@@ -273,7 +268,7 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
     # draw weight, crossings, and boundary features
     markersize = 4
     colors = sns.color_palette("Set1")  # , n_colors=oints))
-    draw_features(ax1, encoder, colors, markersize, draw_regions=True)
+    draw_features(ax1, encoder, colors, markersize, draw_regions=True, draw_legend=False)
 
     if not file_name is None:
         plt.savefig(file_name, bbox_inches='tight')
@@ -415,14 +410,16 @@ if __name__ == "__main__":
         # desc_str = "RandomizedPlaceCellEncoder"
         # multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=1, seed=i))
 
-        # desc_str = "Fixed_Weight_MultiEncoder"
-        # multi_encoder.add_encoder(FixedWeightEncoder(n=6+i, w=3))
+        desc_str = "Fixed_Weight_MultiEncoder"
+        multi_encoder.add_encoder(FixedWeightEncoder(n=3, w=1))
+        multi_encoder.add_encoder(FixedWeightEncoder(n=5, w=1))
+        multi_encoder.add_encoder(FixedWeightEncoder(n=7, w=1))
 
         # desc_str = "Tapering_Weight_MultiEncoder"
         # multi_encoder.add_encoder(TaperingWeightEncoder(n=6+i, w=3))
 
-        desc_str = "PeriodicCellEncoder"
-        multi_encoder.add_encoder(PeriodicCellEncoder(n=i, oob_method="modulo", seed=i))
+        #desc_str = "PeriodicCellEncoder"
+        #multi_encoder.add_encoder(PeriodicCellEncoder(n=i, oob_method="modulo", seed=i))
 
         # plot_interval_multi_encoder(multi_encoder, desc_str=desc_str, file_dir=file_dir)
         # plt.close()

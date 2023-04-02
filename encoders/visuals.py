@@ -1033,7 +1033,7 @@ def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regio
     # legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
 
 
-def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_grid=True):
+def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_grid=True, draw_legend=True):
     """
     Features Subplot (Boundaries, Weight, Crossings)
 
@@ -1123,8 +1123,9 @@ def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_
     handles1.pop(min_category)
     labels1.pop(min_category)
 
-    # plot legend for property data
-    legend = ax.legend(handles1, labels1, title="Features", ncol=3, fontsize=8, title_fontsize=9)
+    if draw_legend:
+        # plot legend for property data
+        legend = ax.legend(handles1, labels1, title="Features", ncol=3, fontsize=8, title_fontsize=9)
 
 
 def draw_code_self_similarity(ax, encoder, triangle=False, annot=True):
