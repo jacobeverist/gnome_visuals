@@ -33,7 +33,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
     """
 
     :param ax: mpl.axes.Axes
-    :param encoder: encoders.encoders.EncoderBase
+    :param encoder: gnomecodes.encoders.EncoderBase
     :param xmin: float | None
     :param xmax: float | None
     :param clip_on: bool

@@ -6,9 +6,9 @@
 #    "visuals",
 #]
 
-import encoders.encoders as encoders
-import encoders.helpers as helpers
-import encoders.visuals as visuals
+import gnomecodes.encoders as encoders
+import gnomecodes.helpers as helpers
+import gnomecodes.visuals as visuals
 
 from .encoders import *
 from .helpers import *

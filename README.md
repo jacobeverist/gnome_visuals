@@ -4,19 +4,23 @@ Visualizations of Real-Value Representations Using Discrete Population Encoding
 
 ## Manim Animations
 
-We use `manim` for animations.  Test scripts can be found in `animation/`.
+We use `manim` for animations.  Test scripts can be found in `manim_visuals/`.
 
-The simplest can be executed with:
+To run, first change into the `manim_visuals` directory.
 
 ```shell
-cd animation
+cd manim_visuals
+```
+
+The simplest script can be run by:
+
+```shell
 manim test_square.py
 ```
 
-The most complex would be:
+The most complex script can be run by:
 
 ```shell
-cd animation
 manim test_shuffle.py
 ```
 
@@ -33,7 +37,7 @@ Many function calls can be uncommented and executed to plot various types of vis
 
 ## Python Module
 
-Much of the reusable code has been ported to a local python module `encoders`.  It has three constituent files.
+Much of the reusable code has been ported to a local python module `gnomecodes`.  It has three constituent files.
 
 - `helpers.py`:  utility functions
 - `visuals.py`:  Axes-level visualization code for `matplotlib`

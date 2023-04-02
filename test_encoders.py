@@ -10,7 +10,7 @@ import seaborn as sns
 import numpy as np
 import numpy.ma as ma
 
-from encoders import *
+from gnomecodes import *
 
 
 # sns.set_theme(style="white", color_codes=True)
