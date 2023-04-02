@@ -44,3 +44,10 @@ Much of the reusable code has been ported to a local python module `gnomecodes`.
 - `helpers.py`:  utility functions
 - `visuals.py`:  Axes-level visualization code for `matplotlib`
 - `encoders.py`:  Implementation of many types of encoders with extra instrumentation for analysis.  Not optimized.
+
+## Examples Gallery
+
+Example Manim animations can be found in [docs/animation_examples/](docs/animation_examples/).
+
+Example Matplotlib images can be found in [docs/plot_examples/](docs/plot_examples/).
+
