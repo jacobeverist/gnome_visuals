@@ -25,42 +25,24 @@ from gnomecode import *
 # 10)+ plot_encoders.py should be figure-level and axes-level styling code, and visuals.py should be axes-level plotting
 
 def plot_code_heatmap(encoder, desc_str="Encoder", triangle=False, fontsize=8, annot=True):
-    #n_bits = encoder.n
-    #n_regions = len(encoder.region_centers)
-
-    #file_name = file_dir + "%03u_%04u_" % (n_bits, n_regions) + desc_str + ".png"
 
     sns.set_style("white")
     sns.set_style("ticks")
 
     # Set up the matplotlib figure
-    # fig, ax = plt.subplots(1, 1, figsize=(10, 8), dpi=300, constrained_layout=True)
-    # f, ax = plt.subplots(figsize=(11, 9))
-
     f, ax = plt.subplots(figsize=(11, 9))
 
     # same tick configuration for each axes
-    # ax.tick_params({'axis': 'both', 'which': 'both', 'labelsize': fontsize})
-    # ax.tick_params({'axis': 'both', 'labelsize': fontsize})
     ax.tick_params(axis='both', labelsize=fontsize)
     ax.set_title(desc_str)
 
     draw_code_self_similarity(ax, encoder, triangle=triangle, annot=annot)
-
-    #if file_name is not None:
-    #    plt.savefig(file_name, bbox_inches='tight')
-
-    #sns.reset_defaults()
-
 
 def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True):
 
     # plot range for this multi encoder
     xmin = encoder.lower_bound
     xmax = encoder.upper_bound
-
-    # sns.set_style("white")
-    # sns.set_style("ticks")
 
     ax_colorbar = None
 
@@ -73,14 +55,7 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
     if do_sns_jointgrid:
         ratio = 4
 
-        # Set up the subplot grid
-        # f = plt.figure(figsize=(9, 9))
-        # gs = plt.GridSpec(ratio + 1, ratio + 1)
-
-        # ax_joint = f.add_subplot(gs[1:, :-1])
-        # ax_marg_x = f.add_subplot(gs[0, :-1], sharex=ax_joint)
-        # ax_marg_y = f.add_subplot(gs[1:, -1], sharey=ax_joint)
-
+        # setup Seaborn JointGrid
         g = sns.JointGrid(ratio=ratio, xlim=(0, 1), ylim=(0, 1))
 
         fig = g.fig
@@ -106,6 +81,7 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
         fig.set_tight_layout(True)
 
     elif do_inset_axes:
+
         # Start with a square Figure and add a couple extra inches to top
         fig = plt.figure(figsize=(9, 11), constrained_layout=True)
 
@@ -115,7 +91,6 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
         plot_up = True
         if plot_up:
             ax_features = ax_heatmap.inset_axes([0, 1.02, 1, 0.25], sharex=ax_heatmap)  # plot on top
-            # ax_features = ax_heatmap.inset_axes([0, 1.05, 1, 0.25], sharex=ax_heatmap)  # plot on top
         else:
             ax_features = ax_heatmap.inset_axes([0, -0.30, 1, 0.25], sharex=ax_heatmap)  # plot on bottom
 
@@ -138,28 +113,13 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
         ax_features = fig.add_subplot(gs[0, :-1], sharex=ax_heatmap)
         ax_colorbar = fig.add_subplot(gs[1:, -1])
 
-        # Create the Axes.
-        # ax_heatmap = fig.add_subplot(gs[0, 0])
-        # ax_features = fig.add_subplot(gs[1, 0], sharex=ax_heatmap)
-        # ax_colorbar = fig.add_subplot(gs[:, 1])
-        # ax_heatmap.set(aspect=1)
-
-        # def make_axes_gridspec(parent, *, fraction=0.15, shrink=1.0, aspect=20, **kw):
-
     elif do_subgridspec_axes:
 
         fig = plt.figure(figsize=(9, 11))  # , constrained_layout=True) #, tight_layout=True)
 
-        # 2, 2,  width_ratios=(4, 1), height_ratios=(1, 4),
-        # gs0 = fig.add_gridspec(2, 2, width_ratios=(4, 1), height_ratios=(4, 1))
-        # left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.05, hspace=0.05)
-
-        # gs0 = fig.add_gridspec(1, 2, width_ratios=(4, 1), left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.05, hspace=0.01)
         gs0 = fig.add_gridspec(1, 2, width_ratios=(4, 1), hspace=0, wspace=0)
         gs00 = gs0[0].subgridspec(2, 1, height_ratios=(4, 1), hspace=0, wspace=0)  # , wspace=0.05, hspace=0.05)
         gs01 = gs0[1].subgridspec(2, 3, height_ratios=(4, 1), width_ratios=(1, 1, 1), hspace=0.03, wspace=0.03)
-
-        # gs01 = gs0[1].subgridspec(1, 1)
 
         ax_heatmap = fig.add_subplot(gs00[0, 0])
         ax_features = fig.add_subplot(gs00[1, 0], sharex=ax_heatmap)
@@ -193,26 +153,10 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
 
         fig = plt.figure(figsize=(9, 11), constrained_layout=True)  # , tight_layout=True)
 
-        # 2, 2,  width_ratios=(4, 1), height_ratios=(1, 4),
-        # gs0 = fig.add_gridspec(2, 2, width_ratios=(4, 1), height_ratios=(4, 1))
-        # left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.05, hspace=0.05)
-
-        # gs0 = fig.add_gridspec(1, 2, width_ratios=(4, 1), left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.05, hspace=0.01)
-        # gs0 = fig.add_gridspec(2, 1, height_ratios=(4, 1), top=0.75, right=0.75) #, hspace=0, wspace=0)
-        gs0 = fig.add_gridspec(2, 1, height_ratios=(4, 1))  # , top=0.75, right=0.75) #, hspace=0, wspace=0)
+        gs0 = fig.add_gridspec(2, 1, height_ratios=(4, 1))
 
         ax_heatmap = fig.add_subplot(gs0[0, 0])
         ax_features = fig.add_subplot(gs0[1, 0], sharex=ax_heatmap)
-
-        # ax_heatmap = fig.add_gridspec(top=0.75, right=0.75).subplots()
-        # ax_heatmap.set(aspect=1)
-
-        # plot_top = False
-        # if plot_top:
-        #    ax_features = ax_heatmap.inset_axes([0, 1.05, 1, 0.25], sharex=ax_heatmap)  # plot on top
-        # else:
-        #    ax_features = ax_heatmap.inset_axes([0, -0.30, 1, 0.25], sharex=ax_heatmap)  # plot on bottom
-
         ax_colorbar = ax_heatmap.inset_axes([1.05, 0.25, 0.05, 0.5])
 
         ax_heatmap.set(aspect=1)
@@ -225,13 +169,10 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
 
     fig.suptitle(desc_str)
     ax_heatmap.invert_yaxis()
-    """
-    ax_heatmap.spines['top'].set_visible(False)
-    ax_heatmap.spines['right'].set_visible(False)
-    ax_heatmap.spines['bottom'].set_visible(False)
-    ax_heatmap.spines['left'].set_visible(False)
-    """
-    # ax_heatmap.set_aspect("equal")
+
+    # hide the spines
+    # for side in ["top", "right", "bottom", "left"]:
+    #    ax_heatmap.spines[side].set_visible(False)
 
     draw_projected_self_similarity(ax_heatmap, encoder, triangle=triangle, annot=annot, cbar=True, cbar_ax=ax_colorbar)
 
@@ -251,14 +192,7 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
     colors = sns.color_palette("Set1")  # , n_colors=oints))
     draw_features(ax_features, encoder, colors, markersize, draw_regions=True, draw_legend=False)
 
-    #if file_name is not None:
-    #    plt.savefig(file_name, bbox_inches='tight')
-
-    #sns.reset_defaults()
-
-
 def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
-    # , desc_str="Encoder", file_dir="./out", x_pad=0.1):
     n_bits = encoder.n
     markersize = 4
     fontsize = 6
@@ -268,9 +202,6 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
     # plot range for this multi encoder
     xmin = encoder.lower_bound - x_pad
     xmax = encoder.upper_bound + x_pad
-
-    # filename
-    # file_name = file_dir + "%03u_samples_" % n_bits + desc_str + ".png"
 
     # reference points for comparison
     ref_points = np.array([[0.21], [0.69]])
@@ -333,9 +264,6 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
     draw_similarity(ax2, encoder, X_gnomes, ref_points, colors, draw_regions=False,
                     draw_h_grid=True, draw_v_values=True)
 
-    # draw_similarity_heatmap(ax2, encoder, X_gnomes, ref_points[0], colors, draw_regions=True, draw_v_values=True,
-    #                        clip_on=False, xmin=xmin, xmax=xmax)
-
     # # Encoding Bits Subplot
     tick_args['labelbottom'] = True
     tick_args['bottom'] = True
@@ -357,12 +285,6 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
     # draw input interval boundary lines across axes with vertical lines
     ax3.axvline(x=encoder.lower_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
     ax3.axvline(x=encoder.upper_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
-
-    # if file_name is not None:
-    #    plt.savefig(file_name, bbox_inches='tight')
-
-    # sns.reset_defaults()
-
 
 def save_fig(path, encoder, plot_name, experiment_str, do_close=True):
 
