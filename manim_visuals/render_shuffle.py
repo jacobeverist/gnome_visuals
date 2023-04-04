@@ -177,10 +177,14 @@ class GnomeCode(VGroup):
 
 class GnomeShuffle(Scene):
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    #def __init__(self, **kwargs):
+    #    super().__init__(**kwargs)
 
     def construct(self):
+
+        #print(self.renderer)
+        #return
+
         self.rng = np.random.default_rng(0)
 
         # frame configuration
@@ -213,6 +217,8 @@ class GnomeShuffle(Scene):
             # generate new code with w random activated bits
             sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
             new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+
+            print("set code:", new_code)
 
             # set encoding
             self.play(code.set_value(new_code), run_time=0.4)

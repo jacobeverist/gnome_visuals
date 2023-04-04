@@ -15,13 +15,13 @@ cd manim_visuals
 The simplest script can be run by:
 
 ```shell
-manim test_square.py
+manim render_square.py
 ```
 
 The most complex script can be run by:
 
 ```shell
-manim test_shuffle.py
+manim render_shuffle.py
 ```
 
 
@@ -29,7 +29,7 @@ manim test_shuffle.py
 We use `matplotlib` for most of our quantitative plots.  The main plotting script can be executed from the root directory:
 
 ```shell
-python test_encoders.py
+python plot_encoders.py
 ```
 
 The resulting plotted images can be found in `out/`.

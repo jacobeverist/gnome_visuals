@@ -1,14 +1,10 @@
 # plotting
 
-from matplotlib import ticker
-from matplotlib import axis
-
-
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib import ticker, axis
 import seaborn as sns
 import numpy as np
-import numpy.ma as ma
 
 from gnomecode import *
 
@@ -25,7 +21,7 @@ from gnomecode import *
 # 7) + try to use the seaborn facet features to align heatmap x-axis with a graph plot x-axis
 # 8) + replace original self-similarity plots with plot_heatmap2 and plot_pmesh_heatmap2, figure out style issues (add seaborn layout)
 # 9) + remove plot_heatmap and plot_pmesh_heatmap code
-# 10)+ test_encoders.py should be figure-level and axes-level styling code, and visuals.py should be axes-level plotting
+# 10)+ plot_encoders.py should be figure-level and axes-level styling code, and visuals.py should be axes-level plotting
 
 def plot_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, fontsize=8, annot=True):
     n_bits = encoder.n
@@ -126,7 +122,8 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
 
         plot_up = True
         if plot_up:
-            ax_features = ax_heatmap.inset_axes([0, 1.05, 1, 0.25], sharex=ax_heatmap)  # plot on top
+            ax_features = ax_heatmap.inset_axes([0, 1.02, 1, 0.25], sharex=ax_heatmap)  # plot on top
+            #ax_features = ax_heatmap.inset_axes([0, 1.05, 1, 0.25], sharex=ax_heatmap)  # plot on top
         else:
             ax_features = ax_heatmap.inset_axes([0, -0.30, 1, 0.25], sharex=ax_heatmap)  # plot on bottom
 
@@ -246,16 +243,18 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
     fig.suptitle(desc_str)
     #ax0.set_title(desc_str)
     ax0.invert_yaxis()
+    """
     ax0.spines['top'].set_visible(False)
     ax0.spines['right'].set_visible(False)
     ax0.spines['bottom'].set_visible(False)
     ax0.spines['left'].set_visible(False)
+    """
     #ax0.set_aspect("equal")
 
     draw_projected_self_similarity(ax0, encoder, triangle=triangle, annot=annot, cbar=True, cbar_ax=ax_colorbar)
 
     # same tick configuration for each axes
-    tick_args = {'axis': 'both', 'which': 'both', 'labelsize': 'small', 'labelbottom': True, 'bottom': True,
+    tick_args = {'axis': 'both', 'which': 'both', 'labelsize': 'small', 'labelbottom': False, 'bottom': False,
                  'left': False, 'labelleft': False, 'right': True, 'labelright': True}
 
     # Features Subplot (Boundaries, Weight, Crossings)
@@ -410,19 +409,19 @@ if __name__ == "__main__":
         # desc_str = "RandomizedPlaceCellEncoder"
         # multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=1, seed=i))
 
-        desc_str = "Fixed_Weight_MultiEncoder"
-        multi_encoder.add_encoder(FixedWeightEncoder(n=3, w=1))
-        multi_encoder.add_encoder(FixedWeightEncoder(n=5, w=1))
-        multi_encoder.add_encoder(FixedWeightEncoder(n=7, w=1))
+        #desc_str = "Fixed_Weight_MultiEncoder"
+        #multi_encoder.add_encoder(FixedWeightEncoder(n=3, w=1))
+        #multi_encoder.add_encoder(FixedWeightEncoder(n=5, w=1))
+        #multi_encoder.add_encoder(FixedWeightEncoder(n=7, w=1))
 
         # desc_str = "Tapering_Weight_MultiEncoder"
         # multi_encoder.add_encoder(TaperingWeightEncoder(n=6+i, w=3))
 
-        #desc_str = "PeriodicCellEncoder"
-        #multi_encoder.add_encoder(PeriodicCellEncoder(n=i, oob_method="modulo", seed=i))
+        desc_str = "PeriodicCellEncoder"
+        multi_encoder.add_encoder(PeriodicCellEncoder(n=i, oob_method="modulo", seed=i))
 
-        # plot_interval_multi_encoder(multi_encoder, desc_str=desc_str, file_dir=file_dir)
-        # plt.close()
+        #plot_interval_multi_encoder(multi_encoder, desc_str=desc_str, file_dir=file_dir)
+        #plt.close()
 
         # self-similarity matrix by region code
         # plot_heatmap(multi_encoder, desc_str=desc_str + "_Similarity_Matrix_by_Region_Code", file_dir=file_dir,
