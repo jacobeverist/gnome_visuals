@@ -19,15 +19,16 @@ from gnomecode import *
 # 5) center fund. region for each bin
 # 6) illustrative plots for each step of discussion (Properties of Discrete Encodings of Binary Population)
 # 7) + try to use the seaborn facet features to align heatmap x-axis with a graph plot x-axis
-# 8) + replace original self-similarity plots with plot_heatmap2 and plot_pmesh_heatmap2, figure out style issues (add seaborn layout)
+# 8) + replace original self-similarity plots with plot_heatmap2 and plot_pmesh_heatmap2,
+#      figure out style issues (add seaborn layout)
 # 9) + remove plot_heatmap and plot_pmesh_heatmap code
 # 10)+ plot_encoders.py should be figure-level and axes-level styling code, and visuals.py should be axes-level plotting
 
-def plot_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, fontsize=8, annot=True):
-    n_bits = encoder.n
-    n_regions = len(encoder.region_centers)
+def plot_code_heatmap(encoder, desc_str="Encoder", triangle=False, fontsize=8, annot=True):
+    #n_bits = encoder.n
+    #n_regions = len(encoder.region_centers)
 
-    file_name = file_dir + "%03u_%04u_" % (n_bits, n_regions) + desc_str + ".png"
+    #file_name = file_dir + "%03u_%04u_" % (n_bits, n_regions) + desc_str + ".png"
 
     sns.set_style("white")
     sns.set_style("ticks")
@@ -46,28 +47,21 @@ def plot_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, 
 
     draw_code_self_similarity(ax, encoder, triangle=triangle, annot=annot)
 
-    if not file_name is None:
-        plt.savefig(file_name, bbox_inches='tight')
+    #if file_name is not None:
+    #    plt.savefig(file_name, bbox_inches='tight')
 
-    sns.reset_defaults()
+    #sns.reset_defaults()
 
 
-def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=False, annot=True):
-    n_bits = encoder.n
-    n_regions = len(encoder.region_centers)
+def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True):
 
     # plot range for this multi encoder
     xmin = encoder.lower_bound
     xmax = encoder.upper_bound
 
-    # file_name = file_dir + "%02u_" % (n_bits) + "heatmap_by_value" + ".png"
-    file_name = file_dir + "%03u_%04u_" % (n_bits, n_regions) + desc_str + ".png"
-
     # sns.set_style("white")
     # sns.set_style("ticks")
 
-    ax_heatmap = None
-    ax_features = None
     ax_colorbar = None
 
     do_sns_jointgrid = False
@@ -76,25 +70,23 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
     do_subgridspec_axes = False
     do_gridspec_inset_axes = False
 
-
     if do_sns_jointgrid:
-        ratio = 5
+        ratio = 4
 
         # Set up the subplot grid
-        #f = plt.figure(figsize=(9, 9))
-        #gs = plt.GridSpec(ratio + 1, ratio + 1)
+        # f = plt.figure(figsize=(9, 9))
+        # gs = plt.GridSpec(ratio + 1, ratio + 1)
 
-        #ax_joint = f.add_subplot(gs[1:, :-1])
-        #ax_marg_x = f.add_subplot(gs[0, :-1], sharex=ax_joint)
-        #ax_marg_y = f.add_subplot(gs[1:, -1], sharey=ax_joint)
+        # ax_joint = f.add_subplot(gs[1:, :-1])
+        # ax_marg_x = f.add_subplot(gs[0, :-1], sharex=ax_joint)
+        # ax_marg_y = f.add_subplot(gs[1:, -1], sharey=ax_joint)
 
-        g = sns.JointGrid(ratio=4, xlim=(0, 1), ylim=(0, 1))
+        g = sns.JointGrid(ratio=ratio, xlim=(0, 1), ylim=(0, 1))
 
-        fig = g._figure
+        fig = g.fig
         ax_heatmap = g.ax_joint
         ax_features = g.ax_marg_x
         ax_colorbar = g.ax_marg_y
-
 
         # Unshare y-axis of colorbar
 
@@ -115,7 +107,7 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
 
     elif do_inset_axes:
         # Start with a square Figure and add a couple extra inches to top
-        fig = plt.figure(figsize=(9,11), constrained_layout=True)
+        fig = plt.figure(figsize=(9, 11), constrained_layout=True)
 
         ax_heatmap = fig.add_gridspec(top=0.75, right=0.75).subplots()
         ax_heatmap.set(aspect=1)
@@ -123,7 +115,7 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
         plot_up = True
         if plot_up:
             ax_features = ax_heatmap.inset_axes([0, 1.02, 1, 0.25], sharex=ax_heatmap)  # plot on top
-            #ax_features = ax_heatmap.inset_axes([0, 1.05, 1, 0.25], sharex=ax_heatmap)  # plot on top
+            # ax_features = ax_heatmap.inset_axes([0, 1.05, 1, 0.25], sharex=ax_heatmap)  # plot on top
         else:
             ax_features = ax_heatmap.inset_axes([0, -0.30, 1, 0.25], sharex=ax_heatmap)  # plot on bottom
 
@@ -137,7 +129,7 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
         # Add a gridspec with two rows and two columns and a ratio of 1 to 4 between
         # the size of the marginal axes and the main axes in both directions.
         # Also adjust the subplot parameters for a square plot.
-        gs = fig.add_gridspec(2, 2, width_ratios=(8, 1), height_ratios=(4, 1))
+        # gs = fig.add_gridspec(2, 2, width_ratios=(8, 1), height_ratios=(4, 1))
         # , left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.05, hspace=0.05)
 
         gs = fig.add_gridspec(6, 6)
@@ -146,26 +138,25 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
         ax_features = fig.add_subplot(gs[0, :-1], sharex=ax_heatmap)
         ax_colorbar = fig.add_subplot(gs[1:, -1])
 
-
         # Create the Axes.
-        #ax_heatmap = fig.add_subplot(gs[0, 0])
-        #ax_features = fig.add_subplot(gs[1, 0], sharex=ax_heatmap)
-        #ax_colorbar = fig.add_subplot(gs[:, 1])
-        #ax_heatmap.set(aspect=1)
+        # ax_heatmap = fig.add_subplot(gs[0, 0])
+        # ax_features = fig.add_subplot(gs[1, 0], sharex=ax_heatmap)
+        # ax_colorbar = fig.add_subplot(gs[:, 1])
+        # ax_heatmap.set(aspect=1)
 
         # def make_axes_gridspec(parent, *, fraction=0.15, shrink=1.0, aspect=20, **kw):
 
     elif do_subgridspec_axes:
 
-        fig = plt.figure(figsize=(9,11)) #, constrained_layout=True) #, tight_layout=True)
+        fig = plt.figure(figsize=(9, 11))  # , constrained_layout=True) #, tight_layout=True)
 
         # 2, 2,  width_ratios=(4, 1), height_ratios=(1, 4),
-        #gs0 = fig.add_gridspec(2, 2, width_ratios=(4, 1), height_ratios=(4, 1))
+        # gs0 = fig.add_gridspec(2, 2, width_ratios=(4, 1), height_ratios=(4, 1))
         # left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.05, hspace=0.05)
 
-        #gs0 = fig.add_gridspec(1, 2, width_ratios=(4, 1), left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.05, hspace=0.01)
+        # gs0 = fig.add_gridspec(1, 2, width_ratios=(4, 1), left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.05, hspace=0.01)
         gs0 = fig.add_gridspec(1, 2, width_ratios=(4, 1), hspace=0, wspace=0)
-        gs00 = gs0[0].subgridspec(2, 1, height_ratios=(4, 1), hspace=0, wspace=0 ) #, wspace=0.05, hspace=0.05)
+        gs00 = gs0[0].subgridspec(2, 1, height_ratios=(4, 1), hspace=0, wspace=0)  # , wspace=0.05, hspace=0.05)
         gs01 = gs0[1].subgridspec(2, 3, height_ratios=(4, 1), width_ratios=(1, 1, 1), hspace=0.03, wspace=0.03)
 
         # gs01 = gs0[1].subgridspec(1, 1)
@@ -193,42 +184,38 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
                                  'left': False, 'labelleft': False,
                                  'right': False, 'labelright': False}
 
-                    ## Encoding Bins Subplot
+                    # # Encoding Bins Subplot
                     ax_temp.tick_params(**tick_args)
 
                     ax_temp.set(visible=False)
 
-
     elif do_gridspec_inset_axes:
 
-        fig = plt.figure(figsize=(9,11), constrained_layout=True) #, tight_layout=True)
+        fig = plt.figure(figsize=(9, 11), constrained_layout=True)  # , tight_layout=True)
 
         # 2, 2,  width_ratios=(4, 1), height_ratios=(1, 4),
-        #gs0 = fig.add_gridspec(2, 2, width_ratios=(4, 1), height_ratios=(4, 1))
+        # gs0 = fig.add_gridspec(2, 2, width_ratios=(4, 1), height_ratios=(4, 1))
         # left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.05, hspace=0.05)
 
-        #gs0 = fig.add_gridspec(1, 2, width_ratios=(4, 1), left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.05, hspace=0.01)
-        #gs0 = fig.add_gridspec(2, 1, height_ratios=(4, 1), top=0.75, right=0.75) #, hspace=0, wspace=0)
-        gs0 = fig.add_gridspec(2, 1, height_ratios=(4, 1)) #, top=0.75, right=0.75) #, hspace=0, wspace=0)
+        # gs0 = fig.add_gridspec(1, 2, width_ratios=(4, 1), left=0.1, right=0.9, bottom=0.1, top=0.9, wspace=0.05, hspace=0.01)
+        # gs0 = fig.add_gridspec(2, 1, height_ratios=(4, 1), top=0.75, right=0.75) #, hspace=0, wspace=0)
+        gs0 = fig.add_gridspec(2, 1, height_ratios=(4, 1))  # , top=0.75, right=0.75) #, hspace=0, wspace=0)
 
         ax_heatmap = fig.add_subplot(gs0[0, 0])
         ax_features = fig.add_subplot(gs0[1, 0], sharex=ax_heatmap)
 
-        #ax_heatmap = fig.add_gridspec(top=0.75, right=0.75).subplots()
-        #ax_heatmap.set(aspect=1)
+        # ax_heatmap = fig.add_gridspec(top=0.75, right=0.75).subplots()
+        # ax_heatmap.set(aspect=1)
 
-        #plot_top = False
-        #if plot_top:
+        # plot_top = False
+        # if plot_top:
         #    ax_features = ax_heatmap.inset_axes([0, 1.05, 1, 0.25], sharex=ax_heatmap)  # plot on top
-        #else:
+        # else:
         #    ax_features = ax_heatmap.inset_axes([0, -0.30, 1, 0.25], sharex=ax_heatmap)  # plot on bottom
 
         ax_colorbar = ax_heatmap.inset_axes([1.05, 0.25, 0.05, 0.5])
 
         ax_heatmap.set(aspect=1)
-
-
-
 
     # do_subplots_axes
     else:
@@ -236,46 +223,42 @@ def plot_pmesh_heatmap(encoder, desc_str="Encoder", file_dir="./out", triangle=F
         ax_heatmap = axes[0]
         ax_features = axes[1]
 
-    ax0 = ax_heatmap
-    ax1 = ax_features
-
-
     fig.suptitle(desc_str)
-    #ax0.set_title(desc_str)
-    ax0.invert_yaxis()
+    ax_heatmap.invert_yaxis()
     """
-    ax0.spines['top'].set_visible(False)
-    ax0.spines['right'].set_visible(False)
-    ax0.spines['bottom'].set_visible(False)
-    ax0.spines['left'].set_visible(False)
+    ax_heatmap.spines['top'].set_visible(False)
+    ax_heatmap.spines['right'].set_visible(False)
+    ax_heatmap.spines['bottom'].set_visible(False)
+    ax_heatmap.spines['left'].set_visible(False)
     """
-    #ax0.set_aspect("equal")
+    # ax_heatmap.set_aspect("equal")
 
-    draw_projected_self_similarity(ax0, encoder, triangle=triangle, annot=annot, cbar=True, cbar_ax=ax_colorbar)
+    draw_projected_self_similarity(ax_heatmap, encoder, triangle=triangle, annot=annot, cbar=True, cbar_ax=ax_colorbar)
 
     # same tick configuration for each axes
     tick_args = {'axis': 'both', 'which': 'both', 'labelsize': 'small', 'labelbottom': False, 'bottom': False,
                  'left': False, 'labelleft': False, 'right': True, 'labelright': True}
 
     # Features Subplot (Boundaries, Weight, Crossings)
-    ax1.tick_params(**tick_args)
+    ax_features.tick_params(**tick_args)
 
-    # share ax0 and ax1 x-axis
-    # ax1.get_shared_x_axes().join(ax1, ax0)
-    ax1.set_xlim(xmin, xmax)
+    # share ax_heatmap and ax_features x-axis
+    # ax_features.get_shared_x_axes().join(ax_features, ax_heatmap)
+    ax_features.set_xlim(xmin, xmax)
 
     # draw weight, crossings, and boundary features
     markersize = 4
     colors = sns.color_palette("Set1")  # , n_colors=oints))
-    draw_features(ax1, encoder, colors, markersize, draw_regions=True, draw_legend=False)
+    draw_features(ax_features, encoder, colors, markersize, draw_regions=True, draw_legend=False)
 
-    if not file_name is None:
-        plt.savefig(file_name, bbox_inches='tight')
+    #if file_name is not None:
+    #    plt.savefig(file_name, bbox_inches='tight')
 
-    sns.reset_defaults()
+    #sns.reset_defaults()
 
 
-def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x_pad=0.1):
+def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
+    # , desc_str="Encoder", file_dir="./out", x_pad=0.1):
     n_bits = encoder.n
     markersize = 4
     fontsize = 6
@@ -287,7 +270,7 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     xmax = encoder.upper_bound + x_pad
 
     # filename
-    file_name = file_dir + "%03u_samples_" % (n_bits) + desc_str + ".png"
+    # file_name = file_dir + "%03u_samples_" % n_bits + desc_str + ".png"
 
     # reference points for comparison
     ref_points = np.array([[0.21], [0.69]])
@@ -304,7 +287,7 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     # seaborn style
     sns.set_theme(style="white")
 
-    ## Draw Plots in Each SubAxes
+    # # Draw Plots in Each SubAxes
 
     # subplot_kw, gridspec_kw, **fig_kw
     fig, axes = plt.subplots(4, 1, num=1, figsize=(10, 8), dpi=300, constrained_layout=True,
@@ -324,7 +307,7 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
                  'left': False, 'labelleft': False,
                  'right': True, 'labelright': True}
 
-    ## Encoding Bins Subplot
+    # # Encoding Bins Subplot
     ax0.tick_params(**tick_args)
 
     # draw encoder bins
@@ -340,7 +323,7 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     # draw weight, crossings, and boundary features
     draw_features(ax1, encoder, colors, markersize, draw_regions=True)
 
-    ## Similarity Subplot
+    # # Similarity Subplot
     ax2.tick_params(**tick_args)
 
     # share ax0 and ax2 x-axis
@@ -353,7 +336,7 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     # draw_similarity_heatmap(ax2, encoder, X_gnomes, ref_points[0], colors, draw_regions=True, draw_v_values=True,
     #                        clip_on=False, xmin=xmin, xmax=xmax)
 
-    ## Encoding Bits Subplot
+    # # Encoding Bits Subplot
     tick_args['labelbottom'] = True
     tick_args['bottom'] = True
     ax3.tick_params(**tick_args)
@@ -375,21 +358,26 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", file_dir="./out", x
     ax3.axvline(x=encoder.lower_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
     ax3.axvline(x=encoder.upper_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
 
-    if not file_name is None:
-        plt.savefig(file_name, bbox_inches='tight')
+    # if file_name is not None:
+    #    plt.savefig(file_name, bbox_inches='tight')
+
+    # sns.reset_defaults()
+
+
+def save_fig(path, encoder, plot_name, experiment_str, do_close=True):
+
+    file_path = path + "%03u_%04u_" % (
+        encoder.n, len(encoder.region_centers)) + plot_name + "_" + experiment_str + ".png"
+
+    plt.savefig(file_path, bbox_inches='tight')
+
+    if do_close:
+        plt.close()
+        sns.reset_defaults()
 
 
 if __name__ == "__main__":
-    file_dir = "out/"
-
-    # test numpy array input (n,1)
-    # X = np.array([[0.21], [0.69], [0.91]])
-    # result = multi_encoder.encode(X)
-    # print(X, result)
-
-    # test scalar input
-    # result = multi_encoder.encode(-1)
-    # print(-1, result)
+    """
 
     # FOREACH encoder type and config
     # test numpy array input (n,)
@@ -402,33 +390,47 @@ if __name__ == "__main__":
     # test oob_method 'clamp'
     # test oob_method 'exception'
 
+    # test numpy array input (n,1)
+    # X = np.array([[0.21], [0.69], [0.91]])
+    # result = multi_encoder.encode(X)
+    # print(X, result)kkkk
+
+    # test scalar input
+    # result = multi_encoder.encode(-1)
+    # print(-1, result)
+
+    # experiment_str = "RandomizedPlaceCellEncoder"
+    # RandomizedPlaceCellEncoder(n=1, seed=i)
+    
+    # experiment_str = "Fixed_Weight_MultiEncoder"
+    # FixedWeightEncoder(n=5+i, w=1)
+    
+    # experiment_str = "Tapering_Weight_MultiEncoder"
+    # TaperingWeightEncoder(n=6+i, w=3)
+    
+    """
+
+
+
+    # Constants
+    file_dir = "out/"
+    experiment_str = "PeriodicCellEncoder"
+
+    # Initalize Encoder
     multi_encoder = MultiEncoder()
-    for i in range(10, 11):
-        #for i in range(40, 41):
-        # for i in range(200, 201):
-        # desc_str = "RandomizedPlaceCellEncoder"
-        # multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=1, seed=i))
 
-        #desc_str = "Fixed_Weight_MultiEncoder"
-        #multi_encoder.add_encoder(FixedWeightEncoder(n=3, w=1))
-        #multi_encoder.add_encoder(FixedWeightEncoder(n=5, w=1))
-        #multi_encoder.add_encoder(FixedWeightEncoder(n=7, w=1))
-
-        # desc_str = "Tapering_Weight_MultiEncoder"
-        # multi_encoder.add_encoder(TaperingWeightEncoder(n=6+i, w=3))
-
-        desc_str = "PeriodicCellEncoder"
+    for i in range(10, 12):
+        # Change Encoder
         multi_encoder.add_encoder(PeriodicCellEncoder(n=i, oob_method="modulo", seed=i))
 
-        #plot_interval_multi_encoder(multi_encoder, desc_str=desc_str, file_dir=file_dir)
-        #plt.close()
+        # Plot Features
+        plot_interval_multi_encoder(multi_encoder, desc_str=experiment_str)
+        save_fig(file_dir, multi_encoder, "Features", experiment_str)
 
-        # self-similarity matrix by region code
-        # plot_heatmap(multi_encoder, desc_str=desc_str + "_Similarity_Matrix_by_Region_Code", file_dir=file_dir,
-        #             fontsize=6)
-        # plt.close()
+        # Plot Similarity Matrix by Code
+        plot_code_heatmap(multi_encoder, desc_str=experiment_str, fontsize=6)
+        save_fig(file_dir, multi_encoder, "Similarity_Matrix_by_Region_Code", experiment_str)
 
-        # self-similarity matrix projected to real space
-        plot_pmesh_heatmap(multi_encoder, desc_str=desc_str + "_Similarity_Matrix_Projected_to_Real_Space",
-                           file_dir=file_dir)
-        plt.close()
+        # Plot Similarity Matrix by Real Space
+        plot_realspace_heatmap(multi_encoder, desc_str=experiment_str)
+        save_fig(file_dir, multi_encoder, "Similarity_Matrix_Projected_to_Real_Space", experiment_str)

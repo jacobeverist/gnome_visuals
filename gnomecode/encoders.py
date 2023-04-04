@@ -80,13 +80,6 @@ class EncoderBase:
         """
         return None
 
-    def custom(self):
-        """
-        custom code for each variant
-
-        :return:
-        """
-
 
 class MultiEncoder(EncoderBase):
 
@@ -425,6 +418,30 @@ class IntervalEncoder(EncoderBase):
     - for tapering weight, all bins proper subset of interval
         - w=1: l=L/n
         - w>1: l=(w*L)/(n+w-1)
+
+    TODO:
+    - compute and return sequence of unique code values from a to b
+        - convert path through input domain to unique input samples to code sequence
+
+    + calculate and return all the change-point boundaries
+        + boundaries with: gaps, no gaps, and overlaps
+        + length between boundaries
+        - cartesian product of overlapping regions (granulated regions)
+
+    + calculate region features
+        + center-points of regions
+        + encoded value of region
+        + code weight per region
+        - similarity score for some exemplar for each region
+
+    + out-of-bounds behavior for bounded encoders
+        + throw exception
+        + clamp input to upper or lower bound
+
+    + fixed weight vs. tapering weight encoder
+        + fixed weight: some regions are out-of-bounds to ensure constant weight
+        + tapering weight: all regions are within region bounds
+
     """
 
     def __init__(self, n=None, l=None, L=1.0, w=1, lower_bound=0, upper_bound=None, **kwargs):
@@ -515,36 +532,6 @@ class IntervalEncoder(EncoderBase):
         else:
             gnome = np.array([1 if X in b else 0 for b in self.bins])
             return gnome
-
-    def custom(self):
-        """
-
-        TODO:
-        - calculate and return all the change-point boundaries
-            - boundaries with: gaps, no gaps, and overlaps
-            - length between boundaries
-            - cartesian product of overlapping regions (granulated regions)
-
-        - calculate region features
-            - center-points of regions
-            - encoded value of region
-            - code weight per region
-            - similarity score for some exemplar for each region
-
-        - compute and return sequence of unique code values from a to b
-            - convert path through input domain to unique input samples to code sequence
-
-        - out-of-bounds behavior for bounded encoders
-            - throw exception
-            - clamp input to upper or lower bound
-
-        - fixed weight vs. tapering weight encoder
-            - fixed weight: some regions are out-of-bounds to ensure constant weight
-            - tapering weight: all regions are within region bounds
-
-        :return:
-        """
-
 
 class PeriodicCellEncoder(EncoderBase):
     """
@@ -651,6 +638,22 @@ class PeriodicCellEncoder(EncoderBase):
 
         self.config()
 
+    def __is_x_in_periodic_bin(self, x_input, origin, period, bin, straddles):
+
+        # values modulo a period
+        x_modulo = np.mod(x_input, period)
+
+        # back into real coordinates within fund. region
+        x_region = x_modulo + origin
+
+        if x_region in bin:
+            return True
+        # if this bin overlaps upper boundary of its fundamental region, check near the lower boundary too
+        elif straddles and (x_region + period) in bin:
+            return True
+        else:
+            return False
+
     def encode(self, X):
         """
         transform one or many values from the input domain into the output encoding
@@ -666,65 +669,19 @@ class PeriodicCellEncoder(EncoderBase):
         # values with respect to an origin
         x_origin = X - self.origin
 
-        # try:
-        #    print("x_origin:", x_origin.shape)
-        # except:
-        #    print("x_origin:", 1)
-
         # list of values to encode
         if isinstance(X, Iterable):
             gnomes = []
             for x in x_origin:
-
-                vals = []
-                for k in range(self.n):
-
-                    # values modulo a period
-                    x_modulo = np.mod(x, self.periods[k])
-
-                    # back into real coordinates within fund. region
-                    x_region = x_modulo + self.origin
-
-                    b = self.bins[k]
-                    if x_region in b:
-                        vals.append(1)
-                    # if this bin overlaps upper boundary of its fundamental region, check near the lower boundary too
-                    elif self.straddles[k] and (x_region + self.periods[k]) in b:
-                        vals.append(1)
-                    # elif b.upper >= (self.origin + self.periods[k]) and (x + self.periods[k]) in b:
-                    #    vals.append(1)
-                    else:
-                        vals.append(0)
-                gnomes.append(np.array(vals))
-
-                # gnomes.append(np.array(
-                #    [1 if x in self.bins[k] or self.straddles[k] and (x + self.periods[k]) in self.bins[k] else 0 for k
-                #     in range(self.n)]))
-
+                gnome = np.array(
+                    [int(self.__is_x_in_periodic_bin(x, self.origin, self.periods[k], self.bins[k], self.straddles[k]))
+                     for k in range(self.n)])
+                gnomes.append(gnome)
             return np.array(gnomes)
         else:
-            vals = []
-            for k in range(self.n):
-
-                # values modulo a period
-                x_modulo = np.mod(x_origin, self.periods[k])
-
-                # back into real coordinates within fund. region
-                x_region = x_modulo + self.origin
-
-                b = self.bins[k]
-                if x_region in b:
-                    vals.append(1)
-                # if this bin overlaps upper boundary of its fundamental region, check near the lower boundary too
-                elif self.straddles[k] and (x_region + self.periods[k]) in b:
-                    vals.append(1)
-                # elif b.upper >= (self.origin + self.periods[k]) and (x_region + self.periods[k]) in b:
-                #    vals.append(1)
-                else:
-                    vals.append(0)
-
-            gnome = np.array(vals)
-
+            gnome = np.array(
+                [int(self.__is_x_in_periodic_bin(x_origin, self.origin, self.periods[k], self.bins[k],
+                                                 self.straddles[k])) for k in range(self.n)])
             return gnome
 
     def config(self):
@@ -779,6 +736,7 @@ class PeriodicCellEncoder(EncoderBase):
         if len(self.bins) < 1:
             raise Exception("Encoder as configured doesn't allocate any bins")
 
+        """
         # generating congruent bins
         self.bin_congruence = []
 
@@ -821,16 +779,20 @@ class PeriodicCellEncoder(EncoderBase):
 
             # add to complete collection of bins
             bin_lower_multiples += bin_multiples
+        """
 
-        region_boundaries = np.array(bin_lower_multiples)
+        #region_boundaries = np.array(bin_lower_multiples)
 
         # record region boundary points
-        region_boundaries = np.concatenate(region_boundaries)
-        region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
-        region_boundaries = np.sort(region_boundaries)
+        #region_boundaries = np.concatenate(region_boundaries)
+        #region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
+        #region_boundaries = np.sort(region_boundaries)
         # self.region_boundaries = region_boundaries
 
-        self.region_boundaries = self.generate_periodic_boundaries()
+        #self.region_boundaries = self.generate_periodic_boundaries()
+
+        self.bin_congruence, self.region_boundaries = self.generate_periodic_features()
+
         # self.region_boundaries = region_boundaries
         # print("region_boundaries:", self.region_boundaries.shape)
         # print(self.region_boundaries)
@@ -858,6 +820,66 @@ class PeriodicCellEncoder(EncoderBase):
             ([self.region_weights[0]], np.abs(np.diff(self.region_weights)), [self.region_weights[-1]]))
         # print("region_deltas", self.region_deltas.shape)
         # print(self.region_deltas)
+
+
+    def generate_periodic_features(self, xmin=None, xmax=None):
+
+        if xmax is None:
+            xmax = self.upper_bound
+        if xmin is None:
+            xmin = self.lower_bound
+
+        # generating congruent bins
+        bin_congruence = []
+
+        # multiply boundary points for each cell outside of fundamental region
+        bin_lower_multiples = []
+        for k in range(self.n):
+            bin_multiples = []
+            bin = self.bins[k]
+            x_lower = bin.lower
+
+            x_lower = x_lower + self.periods[k]
+            while x_lower < xmax:
+                x_upper = x_lower + self.bin_sizes[k]
+                if x_upper > xmax:
+                    x_upper = xmax
+                bin_multiples.append((x_lower, x_upper))
+                x_lower = x_lower + self.periods[k]
+
+            x_upper = bin.upper
+            x_upper = x_upper - self.periods[k]
+            while x_upper >= xmin:
+                x_lower = x_upper - self.bin_sizes[k]
+                if x_lower < xmin:
+                    x_lower = xmin
+                bin_multiples.append((x_lower, x_upper))
+                x_upper = x_upper - self.periods[k]
+
+            # copy congruent bins without original
+            congruent_bins = []
+            for cong_bounds in bin_multiples:
+                congruent_bins.append(I.closed_open(cong_bounds[0], cong_bounds[1]))
+
+            bin_congruence.append(congruent_bins)
+
+            # add original
+            x_lower = bin.lower
+            x_upper = bin.upper
+            bin_multiples.append((x_lower, x_upper))
+
+            # add to complete collection of bins
+            bin_lower_multiples += bin_multiples
+
+        region_boundaries = np.array(bin_lower_multiples)
+
+        # record region boundary points
+        region_boundaries = np.concatenate(region_boundaries)
+        region_boundaries = np.concatenate(([xmin], region_boundaries, [xmax]))
+        region_boundaries = np.sort(region_boundaries)
+
+        return bin_congruence, region_boundaries
+
 
     def generate_periodic_boundaries(self, xmin=None, xmax=None):
 
