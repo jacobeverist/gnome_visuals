@@ -1,18 +1,16 @@
-from matplotlib import ticker
-from matplotlib.transforms import Affine2D
-import matplotlib.patches as patches
-from matplotlib.collections import PatchCollection
-import matplotlib.axes
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-
-import seaborn as sns
 import string
+from fractions import Fraction
 
+import matplotlib as mpl
+import matplotlib.axes
+import matplotlib.patches as patches
 import numpy as np
 import numpy.ma as ma
-from fractions import Fraction
+import seaborn as sns
 from intervals import FloatInterval as I
+from matplotlib import ticker
+from matplotlib.collections import PatchCollection
+from matplotlib.transforms import Affine2D
 
 from .helpers import *
 
@@ -22,16 +20,24 @@ __all__ = ["draw_bits_by_data", "draw_multi_encoder_bins", "draw_decomposition",
 
 # printing boolean arrays neatly
 np.set_printoptions(
-    precision=3, suppress=True, threshold=1000000, linewidth=400,
-    formatter={'bool': lambda bin_val: 'X' if bin_val else '-'})
-
+        precision=3, suppress=True, threshold=1000000, linewidth=400,
+        formatter={'bool': lambda bin_val: 'X' if bin_val else '-'})
 
 
 def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, draw_region_bits=False,
-                      draw_boundaries=True, draw_bit_grid=True, permute_bits=False, xmin=None, xmax=None, clip_on=True,
-                      box_height=1, num_samples=150, x_pad=0.002, y_pad=0.15):
+                      draw_boundaries=False, draw_bit_grid=True, permute_bits=False, xmin=None, xmax=None, clip_on=True,
+                      box_height=1, num_samples=150, x_pad=0.002, y_pad=0.15, y_margin=0.5):
     """
 
+    :param draw_uniform_samples:
+    :param draw_region_bits:
+    :param draw_boundaries:
+    :param draw_bit_grid:
+    :param permute_bits:
+    :param box_height:
+    :param num_samples:
+    :param x_pad:
+    :param y_pad:
     :param ax: mpl.axes.Axes
     :param encoder: gnomecode.encoders.EncoderBase
     :param xmin: float | None
@@ -58,8 +64,8 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
 
     # scale y-axis to number of bits
     ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
-    ax.set_ylim(-0.5, n_bits + 0.5)
-    ax.set_ylabel("Bit Encoding vs.\nReal Value")
+    ax.yaxis.set_minor_locator(ticker.IndexLocator(1, 0))
+    ax.set_ylim(-y_margin, n_bits + y_margin)
     ax.set_xlim(xmin, xmax)
 
     indices = np.random.permutation(np.arange(n_bits))
@@ -103,37 +109,6 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                 except:
                     do_draw = False
 
-                """
-                # case 1: bin exceeds lower bound
-                if sample_lower_bound < lower_bound:
-                    sample_lower_bound = lower_bound
-
-                    if sample_upper_bound < lower_bound:
-                        # TODO: box_width should be zero, so don't draw
-                        sample_upper_bound = lower_bound
-                        do_draw = False
-
-                    box_x = sample_lower_bound
-                    box_width = sample_upper_bound - sample_lower_bound
-
-                # case 2: bin exceeds interval upper bound
-                elif sample_upper_bound > upper_bound:
-                    sample_upper_bound = upper_bound
-
-                    if sample_lower_bound > upper_bound:
-                        # TODO: box_width should be zero, so don't draw
-                        sample_lower_bound = upper_bound
-                        do_draw = False
-
-                    box_x = sample_lower_bound
-                    box_width = sample_upper_bound - sample_lower_bound
-
-                # case 3: bin within interval bounds
-                else:
-                    # change nothing
-                    pass
-                """
-
             if do_draw:
 
                 patches = []
@@ -153,7 +128,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                         h_adj = box_height - y_shrink
 
                         # create box representing the bin
-                        rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on,
+                        rect = new_rect(x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on,
                                         linewidth=0.2)
                         patches.append(rect)
 
@@ -169,18 +144,14 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
         sample_points = encoder.region_centers
         X_points = sample_points.reshape(-1, 1)
 
-        # print("X_points:", X_points.shape)
-
         # encodings
         X_gnomes = encoder.region_codes
-        # print("X_gnomes:", X_gnomes.shape)
 
         region_widths = np.diff(encoder.region_boundaries)
 
         for k in range(len(X_points)):
             x_val = float(X_points[k])
             gnome_code = X_gnomes[k]
-            # print("point, width, region_lower, region_upper:", x_val, region_widths[k], encoder.region_boundaries[k], encoder.region_boundaries[k+1])
 
             sample_upper_bound = x_val + region_widths[k] / 2.0
             sample_lower_bound = x_val - region_widths[k] / 2.0
@@ -191,43 +162,9 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
 
             if clip_on:
                 try:
-                    # print("clip region:", box_x, box_width)
-                    # box_x, box_width = clip_bin(sample_lower_bound, sample_upper_bound, lower_bound, upper_bound)
                     box_x, box_width = clip_bin(sample_lower_bound, sample_upper_bound, xmin, xmax)
-                    # print("clipped:", box_x, box_width)
                 except:
                     do_draw = False
-
-                """
-                # case 1: bin exceeds lower bound
-                if sample_lower_bound < lower_bound:
-                    sample_lower_bound = lower_bound
-
-                    if sample_upper_bound < lower_bound:
-                        # TODO: + box_width should be zero, so don't draw
-                        sample_upper_bound = lower_bound
-                        do_draw = False
-
-                    box_x = sample_lower_bound
-                    box_width = sample_upper_bound - sample_lower_bound
-
-                # case 2: bin exceeds interval upper bound
-                elif sample_upper_bound > upper_bound:
-                    sample_upper_bound = upper_bound
-
-                    if sample_lower_bound > upper_bound:
-                        # TODO: + box_width should be zero, so don't draw
-                        sample_lower_bound = upper_bound
-                        do_draw = False
-
-                    box_x = sample_lower_bound
-                    box_width = sample_upper_bound - sample_lower_bound
-
-                # case 3: bin within interval bounds
-                else:
-                    # change nothing
-                    pass
-                """
 
             if do_draw:
                 patches = []
@@ -251,13 +188,14 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                         h_adj = box_height - y_shrink
 
                         # create box representing the bin
-                        rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on,
+                        rect = new_rect(x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on,
                                         linewidth=0.2)
                         patches.append(rect)
 
                 ax.add_collection(PatchCollection(patches, match_original=True))
 
     else:
+        # draw the bins
         y_index = 0
 
         # shrink the the bins by this amount
@@ -281,48 +219,11 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
 
             if clip_on:
                 try:
-                    # box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, lower_bound, upper_bound)
                     box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, xmin, xmax)
                 except:
                     do_draw = False
 
-                """
-                # case 1: bin exceeds lower bound
-                if bin_lower_bound < lower_bound:
-                    bin_lower_bound = lower_bound
-
-                    if bin_upper_bound < lower_bound:
-                        # TODO: box_width should be zero, so don't draw
-                        bin_upper_bound = lower_bound
-                        do_draw = False
-
-                    box_x = bin_lower_bound
-                    box_width = bin_upper_bound - bin_lower_bound
-
-                # case 2: bin exceeds interval upper bound
-                elif bin_upper_bound > upper_bound:
-                    bin_upper_bound = upper_bound
-
-                    if bin_lower_bound > upper_bound:
-                        # TODO: box_width should be zero, so don't draw
-                        bin_lower_bound = upper_bound
-                        do_draw = False
-
-                    box_x = bin_lower_bound
-                    box_width = bin_upper_bound - bin_lower_bound
-
-                # case 3: bin within interval bounds
-                else:
-                    # change nothing
-                    pass
-                """
-
             if do_draw:
-
-                # if permute_bits:
-                #    box_y = indices[j] * box_height
-                # else:
-                #    box_y = j * box_height
 
                 if permute_bits:
                     box_y = indices[y_index] * box_height
@@ -339,12 +240,15 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                 w_adj = box_width - x_shrink_adj
                 h_adj = box_height - y_shrink
 
+                print("create rect:", y_index, x_adj, y_adj, w_adj, h_adj)
+
                 # create box representing the bin
-                rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
+                rect = new_rect(x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
                 patches.append(rect)
 
+            y_index += 1
+
         ax.add_collection(PatchCollection(patches, match_original=True))
-        y_index += 1
 
     if draw_boundaries:
         boundaries = encoder.region_boundaries
@@ -388,8 +292,6 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
         xmax = upper_bound
     if xmin is None:
         xmin = lower_bound
-
-    # print("draw_multi_encoder_bins:", xmin, xmax)
 
     ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
     ax.set_ylim(-0.1, n_bits + 0.1)
@@ -451,7 +353,6 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
             draw_bin = True
             if clip_on:
                 try:
-                    # box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, lower_bound, upper_bound)
                     box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, xmin, xmax)
                 except:
                     draw_bin = False
@@ -474,7 +375,7 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                                   fontsize=fontsize,
                                   label=grid_label)
                 else:
-                    rect = add_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                    rect = new_rect(box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
                                     box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
                                     clip_on=clip_on, linewidth=bin_linewidth)
                     patches.append(rect)
@@ -511,7 +412,6 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                     draw_cong_bin = True
                     if clip_on:
                         try:
-                            # box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, lower_bound, upper_bound)
                             box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, xmin, xmax)
                         except:
                             draw_cong_bin = False
@@ -527,7 +427,7 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                                           box_height - y_shrink, alpha=cong_alpha, facecolor=grid_colors[encoder_count],
                                           clip_on=True, linewidth=bin_linewidth, fontsize=fontsize, zorder=10)
                         else:
-                            rect = add_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                            rect = new_rect(box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
                                             box_height - y_shrink, alpha=cong_alpha,
                                             facecolor=grid_colors[encoder_count],
                                             clip_on=True, linewidth=bin_linewidth, zorder=10)
@@ -546,13 +446,12 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                 draw_fund_bin = True
                 if clip_on:
                     try:
-                        # box_x, box_width = clip_bin(fund_lower_bound, fund_upper_bound, lower_bound, upper_bound)
                         box_x, box_width = clip_bin(fund_lower_bound, fund_upper_bound, xmin, xmax)
                     except:
                         draw_fund_bin = False
 
                 if draw_fund_bin:
-                    rect = add_rect(ax, box_x, box_y, box_width, box_height, alpha=fund_alpha,
+                    rect = new_rect(box_x, box_y, box_width, box_height, alpha=fund_alpha,
                                     facecolor='k', clip_on=clip_on, linewidth=0.0, zorder=9)
                     patches.append(rect)
 
@@ -645,26 +544,13 @@ def draw_decomposition(ax, boundaries, text_v_offset=-0.01):
         width = x_point_vals[j] - x_point_vals[j - 1]
         height = 1
 
-        # text_v_offset = min(-0.1, -height / 1.2)
-        # text_v_offset = min(-0.1, -height*0.55)
-        # text_v_offset = 0.0
-
         frac = Fraction(str(width)).limit_denominator(1000)
-        # print("%s" % str(frac))
         frac_sum = frac_sum + frac
         text_str = "%d\n--\n%d" % (frac.numerator, frac.denominator)
-        # text_str += "\n\n\n%.2f" % width
-        # text_str = "%d\n\u2014\n%d" % (frac.numerator, frac.denominator)
 
         # create rectangle with text inside
-        # add_text_rect(ax1, origin_point[0], origin_point[1], width, height, angle=0, linewidth=1.5, edgecolor='k',
-        #              fontsize=8, facecolor='none', text_str="%.2f" % width, alpha=1.0,
-        #              text_v_offset=text_v_offset)
-
         add_text_rect(ax, origin_point[0], origin_point[1], width, height, angle=0, linewidth=1.5, edgecolor='k',
                       fontsize=8, facecolor='none', alpha=1.0, text_str=text_str, text_v_offset=text_v_offset)
-
-    # print("total sum = %s" % str(frac_sum))
 
 
 def draw_barcode(ax, X_gnomes):
@@ -702,19 +588,18 @@ def draw_delta_count(ax, boundary_x, grid_delta_counts):
         tick_points_x += [x_val for j in range(count)]
         tick_points_y += [j + 1 for j in range(count)]
 
-    # ax.scatter(tick_points_x, tick_points_y, color='k')
-
+    # FIXME: does this scatter() belong here?
+    ax.scatter(tick_points_x, tick_points_y, color='k')
     ax.bar(tick_points_x, tick_points_y, color='k')
 
 
-def draw_similarity(ax, encoder, X_gnomes, ref_points, colors, draw_regions=False,
+def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
                     draw_h_grid=True, draw_v_values=True):
     """
     Draw count similarity of reference values to existing encodings
 
     :param ax:
     :param encoder:
-    :param X_gnomes: encoded points over the space
     :param ref_points:
     :param colors:
     :param draw_regions:
@@ -726,11 +611,13 @@ def draw_similarity(ax, encoder, X_gnomes, ref_points, colors, draw_regions=Fals
     upper_bound = encoder.upper_bound
     lower_bound = encoder.lower_bound
 
+    # region_codes = self.encode(self.region_centers)
+    X_gnomes = encoder.region_codes
+
     # reference points for comparison
     ref_gnomes = encoder.encode(ref_points)
 
     # count similarity scores
-    # scores = gnome_similarity(X_gnomes, ref_gnomes)
     scores2 = count_similarity(X_gnomes, ref_gnomes)
 
     # for plotting purposes
@@ -738,12 +625,10 @@ def draw_similarity(ax, encoder, X_gnomes, ref_points, colors, draw_regions=Fals
     X_point_upper = upper_bound + 0.5
     X_gnome_lower = encoder.encode(X_point_lower).reshape(1, -1)
     X_gnome_upper = encoder.encode(X_point_upper).reshape(1, -1)
-    # X_points_extended = np.concatenate(
-    #    ([X_point_lower], encoder.region_centers, [X_point_upper]))
     X_gnomes_extended = np.concatenate(
-        (X_gnome_lower, X_gnomes, X_gnome_upper), axis=0)
+            (X_gnome_lower, X_gnomes, X_gnome_upper), axis=0)
     boundaries_extended = np.concatenate(
-        ([lower_bound - 1.0], encoder.region_boundaries, [upper_bound + 1.0]))
+            ([lower_bound - 1.0], encoder.region_boundaries, [upper_bound + 1.0]))
 
     scores_extended = count_similarity(X_gnomes_extended, ref_gnomes)
 
@@ -786,17 +671,13 @@ def draw_similarity(ax, encoder, X_gnomes, ref_points, colors, draw_regions=Fals
     legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
 
 
-# def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, draw_region_bits=False,
-#                      draw_boundaries=True, draw_bit_grid=True, permute_bits=False, xmin=None, xmax=None, clip_on=True,
-#                      box_height=1, num_samples=150, x_pad=0.002, y_pad=0.15):
-def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regions=True,
+def draw_similarity_heatmap(ax, encoder, ref_point, colors, draw_regions=True,
                             draw_v_values=True, clip_on=True, xmin=None, xmax=None):
     """
     Draw count similarity of reference values to existing encodings
 
     :param ax:
     :param encoder:
-    :param X_gnomes: encoded points over the space
     :param ref_point:
     :param colors:
     :param draw_regions:
@@ -818,28 +699,15 @@ def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regio
     # reference points for comparison
     ref_gnome = encoder.encode(ref_point)
 
+    X_gnomes = encoder.region_codes
+
     # count similarity scores
     scores2 = count_similarity(X_gnomes, ref_gnome)
-
-    # for plotting purposes
-    # X_point_lower = lower_bound - 0.5
-    # X_point_upper = upper_bound + 0.5
-    # X_gnome_lower = encoder.encode(X_point_lower).reshape(1, -1)
-    # X_gnome_upper = encoder.encode(X_point_upper).reshape(1, -1)
-    # X_points_extended = np.concatenate(
-    #    ([X_point_lower], encoder.region_centers, [X_point_upper]))
-    # X_gnomes_extended = np.concatenate(
-    #    (X_gnome_lower, X_gnomes, X_gnome_upper), axis=0)
-    # boundaries_extended = np.concatenate(
-    #    ([lower_bound - 1.0], encoder.region_boundaries, [upper_bound + 1.0]))
-    # scores_extended = count_similarity(X_gnomes_extended, ref_gnome)
 
     # maximum data score for normalization
     max_score = np.max(scores2)
 
     # scale y-axis to boundaries of axes
-    # ax.set_ylim(0, 1)
-    # ax.yaxis.set_major_locator(ticker.IndexLocator(2, 1))
     ax.tick_params(**{'right': False, 'labelright': False})
     ax.set_ylabel("Similarity of\nExample Values")
 
@@ -850,19 +718,13 @@ def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regio
 
     cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
 
-    # shrink the the boxes by this amount
+    # shrink the boxes by this amount
     # x_shrink = x_pad * 2.0
     x_shrink = 0
 
     # record region center points
     sample_points = encoder.region_centers
     X_points = sample_points.reshape(-1, 1)
-
-    # print("X_points:", X_points.shape)
-
-    # encodings
-    # X_gnomes = encoder.region_codes
-    # print("X_gnomes:", X_gnomes.shape)
 
     region_widths = np.diff(encoder.region_boundaries)
 
@@ -903,7 +765,7 @@ def draw_similarity_heatmap(ax, encoder, X_gnomes, ref_point, colors, draw_regio
             # print("color:", score, cmap(score))
 
             # create box representing the bin
-            rect = add_rect(ax, x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor=cmap(score), clip_on=clip_on,
+            rect = new_rect(x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor=cmap(score), clip_on=clip_on,
                             linewidth=0)
             patches.append(rect)
 
@@ -1032,11 +894,9 @@ def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_
 
 def draw_code_self_similarity(ax, encoder, triangle=False, annot=True):
     # sampled points over the space
-    X_points = np.array(encoder.region_centers).reshape(-1, 1)
     X_gnomes1 = encoder.region_codes
-    X_gnomes2 = encoder.encode(X_points)
 
-    diagonal_scores = count_similarity(X_gnomes1, X_gnomes2)
+    diagonal_scores = count_similarity(X_gnomes1, X_gnomes1)
     max_count = np.max(diagonal_scores)
 
     # Generate a mask for the upper triangle
@@ -1058,7 +918,7 @@ def draw_code_self_similarity(ax, encoder, triangle=False, annot=True):
     # cmap = sns.color_palette("rocket_r", as_cmap=True)
     cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
 
-    num_points = X_points.shape[0]
+    num_points = X_gnomes1.shape[0]
 
     linewidths = 0
     fontsize = 0
@@ -1069,9 +929,26 @@ def draw_code_self_similarity(ax, encoder, triangle=False, annot=True):
     else:
         annot_data = False
 
+    # find closest tick count to 20
+    tick_counts = [5, 10, 50, 100, 500, 100, 500, 1000]
+
+    minDist = 1e100
+    tick_index = -1
+    for k in range(len(tick_counts)):
+        result = abs(20.0 - num_points / tick_counts[k])
+        print(k, tick_counts[k], result)
+
+        if result < minDist:
+            minDist = result
+            tick_index = k
+
+    print("suggested tick count:", tick_counts[tick_index], num_points)
+    #print(diagonal_scores)
+
     # Draw the heatmap with the mask and correct aspect ratio
     sns.heatmap(diagonal_scores, ax=ax, mask=mask, cmap=cmap, vmax=max_count, fmt="s",
                 square=True, linewidths=linewidths, cbar_kws={"shrink": .5}, annot=annot_data,
+                xticklabels=tick_counts[tick_index], yticklabels=tick_counts[tick_index],
                 annot_kws={"fontsize": fontsize})
 
 
@@ -1150,28 +1027,20 @@ def draw_projected_self_similarity(ax, encoder, triangle=False, annot=True, cbar
     else:
         linewidth = 0
 
-
     # seaborn data-mangling (converts to dataframe everything)
-    #plot_data = np.asarray(data)
-    #data = pd.DataFrame(plot_data)
-    #mask = _matrix_mask(data, mask) # Validate the mask and convert to DataFrame
-    #plot_data = np.ma.masked_where(np.asarray(mask), plot_data)
-    #mesh = ax.pcolormesh(plot_data, cmap=cmap, **kws)
-    #sns.heatmap(diagonal_scores, ax=ax, mask=mask, cmap=cmap, vmax=max_count, fmt="s",
-    #            square=True, linewidths=linewidths, cbar_kws={"shrink": .5}, annot=annot_data,
-    #            annot_kws={"fontsize": fontsize})
+    # plot_data = np.asarray(data)
+    # data = pd.DataFrame(plot_data)
+    # mask = _matrix_mask(data, mask) # Validate the mask and convert to DataFrame
+    # plot_data = np.ma.masked_where(np.asarray(mask), plot_data)
+    # mesh = ax.pcolormesh(plot_data, cmap=cmap, **kws)
 
     mesh = ax.pcolormesh(x_vals, y_vals, masked_scores, vmax=max_count, vmin=0, edgecolor='1.0', linewidth=linewidth,
-                      cmap=cmap)
+                         cmap=cmap)
 
     if cbar:
         # add colorbar to the figure, creating a separate axes and repositioning original axes
-        cb = ax.figure.colorbar(mesh, ax=ax, cax=cbar_ax, shrink=0.5) # , spacing="uniform", drawedges=True)
+        cb = ax.figure.colorbar(mesh, ax=ax, cax=cbar_ax, shrink=0.5)  # , spacing="uniform", drawedges=True)
         cb.outline.set_linewidth(0)
-        #print("axes:")
-        #print(cb.ax)
-        #print(cbar_ax)
-        #print(ax)
 
     # add text box to center of each rectangle indicating count similarity
     if annot:
@@ -1205,26 +1074,30 @@ def draw_projected_self_similarity(ax, encoder, triangle=False, annot=True, cbar
                             fontsize=fontsize, color=text_color)
 
 
-def add_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k',
+def new_rect(box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k',
              facecolor='none', alpha=1.0, clip_on=False, label=None, zorder=1):
     # add rectangle at corner position and rotate by angle
-    rect = patches.Rectangle((box_x, box_y), box_width, box_height, angle=angle, linewidth=linewidth,
+    return patches.Rectangle((box_x, box_y), box_width, box_height, angle=angle, linewidth=linewidth,
                              edgecolor=edgecolor,
                              facecolor=facecolor, clip_on=clip_on, alpha=alpha, label=label, zorder=zorder)
-    return rect
 
 
 def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k', fontsize=8,
                   facecolor='none', text_str=None, aligned_text=False, alpha=1.0, text_v_offset=-0.01, clip_on=False,
                   label=None, zorder=None):
+    # Add Rectangle
+
+    # create rectangle
+    rect = new_rect(box_x, box_y, box_width, box_height, angle=angle, linewidth=linewidth,
+                    edgecolor=edgecolor, facecolor=facecolor, alpha=alpha, clip_on=clip_on,
+                    label=label, zorder=zorder)
+    # add to axes
+    ax.add_patch(rect)
+
+    # Add Text
+
     # data space coordinates to find new point after rotated
     fixed_point_rotation = Affine2D().rotate_deg_around(box_x, box_y, angle)
-
-    # add rectangle at corner position and rotate by angle
-    rect = patches.Rectangle((box_x, box_y), box_width, box_height, angle=angle, linewidth=linewidth,
-                             edgecolor=edgecolor,
-                             facecolor=facecolor, clip_on=clip_on, alpha=alpha, label=label, zorder=zorder)
-    ax.add_patch(rect)
 
     # put angle within +180/-180
     normalized_angle = angle
@@ -1267,5 +1140,3 @@ def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.
     # add text box to center of rectangle
     ax.text(text_pos[0], text_pos[1], text_str, rotation=text_angle, rotation_mode='anchor',
             fontsize=fontsize, va='center', ha='center', clip_on=clip_on, alpha=alpha, zorder=zorder)
-
-    # return rect

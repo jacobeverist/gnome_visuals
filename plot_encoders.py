@@ -2,16 +2,15 @@
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib import ticker, axis
-import seaborn as sns
 import numpy as np
+import seaborn as sns
+from matplotlib import ticker, axis
 
 from gnomecode import *
 
-
-# sns.set_theme(style="white", color_codes=True)
-
 # TODO:
+"""
+## TODO list
 # 1) + add base class boundary-handling options (exception, clamp, modulo, silent)
 # 2) + able to plot fundamental regions of periodic cells
 # 3) + plot fundamental bin and congruent bins (with lower alpha)
@@ -24,21 +23,129 @@ from gnomecode import *
 # 9) + remove plot_heatmap and plot_pmesh_heatmap code
 # 10)+ plot_encoders.py should be figure-level and axes-level styling code, and visuals.py should be axes-level plotting
 
-def plot_code_heatmap(encoder, desc_str="Encoder", triangle=False, fontsize=8, annot=True):
 
-    sns.set_style("white")
-    sns.set_style("ticks")
+## Current implemented encoders in gnomecode.encoders
+# "MultiEncoder",
+# "PeriodicCellEncoder",
+# "RandomizedPlaceCellEncoder",
+# "FixedWeightEncoder", "TaperingWeightEncoder"
+
+
+## FOREACH encoder type and config
+# test numpy array input (n,)
+# test list of floats input
+# test different interval upper and lower bounds
+# test different weight 'w'
+# test different interval length 'L'
+# test oob_method 'silent'
+# test oob_method 'modulo'
+# test oob_method 'clamp'
+# test oob_method 'exception'
+
+## test numpy array input (n,1)
+# X = np.array([[0.21], [0.69], [0.91]])
+# result = multi_encoder.encode(X)
+# print(X, result)kkkk
+
+## test scalar input
+# result = multi_encoder.encode(-1)
+# print(-1, result)
+
+# experiment = "RandomizedPlaceCellEncoder"
+# RandomizedPlaceCellEncoder(n=1, seed=i)
+
+# experiment = "Fixed_Weight_MultiEncoder"
+# FixedWeightEncoder(n=5+i, w=1)
+
+# experiment = "Tapering_Weight_MultiEncoder"
+# TaperingWeightEncoder(n=6+i, w=3)
+
+"""
+
+
+def plot_code_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, draw_manual_grid=True,
+                      draw_minor_tick_grid=False):
+    y_spacing = 0.05
+    # sns.set_style("white")
+    # sns.set_style("ticks")
 
     # Set up the matplotlib figure
-    f, ax = plt.subplots(figsize=(11, 9))
+    # f, ax = plt.subplots(figsize=(11, 9))
 
-    # same tick configuration for each axes
-    ax.tick_params(axis='both', labelsize=fontsize)
-    ax.set_title(desc_str)
+    # Start with a square Figure and add a couple extra inches to top
+    fig = plt.figure(figsize=(9, 11), constrained_layout=True)
 
-    draw_code_self_similarity(ax, encoder, triangle=triangle, annot=annot)
+    ax_heatmap = fig.add_gridspec(top=0.75, right=0.75).subplots()
+    ax_heatmap.set(aspect=1)
 
-def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True):
+    plot_up = True
+    if plot_up:
+        ax_features = ax_heatmap.inset_axes([0, 1.0 + y_spacing, 1, 0.25], sharex=ax_heatmap)  # plot on top
+        # ax_features = ax_heatmap.inset_axes([0, 1.0+y_spacing, 1, 0.25])
+    else:
+        ax_features = ax_heatmap.inset_axes([0, -0.30, 1, 0.25], sharex=ax_heatmap)  # plot on bottom
+
+    fig.suptitle(desc_str)
+
+    # ax_heatmap.xaxis.set_major_locator(ticker.IndexLocator(5, 0))
+    # ax_heatmap.xaxis.set_minor_locator(ticker.IndexLocator(1, 0))
+
+    draw_code_self_similarity(ax_heatmap, encoder, triangle=triangle, annot=annot)
+
+    # redraw tick locations because seaborn heatmap shifts them by 0.5
+    ax_heatmap.xaxis.set_major_locator(ticker.MultipleLocator(10))
+    ax_heatmap.xaxis.set_minor_locator(ticker.MultipleLocator(1))
+    ax_heatmap.xaxis.set_major_formatter(lambda x, pos: str(int(x)))
+
+    ax_heatmap.yaxis.set_major_locator(ticker.MultipleLocator(10))
+    ax_heatmap.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+    ax_heatmap.yaxis.set_major_formatter(lambda x, pos: str(int(x)))
+
+    # ax_heatmap.xaxis.set_minor_locator(ticker.MultipleLocator(5))
+
+    # set fontsize of tick labels (using default fontsize from seaborn for now)
+    # ax.tick_params(axis='both', labelsize=8)
+
+    # restore bounding box lines
+    ax_heatmap.spines['top'].set_visible(True)
+    ax_heatmap.spines['right'].set_visible(True)
+    ax_heatmap.spines['bottom'].set_visible(True)
+    ax_heatmap.spines['left'].set_visible(True)
+
+    draw_barcode(ax_features, encoder.region_codes)
+
+    # redraw tick locations because seaborn heatmap shifts them by 0.5
+    ax_features.yaxis.set_major_locator(ticker.IndexLocator(1, 0))
+    ax_features.xaxis.set_minor_locator(ticker.IndexLocator(1, 0))
+
+    grid_linewidth = 0.3
+    grid_alpha = 0.2
+
+    if draw_manual_grid:
+        num_points = encoder.region_codes.shape[0]
+        ymin, ymax = ax_features.get_ybound()
+        for k in range(num_points):
+            ax_features.axvline(x=k, ymin=ymin, ymax=ymax, alpha=grid_alpha, linewidth=grid_linewidth, color='k', zorder=1)
+
+        xmin, xmax = ax_heatmap.get_xbound()
+        ymin, ymax = ax_heatmap.get_ybound()
+        for k in range(num_points):
+            ax_heatmap.axvline(x=k, ymin=ymin, ymax=ymax, alpha=grid_alpha, linewidth=grid_linewidth, color='k', zorder=1)
+            ax_heatmap.axhline(y=k, xmin=xmin, xmax=xmax, alpha=grid_alpha, linewidth=grid_linewidth, color='k', zorder=1)
+
+    elif draw_minor_tick_grid:
+        ax_features.grid(visible=True, which='minor', axis='x', alpha=grid_alpha, linewidth=grid_linewidth, color='k', zorder=1)
+        ax_heatmap.grid(visible=True, which='minor', axis='both', alpha=grid_alpha, linewidth=grid_linewidth, color='k', zorder=1)
+
+    # ax_features.grid(visible=True, which='both', axis='x')
+    # ax_features.grid(visible=True, which='both', axis='y')
+    # ax_features.xaxis.set_major_locator(ticker.IndexLocator(5, 0))
+    # ax_features.xaxis.set_minor_locator(ticker.IndexLocator(1, 0))
+
+
+def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, draw_manual_grid=True,
+                      draw_minor_tick_grid=False):
+    y_spacing = 0.05
 
     # plot range for this multi encoder
     xmin = encoder.lower_bound
@@ -90,7 +197,7 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
 
         plot_up = True
         if plot_up:
-            ax_features = ax_heatmap.inset_axes([0, 1.02, 1, 0.25], sharex=ax_heatmap)  # plot on top
+            ax_features = ax_heatmap.inset_axes([0, 1.0 + y_spacing, 1, 0.25], sharex=ax_heatmap)  # plot on top
         else:
             ax_features = ax_heatmap.inset_axes([0, -0.30, 1, 0.25], sharex=ax_heatmap)  # plot on bottom
 
@@ -167,8 +274,8 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
         ax_heatmap = axes[0]
         ax_features = axes[1]
 
-    fig.suptitle(desc_str)
     ax_heatmap.invert_yaxis()
+    fig.suptitle(desc_str)
 
     # hide the spines
     # for side in ["top", "right", "bottom", "left"]:
@@ -177,20 +284,49 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
     draw_projected_self_similarity(ax_heatmap, encoder, triangle=triangle, annot=annot, cbar=True, cbar_ax=ax_colorbar)
 
     # same tick configuration for each axes
-    tick_args = {'axis': 'both', 'which': 'both', 'labelsize': 'small', 'labelbottom': False, 'bottom': False,
-                 'left': False, 'labelleft': False, 'right': True, 'labelright': True}
+    # tick_args = {'axis': 'both', 'which': 'both', 'labelsize': 'small', 'labelbottom': False, 'bottom': False,
+    #             'left': False, 'labelleft': False, 'right': True, 'labelright': True}
 
     # Features Subplot (Boundaries, Weight, Crossings)
-    ax_features.tick_params(**tick_args)
+    # ax_features.tick_params(**tick_args)
 
     # share ax_heatmap and ax_features x-axis
     # ax_features.get_shared_x_axes().join(ax_features, ax_heatmap)
     ax_features.set_xlim(xmin, xmax)
 
     # draw weight, crossings, and boundary features
-    markersize = 4
-    colors = sns.color_palette("Set1")  # , n_colors=oints))
-    draw_features(ax_features, encoder, colors, markersize, draw_regions=True, draw_legend=False)
+    #markersize = 4
+    #colors = sns.color_palette("Set1")  # , n_colors=oints))
+
+    # draw_features(ax_features, encoder, colors, markersize, draw_regions=True, draw_legend=False)
+    draw_bits_by_data(ax_features, encoder, draw_boundaries=False, draw_region_bits=True, draw_bit_grid=True, x_pad=0,
+                      y_margin=0)
+
+    # draw minor tick locations for the region boundaries
+    boundaries = encoder.region_boundaries
+    ax_features.xaxis.set_minor_locator(ticker.FixedLocator(boundaries))
+    ax_heatmap.yaxis.set_minor_locator(ticker.FixedLocator(boundaries))
+
+    # ax_features.set_ylabel("Bit Encoding vs.\nReal Value")
+
+    grid_linewidth = 0.3
+    grid_alpha = 0.2
+
+    if draw_manual_grid:
+        ymin, ymax = ax_features.get_ybound()
+        for k in range(len(boundaries)):
+            ax_features.axvline(x=boundaries[k], ymin=ymin, ymax=ymax, alpha=grid_alpha, linewidth=grid_linewidth, color='k', zorder=-1)
+
+        xmin, xmax = ax_heatmap.get_xbound()
+        ymin, ymax = ax_heatmap.get_ybound()
+        for k in range(len(boundaries)):
+            ax_heatmap.axvline(x=boundaries[k], ymin=ymin, ymax=ymax, alpha=grid_alpha, linewidth=grid_linewidth, color='k', zorder=1)
+            ax_heatmap.axhline(y=boundaries[k], xmin=xmin, xmax=xmax, alpha=grid_alpha, linewidth=grid_linewidth, color='k', zorder=1)
+
+    elif draw_minor_tick_grid:
+        ax_features.grid(visible=True, which='minor', axis='x', alpha=grid_alpha, linewidth=grid_linewidth, color='k', zorder=1)
+        ax_heatmap.grid(visible=True, which='minor', axis='both', alpha=grid_alpha, linewidth=grid_linewidth, color='k', zorder=1)
+
 
 def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
     n_bits = encoder.n
@@ -205,12 +341,6 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
 
     # reference points for comparison
     ref_points = np.array([[0.21], [0.69]])
-
-    # sampled points over the space
-    X_points = np.array(encoder.region_centers).reshape(-1, 1)
-
-    # encodings
-    X_gnomes = encoder.encode(X_points)
 
     # color palette
     colors = sns.color_palette("Set1", n_colors=len(ref_points))
@@ -229,7 +359,7 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
     ax3 = axes[3]
 
     # set title of whole figure
-    ax0.set_title("%s, n=%d" % (desc_str, n_bits))
+    fig.suptitle("%s, n=%d" % (desc_str, n_bits))
 
     # same tick configuration for each axes
     tick_args = {'axis': 'both', 'which': 'both',
@@ -246,13 +376,15 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
                             clip_on=True, draw_regions=False, draw_region_by_encoder=False, draw_h_border=False)
 
     # Features Subplot (Boundaries, Weight, Crossings)
-    ax1.tick_params(**tick_args)
+    # ax1.tick_params(**tick_args)
 
     # share ax0 and ax1 x-axis
-    ax1.get_shared_x_axes().join(ax1, ax0)
+    # ax1.get_shared_x_axes().join(ax1, ax0)
 
     # draw weight, crossings, and boundary features
-    draw_features(ax1, encoder, colors, markersize, draw_regions=True)
+    # draw_features(ax1, encoder, colors, markersize, draw_regions=True)
+
+    draw_barcode(ax1, encoder.region_codes)
 
     # # Similarity Subplot
     ax2.tick_params(**tick_args)
@@ -261,7 +393,7 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
     ax2.get_shared_x_axes().join(ax2, ax0)
 
     # draw similarity plot
-    draw_similarity(ax2, encoder, X_gnomes, ref_points, colors, draw_regions=False,
+    draw_similarity(ax2, encoder, ref_points, colors, draw_regions=False,
                     draw_h_grid=True, draw_v_values=True)
 
     # # Encoding Bits Subplot
@@ -274,7 +406,7 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
 
     ax3.set_xlim(xmin, xmax)
 
-    draw_similarity_heatmap(ax3, encoder, X_gnomes, ref_points[0], colors, draw_regions=False, draw_v_values=False,
+    draw_similarity_heatmap(ax3, encoder, ref_points[0], colors, draw_regions=False, draw_v_values=False,
                             clip_on=False, xmin=xmin, xmax=xmax)
 
     # draw encoding bits along x-axis values
@@ -286,10 +418,10 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
     ax3.axvline(x=encoder.lower_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
     ax3.axvline(x=encoder.upper_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
 
-def save_fig(path, encoder, plot_name, experiment_str, do_close=True):
 
+def save_fig(path, encoder, plot_name, experiment_name, do_close=True):
     file_path = path + "%03u_%04u_" % (
-        encoder.n, len(encoder.region_centers)) + plot_name + "_" + experiment_str + ".png"
+            encoder.n, len(encoder.region_centers)) + plot_name + "_" + experiment_name + ".png"
 
     plt.savefig(file_path, bbox_inches='tight')
 
@@ -298,68 +430,30 @@ def save_fig(path, encoder, plot_name, experiment_str, do_close=True):
         sns.reset_defaults()
 
 
-if __name__ == "__main__":
-    """
-
-    # FOREACH encoder type and config
-    # test numpy array input (n,)
-    # test list of floats input
-    # test different interval upper and lower bounds
-    # test different weight 'w'
-    # test different interval length 'L'
-    # test oob_method 'silent'
-    # test oob_method 'modulo'
-    # test oob_method 'clamp'
-    # test oob_method 'exception'
-
-    # test numpy array input (n,1)
-    # X = np.array([[0.21], [0.69], [0.91]])
-    # result = multi_encoder.encode(X)
-    # print(X, result)kkkk
-
-    # test scalar input
-    # result = multi_encoder.encode(-1)
-    # print(-1, result)
-    
-    
-    # # Current implemented encoders in gnomecode.encoders
-    # "MultiEncoder",
-    # "PeriodicCellEncoder",
-    # "RandomizedPlaceCellEncoder", 
-    # "FixedWeightEncoder", "TaperingWeightEncoder"
-
-    # experiment_str = "RandomizedPlaceCellEncoder"
-    # RandomizedPlaceCellEncoder(n=1, seed=i)
-    
-    # experiment_str = "Fixed_Weight_MultiEncoder"
-    # FixedWeightEncoder(n=5+i, w=1)
-    
-    # experiment_str = "Tapering_Weight_MultiEncoder"
-    # TaperingWeightEncoder(n=6+i, w=3)
-    
-    """
-
-
-
+def run_experiment():
     # Constants
     file_dir = "out/"
-    experiment_str = "PeriodicCellEncoder"
+    experiment = "PeriodicCellEncoder"
 
     # Initalize Encoder
     multi_encoder = MultiEncoder()
 
-    for i in range(10, 12):
+    for i in range(10, 11):
         # Change Encoder
         multi_encoder.add_encoder(PeriodicCellEncoder(n=i, oob_method="modulo", seed=i))
 
         # Plot Features
-        plot_interval_multi_encoder(multi_encoder, desc_str=experiment_str)
-        save_fig(file_dir, multi_encoder, "Features", experiment_str)
+        # plot_interval_multi_encoder(multi_encoder, desc_str=experiment)
+        # save_fig(file_dir, multi_encoder, "Features", experiment)
 
         # Plot Similarity Matrix by Code
-        plot_code_heatmap(multi_encoder, desc_str=experiment_str, fontsize=6)
-        save_fig(file_dir, multi_encoder, "Similarity_Matrix_by_Region_Code", experiment_str)
+        plot_code_heatmap(multi_encoder, desc_str=experiment)
+        save_fig(file_dir, multi_encoder, "Similarity_Matrix_by_Region_Code", experiment)
 
         # Plot Similarity Matrix by Real Space
-        plot_realspace_heatmap(multi_encoder, desc_str=experiment_str)
-        save_fig(file_dir, multi_encoder, "Similarity_Matrix_Projected_to_Real_Space", experiment_str)
+        plot_realspace_heatmap(multi_encoder, desc_str=experiment)
+        save_fig(file_dir, multi_encoder, "Similarity_Matrix_Projected_to_Real_Space", experiment)
+
+
+if __name__ == "__main__":
+    run_experiment()
