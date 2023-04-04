@@ -320,6 +320,13 @@ if __name__ == "__main__":
     # test scalar input
     # result = multi_encoder.encode(-1)
     # print(-1, result)
+    
+    
+    # # Current implemented encoders in gnomecode.encoders
+    # "MultiEncoder",
+    # "PeriodicCellEncoder",
+    # "RandomizedPlaceCellEncoder", 
+    # "FixedWeightEncoder", "TaperingWeightEncoder"
 
     # experiment_str = "RandomizedPlaceCellEncoder"
     # RandomizedPlaceCellEncoder(n=1, seed=i)

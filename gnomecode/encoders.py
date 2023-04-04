@@ -1,16 +1,17 @@
 from intervals import FloatInterval as I
 import numpy as np
 from collections.abc import Iterable
-from sklearn.utils.validation import check_X_y, check_array
 from heapq import merge
 
-__all__ = [
-    "EncoderBase", "MultiEncoder", "IntervalEncoder", "PeriodicCellEncoder", "PlaceCellEncoder",
-    "RandomizedPlaceCellEncoder", "FixedWeightEncoder", "TaperingWeightEncoder"]
+# Scikit-Learn's numpy array input validation and reformatting that we've found useful in the past
+# #from sklearn.utils.validation import check_X_y, check_array
+
+__all__ = ["MultiEncoder", "PeriodicCellEncoder", "RandomizedPlaceCellEncoder", "FixedWeightEncoder",
+           "TaperingWeightEncoder"] + ["_EncoderBase", "_IntervalEncoder", "_PlaceCellEncoder"]
 
 
 # abstract superclass of all encoders
-class EncoderBase:
+class _EncoderBase:
     """
     Variants:
     - bounded or unbounded input domain
@@ -81,7 +82,7 @@ class EncoderBase:
         return None
 
 
-class MultiEncoder(EncoderBase):
+class MultiEncoder(_EncoderBase):
 
     def __init__(self):
         # superclass constructor
@@ -389,7 +390,7 @@ class MultiEncoder(EncoderBase):
     # l = property(get_l)
 
 
-class IntervalEncoder(EncoderBase):
+class _IntervalEncoder(_EncoderBase):
     """
     use appropriate encoder parameter equation and fill in any missing parameter
     - Encoder Type Options
@@ -533,7 +534,8 @@ class IntervalEncoder(EncoderBase):
             gnome = np.array([1 if X in b else 0 for b in self.bins])
             return gnome
 
-class PeriodicCellEncoder(EncoderBase):
+
+class PeriodicCellEncoder(_EncoderBase):
     """
     collection of periodic, grid-like bins within a specified input interval
     - Encoder Type Options
@@ -638,7 +640,7 @@ class PeriodicCellEncoder(EncoderBase):
 
         self.config()
 
-    def __is_x_in_periodic_bin(self, x_input, origin, period, bin, straddles):
+    def _is_x_in_periodic_bin(self, x_input, origin, period, bin, straddles):
 
         # values modulo a period
         x_modulo = np.mod(x_input, period)
@@ -674,14 +676,14 @@ class PeriodicCellEncoder(EncoderBase):
             gnomes = []
             for x in x_origin:
                 gnome = np.array(
-                    [int(self.__is_x_in_periodic_bin(x, self.origin, self.periods[k], self.bins[k], self.straddles[k]))
+                    [int(self._is_x_in_periodic_bin(x, self.origin, self.periods[k], self.bins[k], self.straddles[k]))
                      for k in range(self.n)])
                 gnomes.append(gnome)
             return np.array(gnomes)
         else:
             gnome = np.array(
-                [int(self.__is_x_in_periodic_bin(x_origin, self.origin, self.periods[k], self.bins[k],
-                                                 self.straddles[k])) for k in range(self.n)])
+                [int(self._is_x_in_periodic_bin(x_origin, self.origin, self.periods[k], self.bins[k],
+                                                self.straddles[k])) for k in range(self.n)])
             return gnome
 
     def config(self):
@@ -781,15 +783,15 @@ class PeriodicCellEncoder(EncoderBase):
             bin_lower_multiples += bin_multiples
         """
 
-        #region_boundaries = np.array(bin_lower_multiples)
+        # region_boundaries = np.array(bin_lower_multiples)
 
         # record region boundary points
-        #region_boundaries = np.concatenate(region_boundaries)
-        #region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
-        #region_boundaries = np.sort(region_boundaries)
+        # region_boundaries = np.concatenate(region_boundaries)
+        # region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
+        # region_boundaries = np.sort(region_boundaries)
         # self.region_boundaries = region_boundaries
 
-        #self.region_boundaries = self.generate_periodic_boundaries()
+        # self.region_boundaries = self.generate_periodic_boundaries()
 
         self.bin_congruence, self.region_boundaries = self.generate_periodic_features()
 
@@ -820,7 +822,6 @@ class PeriodicCellEncoder(EncoderBase):
             ([self.region_weights[0]], np.abs(np.diff(self.region_weights)), [self.region_weights[-1]]))
         # print("region_deltas", self.region_deltas.shape)
         # print(self.region_deltas)
-
 
     def generate_periodic_features(self, xmin=None, xmax=None):
 
@@ -879,7 +880,6 @@ class PeriodicCellEncoder(EncoderBase):
         region_boundaries = np.sort(region_boundaries)
 
         return bin_congruence, region_boundaries
-
 
     def generate_periodic_boundaries(self, xmin=None, xmax=None):
 
@@ -940,7 +940,7 @@ class PeriodicCellEncoder(EncoderBase):
         return region_boundaries
 
 
-class PlaceCellEncoder(EncoderBase):
+class _PlaceCellEncoder(_EncoderBase):
     """
     arbitrary collection of single bins in a specified input domain
     - Encoder Type Options
@@ -1016,7 +1016,7 @@ class PlaceCellEncoder(EncoderBase):
             return gnome
 
 
-class RandomizedPlaceCellEncoder(PlaceCellEncoder):
+class RandomizedPlaceCellEncoder(_PlaceCellEncoder):
 
     def config(self):
         """
@@ -1079,7 +1079,7 @@ class RandomizedPlaceCellEncoder(PlaceCellEncoder):
         # print(self.region_deltas)
 
 
-class FixedWeightEncoder(IntervalEncoder):
+class FixedWeightEncoder(_IntervalEncoder):
 
     def config(self):
         """
@@ -1165,7 +1165,7 @@ class FixedWeightEncoder(IntervalEncoder):
         self.region_deltas[-1] = self.w
 
 
-class TaperingWeightEncoder(IntervalEncoder):
+class TaperingWeightEncoder(_IntervalEncoder):
 
     def config(self):
         """
