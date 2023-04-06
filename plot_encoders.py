@@ -60,17 +60,24 @@ from gnomecode import *
 def run_experiment():
     # Constants
     file_dir = "out/"
-    experiment = "PeriodicCellEncoder"
+    #experiment = "PeriodicCellEncoder"
+    experiment = "PeriodicScalarEncoder"
 
     # Initalize Encoder
-    multi_encoder = MultiEncoder()
+    #multi_encoder = MultiEncoder()
+    multi_encoder = PeriodicScalarEncoder(n=8, period=0.5)
 
     for i in range(10, 11):
         # Change Encoder
-        multi_encoder.add_encoder(PeriodicCellEncoder(n=i, oob_method="modulo", seed=i))
-        multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=1, seed=i))
-        multi_encoder.add_encoder(FixedWeightEncoder(n=5+i, w=1))
-        multi_encoder.add_encoder(TaperingWeightEncoder(n=6+i, w=3))
+        #multi_encoder.add_encoder(PeriodicCellEncoder(n=i, oob_method="modulo", seed=i))
+        #multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=1, seed=i))
+        #multi_encoder.add_encoder(FixedWeightEncoder(n=5+i, w=1))
+        #multi_encoder.add_encoder(TaperingWeightEncoder(n=6+i, w=3))
+        #multi_encoder.add_encoder(PeriodicScalarEncoder())
+
+        print(multi_encoder.__dict__)
+        for bin in multi_encoder.bins:
+            print(bin)
 
         # Plot Feature
         plot_interval_multi_encoder(multi_encoder, desc_str=experiment)

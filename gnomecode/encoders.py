@@ -943,11 +943,19 @@ class _PeriodicEncoder(_EncoderBase):
 
     def _is_x_in_periodic_bin(self, x_input, origin, period, bin, is_straddle):
 
+        #print("_is_in_periodic_bin:", x_input, origin, period, bin, is_straddle)
+        # x - origin
+
+        # value with respect to fund. region origin
+        x_offset = x_input - origin
+
         # values modulo a period
-        x_modulo = np.mod(x_input, period)
+        x_modulo = np.mod(x_offset, period)
 
         # back into real coordinates within fund. region
         x_region = x_modulo + origin
+
+        print("_is_in_periodic_bin:", x_input, x_offset, x_modulo, x_region, origin, period, bin, is_straddle)
 
         if x_region in bin:
             return True
@@ -1034,16 +1042,25 @@ class _PeriodicEncoder(_EncoderBase):
         if isinstance(_X, Iterable):
             gnomes = []
             for x in _X:
+                #gnome = np.array(
+                #        [int(self._is_x_in_periodic_bin(x - self.origins[k], self.origins[k], self.periods[k],
+                #                                        self.bins[k],
+                #                                        self.straddles[k]))
+                #         for k in range(self.n)])
                 gnome = np.array(
-                        [int(self._is_x_in_periodic_bin(x - self.origins[k], self.origins[k], self.periods[k],
+                        [int(self._is_x_in_periodic_bin(x, self.origins[k], self.periods[k],
                                                         self.bins[k],
                                                         self.straddles[k]))
                          for k in range(self.n)])
                 gnomes.append(gnome)
             return np.array(gnomes)
         else:
+            #gnome = np.array(
+            #        [int(self._is_x_in_periodic_bin(_X - self.origins[k], self.origins[k], self.periods[k],
+            #                                        self.bins[k],
+            #                                        self.straddles[k])) for k in range(self.n)])
             gnome = np.array(
-                    [int(self._is_x_in_periodic_bin(_X - self.origins[k], self.origins[k], self.periods[k],
+                    [int(self._is_x_in_periodic_bin(_X, self.origins[k], self.periods[k],
                                                     self.bins[k],
                                                     self.straddles[k])) for k in range(self.n)])
             return gnome
@@ -1067,7 +1084,9 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
             raise Exception("Number of bins 'n' must be positive integer.")
         self.n = n
 
-        if not isinstance(period, float) or not isinstance(period, int) or period <= 0 or period > self.input_width:
+        print(self.__dict__)
+
+        if not (isinstance(period, float) or isinstance(period, int)) or period <= 0 or period > self.input_width:
             raise Exception("Period must be positive number and less than the input range size")
 
         self.period = period
@@ -1085,7 +1104,7 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
         self.bin_sizes = np.repeat(self.period / self.n, self.n)
 
         # starting point for each bin (NOTE: periods should all be identical)
-        bin_lowers = [self.periods[k] * float(k) / self.n for k in range(self.n)]
+        bin_lowers = [self.origins[k] + self.periods[k] * float(k) / self.n for k in range(self.n)]
 
         # True/False whether bin straddles fund. region boundary
         self.straddles = np.array(
