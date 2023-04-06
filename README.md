@@ -1,5 +1,5 @@
 # Gnome Codes
-Visualizations of Real-Value Representations Using Discrete Population Encoding
+Visualization of Scalar Encoding Using Binary Population Codes
 
 
 ## Manim Animations
@@ -32,17 +32,16 @@ We use `matplotlib` for most of our quantitative plots.  The main plotting scrip
 python plot_encoders.py
 ```
 
-The resulting plotted images can be found in `out/`.
-
-This test script has many function calls that can be uncommented and run to plot various types of visualizations.  
-
+The resulting plotted images can be found in `out/`.  This test script creates and modifies an encoder and calls 
+several plotting methods in `gnomecode/layouts.py` that create different types of visualizations.
 
 ## Python Module
 
 Much of the reusable code has been ported to a local python module `gnomecodes`.  It has three constituent files.
 
-- `helpers.py`:  utility functions
-- `visuals.py`:  Axes-level visualization code for `matplotlib`
+- `utils.py`:  utility functions
+- `layouts.py`:  Figure-level layouts of axes, configs, and plots
+- `axesplots.py`:  Axes-level visualization code for `matplotlib`
 - `encoders.py`:  Implementation of many types of encoders with extra instrumentation for analysis.  Not optimized.
 
 ## Examples Gallery

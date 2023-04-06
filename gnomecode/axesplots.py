@@ -12,7 +12,7 @@ from matplotlib import ticker
 from matplotlib.collections import PatchCollection
 from matplotlib.transforms import Affine2D
 
-from .helpers import *
+from .utils import *
 
 __all__ = ["draw_bits_by_data", "draw_multi_encoder_bins", "draw_decomposition", "draw_barcode", "draw_delta_count",
            "draw_similarity", "draw_similarity_heatmap", "draw_projected_self_similarity", "draw_code_self_similarity",
