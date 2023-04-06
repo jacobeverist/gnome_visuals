@@ -68,6 +68,9 @@ def run_experiment():
     for i in range(10, 11):
         # Change Encoder
         multi_encoder.add_encoder(PeriodicCellEncoder(n=i, oob_method="modulo", seed=i))
+        multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=1, seed=i))
+        multi_encoder.add_encoder(FixedWeightEncoder(n=5+i, w=1))
+        multi_encoder.add_encoder(TaperingWeightEncoder(n=6+i, w=3))
 
         # Plot Feature
         plot_interval_multi_encoder(multi_encoder, desc_str=experiment)
