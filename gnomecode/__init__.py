@@ -8,10 +8,12 @@
 
 import gnomecode.encoders as encoders
 import gnomecode.helpers as helpers
-import gnomecode.visuals as visuals
+import gnomecode.axesplots as axesplots
+import gnomecode.layouts as layouts
 
 from .encoders import *
 from .helpers import *
-from .visuals import *
+from .axesplots import *
+from .layouts import *
 
 
