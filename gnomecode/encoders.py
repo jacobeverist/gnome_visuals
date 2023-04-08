@@ -1096,7 +1096,10 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
         self.period = period
 
         # origins are mid-point of input range
-        self.origins = [self.lower_bound + self.input_width / 2.0 for k in range(self.n)]
+        #self.origins = [self.lower_bound + self.input_width / 2.0 for k in range(self.n)]
+
+        # origins are lower bound of input range
+        self.origins = [self.lower_bound for k in range(self.n)]
 
         # fixed modulus for each grid cell
         self.periods = np.repeat(self.period, self.n)

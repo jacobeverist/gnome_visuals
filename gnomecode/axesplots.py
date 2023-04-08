@@ -350,8 +350,8 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
         try:
             encoder_w = e.w
 
-            if do_cong_bins:
-                encoder_w += 1
+            #if do_cong_bins:
+            #    encoder_w += 1
             if draw_folded_bins:
                 do_overlap_bins = True
             else:
@@ -370,6 +370,11 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
 
             if do_overlap_bins:
                 box_y = encoder_y + (k % encoder_w) * box_height
+
+                # if last set of bins, let them place above encoder_w
+                last_norm_bin = len(e.bins) - encoder_w
+                if do_cong_bins and encoder_w > 1 and k > last_norm_bin:
+                    box_y = encoder_y + (last_norm_bin % encoder_w) * box_height + (k-last_norm_bin) * box_height
             else:
                 box_y = draw_y
 
@@ -434,6 +439,12 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
 
                     if do_overlap_bins:
                         box_y = encoder_y + (k % encoder_w) * box_height
+
+                        # if last set of bins, let them place above encoder_w
+                        last_norm_bin = len(e.bins) - encoder_w
+                        if do_cong_bins and encoder_w > 1 and k > last_norm_bin:
+                            box_y = encoder_y + (last_norm_bin % encoder_w) * box_height + (
+                                        k - last_norm_bin) * box_height
                     else:
                         box_y = draw_y
 
@@ -480,6 +491,13 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                     # FIXME: test are fund. regions the same, else don't do folding of periodic bins
                     if k >= encoder_w:
                         draw_fund_bin = False
+
+                    # if last set of bins, let them place above encoder_w
+                    last_norm_bin = len(e.bins) - encoder_w
+                    if do_cong_bins and encoder_w > 1 and k > last_norm_bin:
+                        box_y = encoder_y + (last_norm_bin % encoder_w) * box_height + (k - last_norm_bin) * box_height
+                        draw_fund_bin = True
+
                 else:
                     box_y = draw_y
 
@@ -538,7 +556,13 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
         e_boundaries = e.region_boundaries
 
         if do_overlap_bins:
-            draw_y += box_height * encoder_w
+            #draw_y += box_height * encoder_w
+            draw_y = max_y
+
+            # if last set of bins, let them place above encoder_w
+            #last_norm_bin = len(e.bins) - encoder_w
+            #if do_cong_bins and encoder_w > 1 and k > last_norm_bin:
+            #    box_y = encoder_y + (last_norm_bin % encoder_w) * box_height + (k - last_norm_bin) * box_height
 
         draw_bound_y = draw_y
 
