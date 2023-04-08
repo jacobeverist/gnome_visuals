@@ -943,7 +943,7 @@ class _PeriodicEncoder(_EncoderBase):
 
     def _is_x_in_periodic_bin(self, x_input, origin, period, bin, is_straddle):
 
-        #print("_is_in_periodic_bin:", x_input, origin, period, bin, is_straddle)
+        # print("_is_in_periodic_bin:", x_input, origin, period, bin, is_straddle)
         # x - origin
 
         # value with respect to fund. region origin
@@ -955,7 +955,7 @@ class _PeriodicEncoder(_EncoderBase):
         # back into real coordinates within fund. region
         x_region = x_modulo + origin
 
-        print("_is_in_periodic_bin:", x_input, x_offset, x_modulo, x_region, origin, period, bin, is_straddle)
+        # print("_is_in_periodic_bin:", x_input, x_offset, x_modulo, x_region, origin, period, bin, is_straddle)
 
         if x_region in bin:
             return True
@@ -1042,7 +1042,7 @@ class _PeriodicEncoder(_EncoderBase):
         if isinstance(_X, Iterable):
             gnomes = []
             for x in _X:
-                #gnome = np.array(
+                # gnome = np.array(
                 #        [int(self._is_x_in_periodic_bin(x - self.origins[k], self.origins[k], self.periods[k],
                 #                                        self.bins[k],
                 #                                        self.straddles[k]))
@@ -1055,7 +1055,7 @@ class _PeriodicEncoder(_EncoderBase):
                 gnomes.append(gnome)
             return np.array(gnomes)
         else:
-            #gnome = np.array(
+            # gnome = np.array(
             #        [int(self._is_x_in_periodic_bin(_X - self.origins[k], self.origins[k], self.periods[k],
             #                                        self.bins[k],
             #                                        self.straddles[k])) for k in range(self.n)])
@@ -1068,7 +1068,7 @@ class _PeriodicEncoder(_EncoderBase):
 
 class PeriodicScalarEncoder(_PeriodicEncoder):
 
-    def __init__(self, n=8, period=0.5, **kwargs):
+    def __init__(self, n=8, w=1, period=0.5, **kwargs):
         """
         1 period, multiple bins
 
@@ -1079,12 +1079,16 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
         # superclass constructor
         super().__init__(**kwargs)
 
+        # weight
+        if not isinstance(w, int) or w < 1:
+            raise Exception("Weight 'w' must be a positive integer")
+        else:
+            self.w = w
+
         # number of bins
         if not isinstance(n, int) and n <= 0:
             raise Exception("Number of bins 'n' must be positive integer.")
         self.n = n
-
-        print(self.__dict__)
 
         if not (isinstance(period, float) or isinstance(period, int)) or period <= 0 or period > self.input_width:
             raise Exception("Period must be positive number and less than the input range size")
@@ -1101,7 +1105,8 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
         self.fund_regions = [I.closed_open(self.origins[k], self.origins[k] + self.periods[k]) for k in range(self.n)]
 
         # bin sizes are period divided into n equal regions
-        self.bin_sizes = np.repeat(self.period / self.n, self.n)
+        # self.bin_sizes = np.repeat(self.period / self.n, self.n)
+        self.bin_sizes = np.repeat(self.w * self.period / self.n, self.n)
 
         # starting point for each bin (NOTE: periods should all be identical)
         bin_lowers = [self.origins[k] + self.periods[k] * float(k) / self.n for k in range(self.n)]
@@ -1112,6 +1117,45 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
 
         # compute bins in their fundamental regions
         self.bins = [I.closed_open(bin_lowers[k], bin_lowers[k] + self.bin_sizes[k]) for k in range(0, self.n)]
+
+        # self.w = 1
+        #num_partitions = self.n - (self.w - 1)
+        #self.step_size = self.input_width / num_partitions
+        # equidist_points = np.linspace(self.lower_bound, self.upper_bound, endpoint=True, num=num_partitions + 1)
+        #bin_steps = list(equidist_points)
+
+        #self.bins = [I.closed_open(bin_steps[k], bin_steps[k + self.w]) for k in range(0, len(bin_steps) - self.w)]
+        #self.bins += [I.closed_open(bin_steps[k], bin_steps[-1])
+        #              for k in range(len(bin_steps) - self.w, len(bin_steps) - 1)]
+
+        # self.region_boundaries = equidist_points
+
+        #         # compute step size for subsequent bins
+        #         num_partitions = self.n - (self.w - 1)
+        #         self.step_size = self.L / num_partitions
+        #
+        #         # internal bin-boundary transition points
+        #         equidist_points = np.linspace(self.lower_bound, self.upper_bound, endpoint=True, num=num_partitions + 1)
+        #
+        #         # record region boundary points
+        #         self.region_boundaries = equidist_points
+        #
+        #         # record region center points
+        #         self.region_centers = self.region_boundaries[:-1] + np.diff(self.region_boundaries) / 2
+        #
+        #         bin_steps = list(equidist_points)
+
+        # self.bins = []
+        # self.bins = [I.closed_open(bin_steps[0], bin_steps[c]) for c in range(1, self.w)]
+        # self.bins += [I.closed_open(bin_steps[c], bin_steps[c + self.w]) for c in range(0, len(bin_steps) - self.w)]
+        # self.bins += [I.closed_open(bin_steps[c], bin_steps[-1]) for c in
+        #              range(len(bin_steps) - self.w, len(bin_steps) - 1)]
+
+        # origins = [self.lower_bound + self.input_width / 2.0 for k in range(self.n)]
+        # periods = np.repeat(self.period, self.n)
+        # fund_regions = [I.closed_open(self.origins[k], self.origins[k] + self.periods[k]) for k in range(self.n)]
+        # bin_sizes = np.repeat(self.period / self.n, self.n)
+        # bin_lowers = [self.origins[k] + self.periods[k] * float(k) / self.n for k in range(self.n)]
 
         # region boundaries and congruent bins
         self.bin_congruence, self.region_boundaries = self._generate_periodic_features(self.lower_bound,
@@ -1328,6 +1372,13 @@ class FixedWeightEncoder(_IntervalEncoder):
         self.bins += [I.closed_open(bin_steps[c], bin_steps[c + self.w]) for c in range(0, len(bin_steps) - self.w)]
         self.bins += [I.closed_open(bin_steps[c], bin_steps[-1]) for c in
                       range(len(bin_steps) - self.w, len(bin_steps) - 1)]
+
+        # origins = [self.lower_bound + self.input_width / 2.0 for k in range(self.n)]
+        # periods = np.repeat(self.period, self.n)
+        # fund_regions = [I.closed_open(self.origins[k], self.origins[k] + self.periods[k]) for k in range(self.n)]
+        # bin_sizes = np.repeat(self.period / self.n, self.n)
+        # bin_lowers = [self.origins[k] + self.periods[k] * float(k) / self.n for k in range(self.n)]
+
         # print("bins")
         # for bin in self.bins:
         #    print(bin)

@@ -5,10 +5,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 from matplotlib import ticker, axis
+
 from .axesplots import *
 
 __all__ = ['plot_code_heatmap', 'plot_realspace_heatmap', 'plot_interval_multi_encoder', 'save_fig']
-
 
 
 def save_fig(path, encoder, plot_name, experiment_name, do_close=True):
@@ -37,7 +37,8 @@ def plot_code_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, d
     if plot_up:
         ax_features = ax_heatmap.inset_axes([0, 1.0 + y_spacing, 1, inset_fraction], sharex=ax_heatmap)  # plot on top
     else:
-        ax_features = ax_heatmap.inset_axes([0, -inset_fraction-y_spacing, 1, inset_fraction], sharex=ax_heatmap)  # plot on bottom
+        ax_features = ax_heatmap.inset_axes([0, -inset_fraction - y_spacing, 1, inset_fraction],
+                                            sharex=ax_heatmap)  # plot on bottom
 
     # title of figure
     fig.suptitle(desc_str)
@@ -150,11 +151,13 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
 
         plot_up = True
         if plot_up:
-            ax_features = ax_heatmap.inset_axes([0, 1.0 + y_spacing, 1, inset_fraction], sharex=ax_heatmap)  # plot on top
+            ax_features = ax_heatmap.inset_axes([0, 1.0 + y_spacing, 1, inset_fraction],
+                                                sharex=ax_heatmap)  # plot on top
         else:
-            ax_features = ax_heatmap.inset_axes([0, -inset_fraction-y_spacing, 1, inset_fraction], sharex=ax_heatmap)  # plot on bottom
+            ax_features = ax_heatmap.inset_axes([0, -inset_fraction - y_spacing, 1, inset_fraction],
+                                                sharex=ax_heatmap)  # plot on bottom
 
-        #ax_colorbar = ax_heatmap.inset_axes([1.05, 0.25, 0.05, 0.5])
+        # ax_colorbar = ax_heatmap.inset_axes([1.05, 0.25, 0.05, 0.5])
         ax_colorbar = ax_heatmap.inset_axes([1.03, 0.23, 0.023, 0.54])
 
     elif do_gridspec_axes:
@@ -331,19 +334,20 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
     ax0.tick_params(**tick_args)
 
     # draw encoder bins
-    draw_multi_encoder_bins(ax0, encoder, fontsize=fontsize, xmin=xmin, xmax=xmax, draw_h_grid=False, bin_linewidth=0,
-                            clip_on=True, draw_regions=False, draw_region_by_encoder=False, draw_h_border=False)
+    draw_multi_encoder_bins(ax0, encoder, fontsize=fontsize, xmin=xmin, xmax=xmax, draw_h_grid=True, bin_linewidth=0.5,
+                            clip_on=False, draw_regions=False, draw_region_by_encoder=False, draw_h_border=False,
+                            draw_folded_bins=True, label_bins=True)
 
     # Features Subplot (Boundaries, Weight, Crossings)
     # ax1.tick_params(**tick_args)
 
     # share ax0 and ax1 x-axis
-    # ax1.get_shared_x_axes().join(ax1, ax0)
+    ax1.get_shared_x_axes().join(ax1, ax0)
 
     # draw weight, crossings, and boundary features
-    # draw_features(ax1, encoder, colors, markersize, draw_regions=True)
+    draw_features(ax1, encoder, colors, markersize, draw_regions=True)
 
-    draw_barcode(ax1, encoder.region_codes)
+    # draw_barcode(ax1, encoder.region_codes)
 
     # # Similarity Subplot
     ax2.tick_params(**tick_args)
@@ -365,13 +369,13 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
 
     ax3.set_xlim(xmin, xmax)
 
-    draw_similarity_heatmap(ax3, encoder, ref_points[0], colors, draw_regions=False, draw_v_values=False,
-                            clip_on=False, xmin=xmin, xmax=xmax)
+    # draw_similarity_heatmap(ax3, encoder, ref_points[0], colors, draw_regions=False, draw_v_values=False,
+    #                         clip_on=False, xmin=xmin, xmax=xmax)
 
     # draw encoding bits along x-axis values
     # FIXME: still some encoding bin errors
-    # draw_bits_by_data(ax3, encoder, xmin=xmin, xmax=xmax, x_pad=0.0, draw_region_bits=False,
-    #                  draw_uniform_samples=True, permute_bits=False, clip_on=True, draw_boundaries=False)
+    draw_bits_by_data(ax3, encoder, xmin=xmin, xmax=xmax, x_pad=0.0, draw_region_bits=True,
+                      draw_uniform_samples=False, permute_bits=False, clip_on=False, draw_boundaries=False)
 
     # draw input interval boundary lines across axes with vertical lines
     ax3.axvline(x=encoder.lower_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)

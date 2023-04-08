@@ -63,10 +63,14 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
     # print("draw_bits:", xmin, xmax)
 
     # scale y-axis to number of bits
-    ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
-    ax.yaxis.set_minor_locator(ticker.IndexLocator(1, 0))
+    #ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
+    #ax.yaxis.set_minor_locator(ticker.IndexLocator(1, 0))
     ax.set_ylim(-y_margin, n_bits + y_margin)
     ax.set_xlim(xmin, xmax)
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(10))
+    #ax.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+    ax.yaxis.set_major_formatter(lambda x, pos: str(int(x)))
+
 
     indices = np.random.permutation(np.arange(n_bits))
 
@@ -261,8 +265,8 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
 
 
 def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8, bin_linewidth=1,
-                            draw_regions=False,
-                            draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True, label_bins=False):
+                            draw_regions=False, draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True,
+                            draw_folded_bins=False, label_bins=False):
     # constants
     bin_alpha = 1
     cong_alpha = 0.3
@@ -293,9 +297,6 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
     if xmin is None:
         xmin = lower_bound
 
-    ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
-    ax.set_ylim(-0.1, n_bits + 0.1)
-    ax.set_ylabel("Encoding Bins\non Interval")
 
     try:
         sub_encoders = encoder.encoders
@@ -322,6 +323,10 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
     min_y = 1
     max_y = 0
 
+    draw_bound_y = 0
+    prev_bound_y = 0
+
+
     bin_count = 0
     patches = []
 
@@ -341,13 +346,33 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
         except:
             do_cong_bins = False
 
+        encoder_w = 1
+        try:
+            encoder_w = e.w
+
+            if do_cong_bins:
+                encoder_w += 1
+            if draw_folded_bins:
+                do_overlap_bins = True
+            else:
+                do_overlap_bins = False
+        except:
+            do_overlap_bins = False
+
+        encoder_y = draw_y
+
         for k in range(len(e.bins)):
             bin = e.bins[k]
             bin_upper_bound = bin.upper
             bin_lower_bound = bin.lower
 
             box_x = bin_lower_bound
-            box_y = draw_y
+
+            if do_overlap_bins:
+                box_y = encoder_y + (k % encoder_w) * box_height
+            else:
+                box_y = draw_y
+
             box_width = bin_upper_bound - bin_lower_bound
 
             draw_bin = True
@@ -406,7 +431,12 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                     bin_lower_bound = bin.lower
 
                     box_x = bin_lower_bound
-                    box_y = draw_y
+
+                    if do_overlap_bins:
+                        box_y = encoder_y + (k % encoder_w) * box_height
+                    else:
+                        box_y = draw_y
+
                     box_width = bin_upper_bound - bin_lower_bound
 
                     draw_cong_bin = True
@@ -440,10 +470,21 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                 fund_lower_bound = fund_region.lower
 
                 box_x = fund_lower_bound
-                box_y = draw_y
-                box_width = fund_upper_bound - fund_lower_bound
 
                 draw_fund_bin = True
+
+                if do_overlap_bins:
+                    box_y = encoder_y + (k % encoder_w) * box_height
+
+                    # assumes that fund regions of each cell in this encoder are identical
+                    # FIXME: test are fund. regions the same, else don't do folding of periodic bins
+                    if k >= encoder_w:
+                        draw_fund_bin = False
+                else:
+                    box_y = draw_y
+
+                box_width = fund_upper_bound - fund_lower_bound
+
                 if clip_on:
                     try:
                         box_x, box_width = clip_bin(fund_lower_bound, fund_upper_bound, xmin, xmax)
@@ -481,7 +522,10 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
 
             bin_count += 1
             bin_id_count += 1
-            draw_y += box_height
+            # draw_y += box_height
+
+            if not do_overlap_bins:
+                draw_y += box_height
 
             if box_y < min_y:
                 min_y = box_y
@@ -489,17 +533,46 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
             if box_y + box_height > max_y:
                 max_y = box_y + box_height
 
+
+        # drawing boundaries
+        e_boundaries = e.region_boundaries
+
+        if do_overlap_bins:
+            draw_y += box_height * encoder_w
+
+        draw_bound_y = draw_y
+
+        if draw_region_by_encoder:
+            ax.vlines(x=e_boundaries, ymin=prev_bound_y, ymax=draw_bound_y, alpha=0.2, linewidth=0.5, color='k',
+                      zorder=-1)
+
+        if draw_h_grid:
+
+            ax.hlines(y=prev_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=1.5, color='k', zorder=-1)
+
+            if do_overlap_bins:
+                for k in range(encoder_w):
+                    ax.hlines(y=prev_bound_y + k, xmin=xmin, xmax=xmax, alpha=0.5, linewidth=0.5, color='k', zorder=-1)
+            else:
+                for k in range(len(e.bins)):
+                    ax.hlines(y=prev_bound_y + k, xmin=xmin, xmax=xmax, alpha=0.5, linewidth=0.5, color='k', zorder=-1)
+
+        prev_bound_y = draw_bound_y
         encoder_count += 1
+
+    if draw_h_grid:
+        ax.hlines(y=draw_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=1.5, color='k', zorder=-1)
 
     if len(patches) > 0:
         ax.add_collection(PatchCollection(patches, match_original=True))
 
-    draw_bound_y = 0
-    prev_bound_y = 0
+    #draw_bound_y = 0
+    #prev_bound_y = 0
 
-    if draw_h_border:
-        ax.hlines(y=draw_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=0.5, color='k', zorder=-1)
+    #if draw_h_border:
+    #    ax.hlines(y=draw_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=0.5, color='k', zorder=-1)
 
+    """
     for e in sub_encoders:
         e_boundaries = e.region_boundaries
         draw_bound_y += box_height * len(e.bins)
@@ -515,14 +588,25 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
             ax.hlines(y=draw_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=0.5, color='k', zorder=-1)
 
         prev_bound_y = draw_bound_y
+    """
 
     if draw_regions:
         boundaries = encoder.region_boundaries
         n_bits = encoder.n
         for k in range(len(boundaries)):
-            ax.vlines(x=boundaries[k], ymin=0, ymax=n_bits, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
-        for k in range(n_bits + 1):
-            ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+            ax.vlines(x=boundaries[k], ymin=0, ymax=max_y, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+            #ax.vlines(x=boundaries[k], ymin=0, ymax=n_bits, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+        #for k in range(n_bits + 1):
+        #    ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+
+    #ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
+    #ax.yaxis.set_minor_locator(ticker.IndexLocator(1, 0))
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(10))
+    ax.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+    ax.yaxis.set_major_formatter(lambda x, pos: str(int(x)))
+
+    ax.set_ylim(min_y-0.1, max_y + 0.1)
+    ax.set_ylabel("Encoding Bins\non Interval")
 
     return max_y, min_y
 
@@ -936,13 +1020,13 @@ def draw_code_self_similarity(ax, encoder, triangle=False, annot=True):
     tick_index = -1
     for k in range(len(tick_counts)):
         result = abs(20.0 - num_points / tick_counts[k])
-        print(k, tick_counts[k], result)
+        #print(k, tick_counts[k], result)
 
         if result < minDist:
             minDist = result
             tick_index = k
 
-    print("suggested tick count:", tick_counts[tick_index], num_points)
+    #print("suggested tick count:", tick_counts[tick_index], num_points)
     #print(diagonal_scores)
 
     # Draw the heatmap with the mask and correct aspect ratio
