@@ -1,7 +1,7 @@
-import string
-from fractions import Fraction
-import textwrap
 import re
+import string
+import textwrap
+from fractions import Fraction
 
 import matplotlib as mpl
 import matplotlib.axes
@@ -319,22 +319,25 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, fon
 
     # grid_colors = ['k',] + grid_colors
     # grid_labels = ["%d,%d" % (keys[j], spacing) for j in range(n_grids)]
-    grid_labels = ["Encoder %d" % (keys[j],) for j in range(n_grids)]
 
-    #label = re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1', sub_encoders[j].__class__.__name__)
+    # grid_labels = ["Encoder %d" % (keys[j],) for j in range(n_grids)]
 
-    grid_labels = ["%s %d" % (
-        re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1', sub_encoders[j].__class__.__name__), keys[j])
-        for j in range(n_grids)]
+    # convert class name to spaced words and wrap around
+    grid_labels = [
+                textwrap.fill(
+                    "(%d) %s" %
+                        (keys[j], re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1',
+                                sub_encoders[j].__class__.__name__)
+                        ),
+                    12)
+                for j in range(n_grids)]
 
-    #grid_labels = ['\n'.join(textwrap.wrap(l, 20)) for l in grid_labels]
-    grid_labels = [textwrap.fill(l, 10) for l in grid_labels]
-    #grid_labels = ["%s %d" % (sub_encoders[j].__class__.__name__, keys[j]) for j in range(n_grids)]
+    #grid_labels = [textwrap.fill(l, 10) for l in grid_labels]
+
+    # grid_labels = ['\n'.join(textwrap.wrap(l, 20)) for l in grid_labels]
+    # grid_labels = ["%s %d" % (sub_encoders[j].__class__.__name__, keys[j]) for j in range(n_grids)]
 
     print(grid_labels)
-
-
-
 
     encoder_count = 0
     bin_id_count = 0
@@ -433,7 +436,7 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, fon
                                      box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
                                      text_str=bin_text_str, clip_on=clip_on, linewidth=bin_linewidth,
                                      fontsize=fontsize, label=grid_label, add_patch=False)
-                #print("draw", bin_text_str, grid_label, rect)
+                # print("draw", bin_text_str, grid_label, rect)
                 patches.append(rect)
 
                 """
@@ -658,16 +661,13 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, fon
         # for k in range(n_bits + 1):
         #    ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
-
-
-
     # ticks correspond to encoder horizontal dividers and
     # tick labels are vertically centered to encoder region with an integer label for the i'th encoder
     ax.yaxis.set_major_locator(ticker.FixedLocator(encoder_boundaries))
     ax.yaxis.set_major_formatter(ticker.NullFormatter())
     ax.yaxis.set_minor_locator(ticker.FixedLocator(encoder_centers))
     ax.yaxis.set_minor_formatter(ticker.FixedFormatter(grid_labels))
-    #ax.yaxis.set_tick_params(which="minor", labelrotation=-45, labelsize=8)
+    # ax.yaxis.set_tick_params(which="minor", labelrotation=-45, labelsize=8)
     ax.yaxis.set_tick_params(which="minor", labelsize=8)
 
     for tick in ax.yaxis.get_minor_ticks():
@@ -698,7 +698,6 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, fon
 
     ax.set_ylim(min_y - 0.1, max_y + 0.1)
     ax.set_ylabel("Encoding Bins\non Interval")
-
 
     return max_y, min_y
 
