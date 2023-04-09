@@ -810,8 +810,8 @@ class PeriodicCellEncoder(_EncoderBase):
         bin_lower_multiples = []
         for k in range(n):
             bin_multiples = []
-            bin = bins[k]
-            x_lower = bin.lower
+            b = bins[k]
+            x_lower = b.lower
 
             x_lower = x_lower + periods[k]
             while x_lower < xmax:
@@ -821,7 +821,7 @@ class PeriodicCellEncoder(_EncoderBase):
                 bin_multiples.append((x_lower, x_upper))
                 x_lower = x_lower + periods[k]
 
-            x_upper = bin.upper
+            x_upper = b.upper
             x_upper = x_upper - periods[k]
             while x_upper >= xmin:
                 x_lower = x_upper - bin_sizes[k]
@@ -838,8 +838,8 @@ class PeriodicCellEncoder(_EncoderBase):
             bin_congruence.append(congruent_bins)
 
             # add original
-            x_lower = bin.lower
-            x_upper = bin.upper
+            x_lower = b.lower
+            x_upper = b.upper
             bin_multiples.append((x_lower, x_upper))
 
             # add to complete collection of bins
@@ -969,7 +969,7 @@ class _PeriodicEncoder(_EncoderBase):
 
         # xmin, xmax, bins, periods
         n = len(bins)
-        bin_sizes = [bin.length for bin in bins]
+        bin_sizes = [b.length for b in bins]
 
         # generating congruent bins
         bin_congruence = []
@@ -978,8 +978,8 @@ class _PeriodicEncoder(_EncoderBase):
         bin_lower_multiples = []
         for k in range(n):
             bin_multiples = []
-            bin = bins[k]
-            x_lower = bin.lower
+            b = bins[k]
+            x_lower = b.lower
 
             x_lower = x_lower + periods[k]
             while x_lower < xmax:
@@ -989,7 +989,7 @@ class _PeriodicEncoder(_EncoderBase):
                 bin_multiples.append((x_lower, x_upper))
                 x_lower = x_lower + periods[k]
 
-            x_upper = bin.upper
+            x_upper = b.upper
             x_upper = x_upper - periods[k]
             while x_upper >= xmin:
                 x_lower = x_upper - bin_sizes[k]
@@ -1006,8 +1006,8 @@ class _PeriodicEncoder(_EncoderBase):
             bin_congruence.append(congruent_bins)
 
             # add original
-            x_lower = bin.lower
-            x_upper = bin.upper
+            x_lower = b.lower
+            x_upper = b.upper
             bin_multiples.append((x_lower, x_upper))
 
             # add to complete collection of bins
