@@ -1,5 +1,7 @@
 import string
 from fractions import Fraction
+import textwrap
+import re
 
 import matplotlib as mpl
 import matplotlib.axes
@@ -263,7 +265,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
             ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
 
-def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spacing=1, fontsize=8, bin_linewidth=1,
+def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1,
                             draw_regions=False, draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True,
                             draw_folded_bins=False, label_bins=False):
     # constants
@@ -271,6 +273,10 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
     cong_alpha = 0.3
     fund_alpha = 0.1
     box_height = 1
+
+    # shrink the the bins by this amount
+    x_shrink = 0.004
+    y_shrink = 0.3
 
     # FIXME: find and optimize bottleneck for large n
 
@@ -312,8 +318,23 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
     grid_colors = [colors[j] for j in range(n_grids)]
 
     # grid_colors = ['k',] + grid_colors
+    # grid_labels = ["%d,%d" % (keys[j], spacing) for j in range(n_grids)]
+    grid_labels = ["Encoder %d" % (keys[j],) for j in range(n_grids)]
 
-    grid_labels = ["%d,%d" % (keys[j], spacing) for j in range(n_grids)]
+    #label = re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1', sub_encoders[j].__class__.__name__)
+
+    grid_labels = ["%s %d" % (
+        re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1', sub_encoders[j].__class__.__name__), keys[j])
+        for j in range(n_grids)]
+
+    #grid_labels = ['\n'.join(textwrap.wrap(l, 20)) for l in grid_labels]
+    grid_labels = [textwrap.fill(l, 10) for l in grid_labels]
+    #grid_labels = ["%s %d" % (sub_encoders[j].__class__.__name__, keys[j]) for j in range(n_grids)]
+
+    print(grid_labels)
+
+
+
 
     encoder_count = 0
     bin_id_count = 0
@@ -323,6 +344,8 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
 
     draw_bound_y = 0
     prev_bound_y = 0
+
+    encoder_boundaries = [draw_bound_y, ]
 
     bin_count = 0
     patches = []
@@ -394,34 +417,46 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                 except:
                     draw_bin = False
 
-            # shrink the the bins by this amount
-            x_shrink = 0.004
-            y_shrink = 0.3
-
-            # only add label to first rectangle of encoder's bins
+            # only add label to first rectangle of encoder's bins (used by legend)
             grid_label = None
             if bin_count == 0:
                 grid_label = grid_labels[encoder_count]
 
+            if label_bins:
+                bin_text_str = str(bin_id_count)
+            else:
+                bin_text_str = None
+
             # draw bin
             if draw_bin:
+                rect = add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                                     box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
+                                     text_str=bin_text_str, clip_on=clip_on, linewidth=bin_linewidth,
+                                     fontsize=fontsize, label=grid_label, add_patch=False)
+                #print("draw", bin_text_str, grid_label, rect)
+                patches.append(rect)
+
+                """
                 if label_bins:
                     add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
                                   box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
                                   text_str=str(bin_id_count), clip_on=clip_on, linewidth=bin_linewidth,
-                                  fontsize=fontsize,
-                                  label=grid_label)
+                                  fontsize=fontsize, label=grid_label)
                 else:
                     rect = new_rect(box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
                                     box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
                                     clip_on=clip_on, linewidth=bin_linewidth)
                     patches.append(rect)
+                """
 
             # draw congruent bins if exist
             if do_cong_bins:
 
-                b = e.bins[k]
                 congruent_bins = []
+
+                b = e.bins[k]
+
+                # lower bounds of congruent bins
                 x_lower = b.lower
 
                 # generate congruent bins instead of using encoder generated versions (e.bin_congruence)
@@ -430,31 +465,20 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                     congruent_bins.append(I.closed_open(x_lower, x_lower + e.bin_sizes[k]))
                     x_lower = x_lower + e.periods[k]
 
+                # upper bounds of congruent bins
                 x_upper = b.upper
                 x_upper = x_upper - e.periods[k]
-
                 while x_upper >= xmin:
                     congruent_bins.append(I.closed_open(x_upper - e.bin_sizes[k], x_upper))
                     x_upper = x_upper - e.periods[k]
 
+                # draw each congruent bin if it is within view
                 for j in range(len(congruent_bins)):
                     b = congruent_bins[j]
                     bin_upper_bound = b.upper
                     bin_lower_bound = b.lower
 
                     box_x = bin_lower_bound
-
-                    if do_folded_bins:
-                        box_y = encoder_y + (k % encoder_w) * box_height
-
-                        # if last set of bins, let them place above encoder_w
-                        last_norm_bin = len(e.bins) - encoder_w
-                        if do_cong_bins and encoder_w > 1 and k > last_norm_bin:
-                            box_y = encoder_y + (last_norm_bin % encoder_w) * box_height + (
-                                    k - last_norm_bin) * box_height
-                    else:
-                        box_y = draw_y
-
                     box_width = bin_upper_bound - bin_lower_bound
 
                     draw_cong_bin = True
@@ -464,12 +488,14 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                         except:
                             draw_cong_bin = False
 
-                    # shrink the the bins by this amount
-                    x_shrink = 0.004
-                    y_shrink = 0.3
-
                     # draw bin
                     if draw_cong_bin:
+                        rect = add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                                             box_height - y_shrink, alpha=cong_alpha, clip_on=True, add_patch=False,
+                                             facecolor=grid_colors[encoder_count], linewidth=bin_linewidth)
+                        patches.append(rect)
+
+                        """
                         if label_bins:
                             add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
                                           box_height - y_shrink, alpha=cong_alpha, facecolor=grid_colors[encoder_count],
@@ -480,6 +506,7 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                                             facecolor=grid_colors[encoder_count],
                                             clip_on=True, linewidth=bin_linewidth, zorder=10)
                             patches.append(rect)
+                        """
 
             # draw fundamental region if exist
             if do_fund_regions:
@@ -492,7 +519,6 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                 draw_fund_bin = True
 
                 if do_folded_bins:
-                    box_y = encoder_y + (k % encoder_w) * box_height
 
                     # assumes that fund regions of each cell in this encoder are identical
                     # FIXME: test are fund. regions the same, else don't do folding of periodic bins
@@ -502,11 +528,7 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
                     # if last set of bins, let them place above encoder_w
                     last_norm_bin = len(e.bins) - encoder_w
                     if do_cong_bins and encoder_w > 1 and k > last_norm_bin:
-                        box_y = encoder_y + (last_norm_bin % encoder_w) * box_height + (k - last_norm_bin) * box_height
                         draw_fund_bin = True
-
-                else:
-                    box_y = draw_y
 
                 box_width = fund_upper_bound - fund_lower_bound
 
@@ -547,52 +569,58 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
 
             bin_count += 1
             bin_id_count += 1
+
             # draw_y += box_height
+            # if not folding, increment draw row by 1
+            # if not do_folded_bins:
+            #    draw_y += box_height
 
-            if not do_folded_bins:
-                draw_y += box_height
-
+            # compute min and max y
             if box_y < min_y:
                 min_y = box_y
-
             if box_y + box_height > max_y:
                 max_y = box_y + box_height
 
-        # drawing boundaries
-        e_boundaries = e.region_boundaries
-
-        if do_folded_bins:
-            # draw_y += box_height * encoder_w
+            # if folding, compute the row after this encoder from the max_y
+            # update draw_y to maximum y so far
             draw_y = max_y
 
-            # if last set of bins, let them place above encoder_w
-            # last_norm_bin = len(e.bins) - encoder_w
-            # if do_cong_bins and encoder_w > 1 and k > last_norm_bin:
-            #    box_y = encoder_y + (last_norm_bin % encoder_w) * box_height + (k - last_norm_bin) * box_height
-
+        # drawing boundaries
+        e_boundaries = e.region_boundaries
         draw_bound_y = draw_y
 
+        # draw vertical region boundaries within an encoder section
         if draw_region_by_encoder:
             ax.vlines(x=e_boundaries, ymin=prev_bound_y, ymax=draw_bound_y, alpha=0.2, linewidth=0.5, color='k',
                       zorder=-1)
 
+        # draw horizontal boundaries between bin rows and encoder sections
         if draw_h_grid:
 
+            # strong line between encoder sections
             ax.hlines(y=prev_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=1.5, color='k', zorder=-1)
 
-            if do_folded_bins:
-                for k in range(encoder_w):
-                    ax.hlines(y=prev_bound_y + k, xmin=xmin, xmax=xmax, alpha=0.5, linewidth=0.5, color='k', zorder=-1)
-            else:
-                for k in range(len(e.bins)):
-                    ax.hlines(y=prev_bound_y + k, xmin=xmin, xmax=xmax, alpha=0.5, linewidth=0.5, color='k', zorder=-1)
+            # weak lines between bin rows, for both folded and unfolded bins
+            curr_y = prev_bound_y
+            while curr_y < draw_bound_y:
+                ax.hlines(y=curr_y, xmin=xmin, xmax=xmax, alpha=0.5, linewidth=0.5, color='k', zorder=-1)
+                curr_y += box_height
+                # print(draw_bound_y, prev_bound_y, curr_y )
 
+        # set the this as boundary line to the next encoder section
+        encoder_boundaries.append(draw_bound_y)
         prev_bound_y = draw_bound_y
         encoder_count += 1
 
+    # encoder horizontal dividers and the mid-point between each divider
+    encoder_boundaries = np.array(encoder_boundaries)
+    encoder_centers = encoder_boundaries[:-1] + np.diff(encoder_boundaries) / 2
+
+    # strong line between encoder sections
     if draw_h_grid:
         ax.hlines(y=draw_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=1.5, color='k', zorder=-1)
 
+    # add any rectangles if they've been collected
     if len(patches) > 0:
         ax.add_collection(PatchCollection(patches, match_original=True))
 
@@ -620,23 +648,57 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, spa
         prev_bound_y = draw_bound_y
     """
 
+    # draw the composite region boundaries of all the encoders together
     if draw_regions:
         boundaries = encoder.region_boundaries
-        n_bits = encoder.n
         for k in range(len(boundaries)):
             ax.vlines(x=boundaries[k], ymin=0, ymax=max_y, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
             # ax.vlines(x=boundaries[k], ymin=0, ymax=n_bits, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+        # n_bits = encoder.n
         # for k in range(n_bits + 1):
         #    ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
-    # ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
-    # ax.yaxis.set_minor_locator(ticker.IndexLocator(1, 0))
-    ax.yaxis.set_major_locator(ticker.MultipleLocator(10))
-    ax.yaxis.set_minor_locator(ticker.MultipleLocator(1))
-    ax.yaxis.set_major_formatter(lambda x, pos: str(int(x)))
+
+
+
+    # ticks correspond to encoder horizontal dividers and
+    # tick labels are vertically centered to encoder region with an integer label for the i'th encoder
+    ax.yaxis.set_major_locator(ticker.FixedLocator(encoder_boundaries))
+    ax.yaxis.set_major_formatter(ticker.NullFormatter())
+    ax.yaxis.set_minor_locator(ticker.FixedLocator(encoder_centers))
+    ax.yaxis.set_minor_formatter(ticker.FixedFormatter(grid_labels))
+    #ax.yaxis.set_tick_params(which="minor", labelrotation=-45, labelsize=8)
+    ax.yaxis.set_tick_params(which="minor", labelsize=8)
+
+    for tick in ax.yaxis.get_minor_ticks():
+        tick.tick1line.set_markersize(0)
+        tick.tick2line.set_markersize(0)
+    for label in ax.get_yticklabels(minor=True):
+        label.set_verticalalignment('center')
+
+    # tick.label.set_verticalalignment('bottom')
+    # ax.yaxis.label.set_verticalalignment
+
+    # same tick configuration for each axes
+    # tick_args = {'axis': 'both', 'which': 'both',
+    #             'labelsize': 'small',
+    #             'labelbottom': False, 'bottom': False,
+    #             'left': False, 'labelleft': False,
+    #             'right': True, 'labelright': True}
+
+    # # Encoding Bins Subplot
+    # ax.tick_params(**tick_args)
+    # ax.yaxis.set(rotation="45")
+    # ax.yaxis.set_minor_formatter(ticker.FixedFormatter(keys))
+    # ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+    # ax.yaxis.set_major_formatter(lambda x, pos: str(int(x)))
+    # ax.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+    # ax.tick_params(labelright=False)
+    # ax.tick_params(labelright=False)
 
     ax.set_ylim(min_y - 0.1, max_y + 0.1)
     ax.set_ylabel("Encoding Bins\non Interval")
+
 
     return max_y, min_y
 
@@ -1198,7 +1260,7 @@ def new_rect(box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgeco
 
 def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k', fontsize=8,
                   facecolor='none', text_str=None, aligned_text=False, alpha=1.0, text_v_offset=-0.01, clip_on=False,
-                  label=None, zorder=None):
+                  label=None, zorder=1, add_patch=True):
     # Add Rectangle
 
     # create rectangle
@@ -1206,51 +1268,55 @@ def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.
                     edgecolor=edgecolor, facecolor=facecolor, alpha=alpha, clip_on=clip_on,
                     label=label, zorder=zorder)
     # add to axes
-    ax.add_patch(rect)
+    if add_patch:
+        ax.add_patch(rect)
 
     # Add Text
+    if text_str is not None:
 
-    # data space coordinates to find new point after rotated
-    fixed_point_rotation = Affine2D().rotate_deg_around(box_x, box_y, angle)
+        # data space coordinates to find new point after rotated
+        fixed_point_rotation = Affine2D().rotate_deg_around(box_x, box_y, angle)
 
-    # put angle within +180/-180
-    normalized_angle = angle
-    if angle > 0:
-        while normalized_angle > 180:
-            normalized_angle -= 360
-    elif angle < 0:
-        while normalized_angle < -180:
-            normalized_angle += 360
+        # put angle within +180/-180
+        normalized_angle = angle
+        if angle > 0:
+            while normalized_angle > 180:
+                normalized_angle -= 360
+        elif angle < 0:
+            while normalized_angle < -180:
+                normalized_angle += 360
 
-    # angle the textbox nicely
-    if aligned_text:
-        text_angle = normalized_angle
-        if abs(text_angle) > 90:
-            text_angle += 180
-    else:
-        text_angle = 0
-
-    # space the text box nicely so it fits no matter orientation
-    # nice centering depends on orientation of text in the figure
-    if aligned_text:
-
-        # upper quadrants and bottom quadrants have different text orientation and adjustment
-        if abs(normalized_angle) > 90:
-            # upper quadrant adjustment
-            rect_center_pos = [box_x + box_width / 2, box_y + box_height * 0.5 - text_v_offset]
+        # angle the textbox nicely
+        if aligned_text:
+            text_angle = normalized_angle
+            if abs(text_angle) > 90:
+                text_angle += 180
         else:
-            # bottom quadrant adjustment
-            rect_center_pos = [box_x + box_width / 2, box_y + box_height * 0.5 + text_v_offset]
-    else:
-        rect_center_pos = [box_x + box_width / 2, box_y + box_height * 0.5]
+            text_angle = 0
 
-    # rotate around rectangle corner
-    text_pos = fixed_point_rotation.transform(rect_center_pos)
+        # space the text box nicely so it fits no matter orientation
+        # nice centering depends on orientation of text in the figure
+        if aligned_text:
 
-    # unaligned text uses standard vertical offset in axes frame
-    if not aligned_text:
-        text_pos[1] += text_v_offset
+            # upper quadrants and bottom quadrants have different text orientation and adjustment
+            if abs(normalized_angle) > 90:
+                # upper quadrant adjustment
+                rect_center_pos = [box_x + box_width / 2, box_y + box_height * 0.5 - text_v_offset]
+            else:
+                # bottom quadrant adjustment
+                rect_center_pos = [box_x + box_width / 2, box_y + box_height * 0.5 + text_v_offset]
+        else:
+            rect_center_pos = [box_x + box_width / 2, box_y + box_height * 0.5]
 
-    # add text box to center of rectangle
-    ax.text(text_pos[0], text_pos[1], text_str, rotation=text_angle, rotation_mode='anchor',
-            fontsize=fontsize, va='center', ha='center', clip_on=clip_on, alpha=alpha, zorder=zorder)
+        # rotate around rectangle corner
+        text_pos = fixed_point_rotation.transform(rect_center_pos)
+
+        # unaligned text uses standard vertical offset in axes frame
+        if not aligned_text:
+            text_pos[1] += text_v_offset
+
+        # add text box to center of rectangle
+        ax.text(text_pos[0], text_pos[1], text_str, rotation=text_angle, rotation_mode='anchor',
+                fontsize=fontsize, va='center', ha='center', clip_on=clip_on, alpha=alpha, zorder=zorder + 2)
+
+    return rect

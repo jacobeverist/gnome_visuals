@@ -80,8 +80,9 @@ def run_experiment():
     #multi_encoder.add_encoder(FixedWeightEncoder(n=5, w=2, lower_bound=0, upper_bound=2))
     #multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=3, upper_bound=2))
 
-    for i in range(3, 9):
+    for i in range(7, 9):
         multi_encoder.add_encoder(PeriodicScalarEncoder(n=i, w=3, period=0.5, xmin=0, xmax=1))
+    multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=3, upper_bound=1))
 
     #for i in [7, 11, 13, 17]:
     #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=3, upper_bound=2))
