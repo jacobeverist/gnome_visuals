@@ -265,8 +265,8 @@ class MultiEncoder(_EncoderBase):
         # print("region_deltas:")
         # print(self.region_deltas)
 
-        # print("region_centers:")
-        # print(self.region_centers)
+        print("region_centers:")
+        print(len(self.region_centers))
 
         self.region_codes = self.encode(self.region_centers)
         # print("region_codes:")
@@ -941,10 +941,44 @@ class _PeriodicEncoder(_EncoderBase):
         # number of boundary crossings at each region boundary
         self.region_deltas = []
 
-    def _is_x_in_periodic_bin(self, x_input, origin, period, bin, is_straddle):
+    def _is_x_in_periodic_bin(self, x_input, origin, period, b, is_straddle):
 
-        # print("_is_in_periodic_bin:", x_input, origin, period, bin, is_straddle)
+        #
+
+
+        #print("_is_in_periodic_bin:", x_input, origin, period, bin, is_straddle)
         # x - origin
+
+        #  FIXME: optimize this bin-checking calculation
+        # FIXME: create two arrays, one for upper bounds, and one for lower bounds
+        """
+            gnomes = []
+            for x_input in _X:
+                gnome = np.array(
+                            [int(self._is_x_in_periodic_bin(
+                                        x_input, self.origins[k], self.periods[k], self.bins[k], self.straddles[k]
+                                    )
+                                )
+                             for k in range(self.n)
+                            ]
+                        )
+                gnomes.append(gnome)
+            return np.array(gnomes)
+
+           # value with respect to fund. region origin
+            x_offset = x_input - origin
+
+            # values modulo a period
+            x_modulo = np.mod(x_offset, period)
+
+            # back into real coordinates within fund. region
+            x_region1 = x_modulo + origin
+            x_region2 = x_region1 + period
+
+            is_in_bin = (x_region1 >= b.lower and x_region1 < b.upper) or (x_region2 >= b.lower and x_region2 < b.upper)
+
+
+        """
 
         # value with respect to fund. region origin
         x_offset = x_input - origin
@@ -957,10 +991,10 @@ class _PeriodicEncoder(_EncoderBase):
 
         # print("_is_in_periodic_bin:", x_input, x_offset, x_modulo, x_region, origin, period, bin, is_straddle)
 
-        if x_region in bin:
+        if x_region in b:
             return True
         # if this bin overlaps upper boundary of its fundamental region, check near the lower boundary too
-        elif is_straddle and (x_region + period) in bin:
+        elif is_straddle and (x_region + period) in b:
             return True
         else:
             return False
@@ -1174,6 +1208,10 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
 
         # size of unique regions
         self.region_sizes = np.diff(self.region_boundaries) / 2
+
+
+        print("region_centers:")
+        print(len(self.region_centers))
 
         # encoding for each region
         self.region_codes = self.encode(self.region_centers)
