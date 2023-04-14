@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "gnome-visuals"
+version = "0.1.0"
+description = "Visualization of Experiments with Gnome Codes"
+authors = ["Jacob Everist <jacob.everist@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "gnome_visuals" }]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+seaborn = "0.12.2"
+matplotlib = "^3.3.4"
+numpy = "^1.23.5"
+scikit-learn = "^0.24.1"
+intervals = "0.9.2"
+manim = "0.17.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -77,18 +77,25 @@ def run_experiment():
     #multi_encoder.add_encoder(PeriodicScalarEncoder(n=3, w=1, period=0.5, xmin=0, xmax=2))
     #multi_encoder.add_encoder(PeriodicScalarEncoder(n=5, w=2, period=0.5, xmin=0, xmax=2))
     #multi_encoder.add_encoder(PeriodicScalarEncoder(n=7, w=3, period=0.5, xmin=0, xmax=2))
-    #multi_encoder.add_encoder(FixedWeightEncoder(n=5, w=2, lower_bound=0, upper_bound=2))
-    #multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=3, upper_bound=2))
+    #multi_encoder.add_encoder(FixedWeightEncoder(n=5, w=2, lower_bound=0, upper_bound=1))
+    #multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=3, upper_bound=1))
 
-    for i in range(7, 9):
-        multi_encoder.add_encoder(PeriodicScalarEncoder(n=i, w=3, period=0.5, xmin=0, xmax=1))
-    multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=3, upper_bound=1))
+    #multi_encoder.add_encoder(PeriodicScalarEncoder(n=1000, w=3, period=0.5, xmin=0, xmax=1))
+    #for i in range(0, 100):
+    #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=8, w=3, period=0.5, xmin=0, xmax=1))
+
+    #for i in range(7, 9):
+    #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=i, w=3, period=0.5, xmin=0, xmax=1))
+    #multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=3, upper_bound=1))
 
     #for i in [7, 11, 13, 17]:
-    #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=3, upper_bound=2))
+    #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=3, upper_bound=1))
 
     #for i in range(4):
-    #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=2**i, period=0.5, xmin=0, xmax=2))
+    #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=2**i, period=0.5, xmin=0, xmax=1))
+
+    for i in [7, 11, 13, 17]:
+        multi_encoder.add_encoder(TaperingWeightEncoder(n=i, w=3))
 
     for i in range(10, 11):
         # Change Encoder
@@ -105,17 +112,20 @@ def run_experiment():
         #print(multi_encoder.straddles)
 
         # Plot Feature
-        plot_interval_multi_encoder(multi_encoder, desc_str=experiment)
-        save_fig(file_dir, multi_encoder, "Features", experiment)
+        #plot_interval_multi_encoder(multi_encoder, desc_str=experiment)
+        #save_fig(file_dir, multi_encoder, "Features", experiment)
 
         # Plot Similarity Matrix by Code
-        #plot_code_heatmap(multi_encoder, desc_str=experiment)
-        #save_fig(file_dir, multi_encoder, "Similarity_Matrix_by_Region_Code", experiment)
+        plot_code_heatmap(multi_encoder, desc_str=experiment)
+        save_fig(file_dir, multi_encoder, "Similarity_Matrix_by_Region_Code", experiment)
 
         # Plot Similarity Matrix by Real Space
         #plot_realspace_heatmap(multi_encoder, desc_str=experiment)
         #save_fig(file_dir, multi_encoder, "Similarity_Matrix_Projected_to_Real_Space", experiment)
 
+        # Plot Difference Matrix by Code
+        plot_diff_heatmap(multi_encoder, desc_str=experiment)
+        save_fig(file_dir, multi_encoder, "Difference_Matrix_by_Region_Code", experiment)
 
 if __name__ == "__main__":
     run_experiment()

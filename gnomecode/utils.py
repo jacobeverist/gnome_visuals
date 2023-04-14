@@ -1,6 +1,6 @@
 import numpy as np
 
-__all__ = ["gnome_similarity", "count_similarity", "clip_bin"]
+__all__ = ["gnome_similarity", "count_similarity", "count_difference", "clip_bin"]
 
 
 def clip_bin(bin_lower, bin_upper, lower_bound, upper_bound):
@@ -48,6 +48,7 @@ def clip_bin(bin_lower, bin_upper, lower_bound, upper_bound):
 
     return bin_lower, bin_width
 
+
 def gnome_similarity(X_gnomes, ref_gnomes):
     """Gnome similarity score.
 
@@ -76,6 +77,7 @@ def gnome_similarity(X_gnomes, ref_gnomes):
 
     return normalized_scores
 
+
 def count_similarity(X_gnomes, ref_gnomes):
     """Count similarity score. Number of common bits between X_gnomes element and ref_gnomes element.
 
@@ -97,3 +99,57 @@ def count_similarity(X_gnomes, ref_gnomes):
     return sum_scores
 
 
+def count_difference(X_gnomes, ref_gnomes):
+    """Count difference score. Essentially the Hamming distance without normalization.
+       Number of bits that are flipped between X_gnomes element and ref_gnomes element.
+
+    :param X_gnomes: An array with shape (n_samples, n_features).
+    :type X_gnomes: list | np.array
+
+    :param ref_gnomes: An array with shape (n_samples, n_features).
+    :type ref_gnomes: list | np.array
+
+    :return: An array of scores from 0 to n_features with shape (n_samples)
+    :rtype: np.array
+
+    """
+
+    #print("shape:", X_gnomes.shape, ref_gnomes.T.shape)
+
+    # generate distance matrix:
+    B = np.rot90(X_gnomes[:, :, None], 1, (1, 2))  # [:,:,None] is needed to add a dimension
+    C = np.rot90(np.rot90(ref_gnomes[:, :, None], 1, (1, 2)), 1, (0, 1))  # [:,:,None] is needed to add a dimension
+
+
+    # result = np.sqrt(np.sum((B - C) ** 2, axis=2))
+    result = np.count_nonzero(np.logical_xor(B, C), axis=2)
+
+    """
+    print("B------", B.shape)
+    print(B)
+    print("C------", C.shape)
+    print(C)
+    print("result--", result.shape)
+    print(result)
+
+    print("B:", B.shape)
+    print("C:", C.shape)
+    print("result:", result.shape)
+    """
+    #print(result)
+
+
+    # sum_scores = np.dot(X_gnomes.astype(int), ref_gnomes.T.astype(int))
+    #sum_scores = np.matmul(X_gnomes.astype(int), ref_gnomes.T.astype(int))
+    #print(sum_scores.shape)
+
+    #diff_compare = np.not_equal(X_gnomes[..., np.newaxis], ref_gnomes.T)
+    #print(diff_compare.shape)
+
+    #diff_bits = np.logical_xor(X_gnomes.astype(bool), ref_gnomes.T.astype(bool))
+    # diff_scores = np.count_nonzero(X_gnomes.astype(int) != ref_gnomes.T.astype(int))
+    #diff_scores = np.count_nonzero(X_gnomes.astype(int) != ref_gnomes.astype(int))
+
+    #return diff_bits
+
+    return result

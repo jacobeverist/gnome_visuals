@@ -3,22 +3,28 @@ import string
 import textwrap
 from fractions import Fraction
 
+import numpy as np
+import numpy.ma as ma
+from intervals import FloatInterval as I
+
 import matplotlib as mpl
 import matplotlib.axes
 import matplotlib.patches as patches
-import numpy as np
-import numpy.ma as ma
-import seaborn as sns
-from intervals import FloatInterval as I
 from matplotlib import ticker
 from matplotlib.collections import PatchCollection
 from matplotlib.transforms import Affine2D
+#import holoviews as hv
+#from colorcet.plotting import swatch, swatches
+import colorcet
+from matplotlib.cm import get_cmap
+
+import seaborn as sns
 
 from .utils import *
 
 __all__ = ["draw_bits_by_data", "draw_multi_encoder_bins", "draw_decomposition", "draw_barcode", "draw_delta_count",
            "draw_similarity", "draw_similarity_heatmap", "draw_projected_self_similarity", "draw_code_self_similarity",
-           "draw_features"]
+           "draw_features", "draw_code_difference"]
 
 # printing boolean arrays neatly
 np.set_printoptions(
@@ -1067,12 +1073,85 @@ def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_
         legend = ax.legend(handles1, labels1, title="Features", ncol=3, fontsize=8, title_fontsize=9)
 
 
+def draw_code_difference(ax, encoder, triangle=False, annot=True):
+    # sampled points over the space
+    X_gnomes1 = encoder.region_codes
+
+
+    #diagonal_scores1 = count_similarity(X_gnomes1, X_gnomes1)
+    diagonal_scores = count_difference(X_gnomes1, X_gnomes1)
+
+    #print(diagonal_scores1)
+    #print(diagonal_scores)
+
+    #print(X_gnomes1.shape)
+    #print(diagonal_scores1.shape)
+    #print(diagonal_scores.shape)
+    max_count = np.max(diagonal_scores)
+
+    # Generate a mask for the upper triangle
+    if triangle:
+        shape_mask = np.triu(np.ones_like(diagonal_scores, dtype=bool), k=1)
+    else:
+        shape_mask = np.zeros_like(diagonal_scores, dtype=bool)
+    mask = shape_mask
+
+    # omit zero text data
+    scores_text = diagonal_scores.astype('|S10')
+    if annot:
+        annot_data = np.where(diagonal_scores > 0, scores_text, '')
+    else:
+        annot_data = False
+
+
+    #cmap = get_cmap("cet_fire")
+    cmap = get_cmap("cet_CET_I1")
+
+    # cmap = sns.color_palette("rocket_r", as_cmap=True)
+    # cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
+
+    num_points = X_gnomes1.shape[0]
+
+    linewidths = 0
+    fontsize = 0
+
+    if num_points < 80:
+        linewidths = 2. / num_points
+        fontsize = 32. * 8. / num_points
+    else:
+        annot_data = False
+
+    # find closest tick count to 20
+    tick_counts = [5, 10, 50, 100, 500, 100, 500, 1000]
+
+    minDist = 1e100
+    tick_index = -1
+    for k in range(len(tick_counts)):
+        result = abs(20.0 - num_points / tick_counts[k])
+        # print(k, tick_counts[k], result)
+
+        if result < minDist:
+            minDist = result
+            tick_index = k
+
+    # print("suggested tick count:", tick_counts[tick_index], num_points)
+    # print(diagonal_scores)
+
+    # Draw the heatmap with the mask and correct aspect ratio
+    sns.heatmap(diagonal_scores, ax=ax, mask=mask, cmap=cmap, vmax=max_count, fmt="s",
+                square=True, linewidths=linewidths, cbar_kws={"shrink": .5}, annot=annot_data,
+                xticklabels=tick_counts[tick_index], yticklabels=tick_counts[tick_index],
+                annot_kws={"fontsize": fontsize})
+
+
+
 def draw_code_self_similarity(ax, encoder, triangle=False, annot=True):
     # sampled points over the space
     X_gnomes1 = encoder.region_codes
 
     diagonal_scores = count_similarity(X_gnomes1, X_gnomes1)
     max_count = np.max(diagonal_scores)
+
 
     # Generate a mask for the upper triangle
     if triangle:
@@ -1091,7 +1170,9 @@ def draw_code_self_similarity(ax, encoder, triangle=False, annot=True):
     # Generate a custom diverging colormap
     # cmap = sns.diverging_palette(230, 20, as_cmap=True)
     # cmap = sns.color_palette("rocket_r", as_cmap=True)
-    cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
+    #cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
+
+    cmap = get_cmap("cet_CET_I1")
 
     num_points = X_gnomes1.shape[0]
 

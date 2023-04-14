@@ -265,8 +265,8 @@ class MultiEncoder(_EncoderBase):
         # print("region_deltas:")
         # print(self.region_deltas)
 
-        print("region_centers:")
-        print(len(self.region_centers))
+        #print("region_centers:")
+        #print(len(self.region_centers))
 
         self.region_codes = self.encode(self.region_centers)
         # print("region_codes:")

@@ -8,7 +8,7 @@ from matplotlib import ticker, axis
 
 from .axesplots import *
 
-__all__ = ['plot_code_heatmap', 'plot_realspace_heatmap', 'plot_interval_multi_encoder', 'save_fig']
+__all__ = ['plot_diff_heatmap', 'plot_code_heatmap', 'plot_realspace_heatmap', 'plot_interval_multi_encoder', 'save_fig']
 
 
 def save_fig(path, encoder, plot_name, experiment_name, do_close=True):
@@ -20,6 +20,83 @@ def save_fig(path, encoder, plot_name, experiment_name, do_close=True):
     if do_close:
         plt.close()
         sns.reset_defaults()
+
+
+
+def plot_diff_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, draw_manual_grid=True,
+                      draw_minor_tick_grid=False):
+    y_spacing = 0.05
+    inset_fraction = 0.25
+
+    # Start with a square Figure and add a couple extra inches to top
+    fig = plt.figure(figsize=(9, 12), constrained_layout=True)
+
+    ax_heatmap = fig.add_gridspec(top=0.75, right=0.75).subplots()
+    ax_heatmap.set(aspect=1)
+
+    plot_up = True
+    if plot_up:
+        ax_features = ax_heatmap.inset_axes([0, 1.0 + y_spacing, 1, inset_fraction], sharex=ax_heatmap)  # plot on top
+    else:
+        ax_features = ax_heatmap.inset_axes([0, -inset_fraction - y_spacing, 1, inset_fraction],
+                                            sharex=ax_heatmap)  # plot on bottom
+
+    # title of figure
+    fig.suptitle(desc_str)
+
+    print("X_gnomes:", encoder.region_codes.shape)
+
+    draw_code_difference(ax_heatmap, encoder, triangle=triangle, annot=annot)
+
+    # redraw tick locations because seaborn heatmap shifts them by 0.5
+    ax_heatmap.xaxis.set_major_locator(ticker.MultipleLocator(10))
+    ax_heatmap.xaxis.set_minor_locator(ticker.MultipleLocator(1))
+    ax_heatmap.xaxis.set_major_formatter(lambda x, pos: str(int(x)))
+    ax_heatmap.yaxis.set_major_locator(ticker.MultipleLocator(10))
+    ax_heatmap.yaxis.set_minor_locator(ticker.MultipleLocator(1))
+    ax_heatmap.yaxis.set_major_formatter(lambda x, pos: str(int(x)))
+
+    # restore bounding box lines
+    ax_heatmap.spines['top'].set_visible(True)
+    ax_heatmap.spines['right'].set_visible(True)
+    ax_heatmap.spines['bottom'].set_visible(True)
+    ax_heatmap.spines['left'].set_visible(True)
+
+    draw_barcode(ax_features, encoder.region_codes)
+
+    # redraw tick locations because seaborn heatmap shifts them by 0.5
+    ax_features.yaxis.set_major_locator(ticker.IndexLocator(1, 0))
+    ax_features.xaxis.set_minor_locator(ticker.IndexLocator(1, 0))
+
+    grid_linewidth = 0.3
+    grid_alpha = 0.2
+
+    if draw_manual_grid:
+        num_points = encoder.region_codes.shape[0]
+        xmin, xmax = ax_features.get_xbound()
+        ymin, ymax = ax_features.get_ybound()
+        for k in range(num_points):
+            ax_features.axvline(x=k, ymin=ymin, ymax=ymax, alpha=grid_alpha, linewidth=grid_linewidth, color='k',
+                                zorder=1)
+
+        num_bits = encoder.region_codes.shape[1]
+        for k in range(num_bits):
+            ax_features.axhline(y=k, xmin=xmin, xmax=xmax, alpha=grid_alpha, linewidth=grid_linewidth, color='k',
+                                zorder=1)
+
+        xmin, xmax = ax_heatmap.get_xbound()
+        ymin, ymax = ax_heatmap.get_ybound()
+        for k in range(num_points):
+            ax_heatmap.axvline(x=k, ymin=ymin, ymax=ymax, alpha=grid_alpha, linewidth=grid_linewidth, color='k',
+                               zorder=1)
+            ax_heatmap.axhline(y=k, xmin=xmin, xmax=xmax, alpha=grid_alpha, linewidth=grid_linewidth, color='k',
+                               zorder=1)
+
+    elif draw_minor_tick_grid:
+        ax_features.grid(visible=True, which='minor', axis='x', alpha=grid_alpha, linewidth=grid_linewidth, color='k',
+                         zorder=1)
+        ax_heatmap.grid(visible=True, which='minor', axis='both', alpha=grid_alpha, linewidth=grid_linewidth, color='k',
+                        zorder=1)
 
 
 def plot_code_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, draw_manual_grid=True,
