@@ -1,11 +1,10 @@
-from manim import *
 import numpy as np
-from copy import deepcopy
+from manim import *
 
 # printing boolean arrays neatly
 np.set_printoptions(
-    precision=3, suppress=True, threshold=1000000, linewidth=400,
-    formatter={'bool': lambda bin_val: 'X' if bin_val else '-'})
+        precision=3, suppress=True, threshold=1000000, linewidth=400,
+        formatter={'bool': lambda bin_val: 'X' if bin_val else '-'})
 
 
 class Count(Animation):
@@ -93,8 +92,14 @@ class GnomeCode(VGroup):
             else:
                 cell = None
 
+            num_digits = len(str(k))
+            # print(num_digits)
+            fontsizes = [48, 48, 48, 36, 24]
+
             # cell index label
-            label = Integer(number=k, font_size=DEFAULT_FONT_SIZE).set_color(BLACK).scale(1.5)
+            # FIXME: scale font based on number of digits, causes misalignment of arranged grid because of this
+            # label = Integer(number=k, font_size=DEFAULT_FONT_SIZE).set_color(BLACK).scale(1.5)
+            label = Integer(number=k, font_size=fontsizes[num_digits]).set_color(BLACK).scale(1.5)
 
             # book-keeping attributes to control each cell's state
             label = label.set(index=k, tracker=self.trackers[k])
@@ -175,15 +180,14 @@ class GnomeCode(VGroup):
         return AnimationGroup(*[MoveToTarget(bin) for bin in self.submobjects])
 
 
-class GnomeShuffle(Scene):
+class GnomeShuffle(MovingCameraScene):
 
-    #def __init__(self, **kwargs):
+    # def __init__(self, **kwargs):
     #    super().__init__(**kwargs)
 
     def construct(self):
-
-        #print(self.renderer)
-        #return
+        # print(self.renderer)
+        # return
 
         self.rng = np.random.default_rng(0)
 
@@ -196,38 +200,91 @@ class GnomeShuffle(Scene):
         number.add_updater(lambda number: number.to_corner())
 
         # initialize gnome code array animation mobject and add to scene
-        code = GnomeCode()
+        code = GnomeCode(n=1024, w=128)
         self.add(code)
 
-
         # group bins into array, arranged from left to right, and center it to screen
-        num_cols = 6
-        code.arrange_in_grid(cols=num_cols, buff=0.1).center()
+        num_cols = 32
+        # code.arrange_in_grid(cols=num_cols, buff=(0.1,0.1)).center()
+        # code.arrange_in_grid(rows=num_cols, buff=(0.1,0.1)).center()
+        code.arrange_in_grid(buff=(0.1, 0.1)).center()
 
-        #code2 = GnomeCode()
-        #code2.arrange_in_grid(cols=num_cols+2, buff=0.1).center()
+        code_width = code.width
+        code_height = code.height
+        # if self.camera.frame.width > code_width:
+        #    self.camera.frame.set(width=code.width*1.1)
 
-        self.wait(0.5)
+        # if self.camera.frame.height > code_height:
+        #    self.camera.frame.set(height=code.height*1.5)
 
-        #self.play(TransformMatchingShapes(code, code2, path_arc=PI/2))
+        # if code_width > code_height:
+        #    self.camera.frame.set(width=code.width*1.1)
+        # else:
+        #    self.camera.frame.set(height=code.height*1.1)
 
-        # self.play(Count(number, 0, 100), run_time=4, rate_func=linear)
+        self.camera.frame.set(height=code.height * 1.1)
 
-        for j in range(2):
+        # if code_width > code_height:
+        #    self.play(self.camera.frame.animate.move_to(ORIGIN).set(width=code.width))
+        # else:
+        #    self.play(self.camera.frame.animate.move_to(ORIGIN).set(height=code.height))
+
+        # self.camera.frame.set(height=code.height * 1.5)
+
+        sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
+        new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        self.play(code.set_value(new_code))
+
+        # permutate the array
+        self.play(code.permutate(), run_time=1)
+
+        # rearrange grid layout
+        # self.play(code.animate.arrange_in_grid(cols=num_cols+1, buff=0.1).center(), run_time=1)
+        # self.play(code.animate.arrange_in_grid(rows=num_cols-1, buff=0.1).center(), run_time=1)
+
+        self.wait(2)
+
+        for j in range(10):
             # generate new code with w random activated bits
             sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
             new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
-
-            print("set code:", new_code)
-
             # set encoding
             self.play(code.set_value(new_code), run_time=0.4)
             self.wait(0.5)
 
-            # permutate the array
-            self.play(code.permutate(), run_time=1)
-            self.wait(0.5)
+        # code2 = GnomeCode()
+        # code2.arrange_in_grid(cols=num_cols+2, buff=0.1).center()
 
-            # rearrange grid layout
-            self.play(code.animate.arrange_in_grid(cols=num_cols - 1 - j, buff=0.1).center(), run_time=1)
-            self.wait(0.5)
+        # self.wait(0.1)
+
+        # sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
+        # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        # self.play(code.set_value(new_code))
+
+        # if code_width > code_height:
+        #    self.play(self.camera.frame.animate.move_to(ORIGIN).set(width=code.width))
+        # else:
+        #    self.play(self.camera.frame.animate.move_to(ORIGIN).set(height=code.height))
+
+        # self.play(TransformMatchingShapes(code, code2, path_arc=PI/2))
+
+        # self.play(Count(number, 0, 100), run_time=4, rate_func=linear)
+
+        # for j in range(2):
+        # generate new code with w random activated bits
+        #    sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
+        #    new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+
+        #    print("set code:", new_code)
+
+        # set encoding
+        #    self.play(code.set_value(new_code), run_time=0.4)
+        #    self.wait(0.5)
+
+        # permutate the array
+        # self.play(code.permutate(), run_time=1)
+        # self.wait(0.5)
+
+        # rearrange grid layout
+        # self.play(code.animate.arrange_in_grid(cols=num_cols - 1 - j, buff=0.1).center(), run_time=1)
+        # self.wait(0.5)
