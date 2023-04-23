@@ -1,3 +1,4 @@
+from line_profiler_pycharm import profile
 import re
 import string
 import textwrap
@@ -977,7 +978,7 @@ def draw_similarity_heatmap(ax, encoder, ref_point, colors, draw_regions=True,
     # labels.reverse()
     # legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
 
-
+@profile
 def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_grid=True, draw_legend=True):
     """
     Features Subplot (Boundaries, Weight, Crossings)
@@ -1105,7 +1106,9 @@ def draw_code_difference(ax, encoder, triangle=False, annot=True):
 
 
     #cmap = get_cmap("cet_fire")
-    cmap = get_cmap("cet_CET_I1")
+    #cmap = get_cmap("cet_CET_I1")
+    #cmap = get_cmap("cet_CET_CBTL2")
+    cmap = get_cmap("cet_CET_CBTL2_r")
 
     # cmap = sns.color_palette("rocket_r", as_cmap=True)
     # cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
@@ -1121,6 +1124,7 @@ def draw_code_difference(ax, encoder, triangle=False, annot=True):
     else:
         annot_data = False
 
+    linewidths = 0
     # find closest tick count to 20
     tick_counts = [5, 10, 50, 100, 500, 100, 500, 1000]
 
@@ -1172,7 +1176,10 @@ def draw_code_self_similarity(ax, encoder, triangle=False, annot=True):
     # cmap = sns.color_palette("rocket_r", as_cmap=True)
     #cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
 
-    cmap = get_cmap("cet_CET_I1")
+    #cmap = get_cmap("cet_CET_I1")
+    #cmap = get_cmap("cet_CET_CBL1_r")
+    #cmap = get_cmap("cet_CET_CBL1")
+    cmap = get_cmap("cet_CET_CBTL2")
 
     num_points = X_gnomes1.shape[0]
 
@@ -1185,6 +1192,7 @@ def draw_code_self_similarity(ax, encoder, triangle=False, annot=True):
     else:
         annot_data = False
 
+    linewidths = 0
     # find closest tick count to 20
     tick_counts = [5, 10, 50, 100, 500, 100, 500, 1000]
 

@@ -1,5 +1,6 @@
 import numpy as np
 from gnomecode import *
+from line_profiler_pycharm import profile
 
 
 # TODO:
@@ -9,8 +10,8 @@ from gnomecode import *
 # 2) + able to plot fundamental regions of periodic cells
 # 3) + plot fundamental bin and congruent bins (with lower alpha)
 # 4) + create better grid distribution options, multi-scale, etc
-# 5) center fund. region for each bin
-# 6) illustrative plots for each step of discussion (Properties of Discrete Encodings of Binary Population)
+# 5) - center fund. region for each bin
+# 6) - illustrative plots for each step of discussion (Properties of Discrete Encodings of Binary Population)
 # 7) + try to use the seaborn facet features to align heatmap x-axis with a graph plot x-axis
 # 8) + replace original self-similarity plots with plot_heatmap2 and plot_pmesh_heatmap2,
 #      figure out style issues (add seaborn layout)
@@ -94,7 +95,7 @@ def run_experiment():
     #for i in range(4):
     #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=2**i, period=0.5, xmin=0, xmax=1))
 
-    for i in [7, 11, 13, 17]:
+    for i in [7, 11, 13, 19]:
         multi_encoder.add_encoder(TaperingWeightEncoder(n=i, w=3))
 
     for i in range(10, 11):
@@ -112,19 +113,19 @@ def run_experiment():
         #print(multi_encoder.straddles)
 
         # Plot Feature
-        #plot_interval_multi_encoder(multi_encoder, desc_str=experiment)
-        #save_fig(file_dir, multi_encoder, "Features", experiment)
+        plot_interval_multi_encoder(multi_encoder, desc_str=experiment)
+        save_fig(file_dir, multi_encoder, "Features", experiment)
 
         # Plot Similarity Matrix by Code
-        plot_code_heatmap(multi_encoder, desc_str=experiment)
+        plot_code_heatmap(multi_encoder, desc_str=experiment, annot=False)
         save_fig(file_dir, multi_encoder, "Similarity_Matrix_by_Region_Code", experiment)
 
         # Plot Similarity Matrix by Real Space
-        #plot_realspace_heatmap(multi_encoder, desc_str=experiment)
-        #save_fig(file_dir, multi_encoder, "Similarity_Matrix_Projected_to_Real_Space", experiment)
+        plot_realspace_heatmap(multi_encoder, desc_str=experiment)
+        save_fig(file_dir, multi_encoder, "Similarity_Matrix_Projected_to_Real_Space", experiment)
 
         # Plot Difference Matrix by Code
-        plot_diff_heatmap(multi_encoder, desc_str=experiment)
+        plot_diff_heatmap(multi_encoder, desc_str=experiment, annot=False)
         save_fig(file_dir, multi_encoder, "Difference_Matrix_by_Region_Code", experiment)
 
 if __name__ == "__main__":

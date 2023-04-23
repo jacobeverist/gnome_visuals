@@ -1,5 +1,6 @@
 from collections.abc import Iterable
 from heapq import merge
+from line_profiler_pycharm import profile
 
 import numpy as np
 from intervals import FloatInterval as I
@@ -112,10 +113,11 @@ class MultiEncoder(_EncoderBase):
 
         self.is_init = False
 
+    @profile
     def add_encoder(self, encoder):
         self.encoders.append(encoder)
         self.config()
-
+    @profile
     def config(self):
         """
         w = property(get_w)
@@ -304,6 +306,7 @@ class MultiEncoder(_EncoderBase):
 
         # 5) capture weights for each region
 
+    @profile
     def encode(self, X):
         if not self.is_init:
             raise Exception("Multi-Encoder is not properly configured.")
@@ -453,6 +456,7 @@ class _IntervalEncoder(_EncoderBase):
 
     """
 
+    @profile
     def __init__(self, n=None, l=None, L=1.0, w=1, lower_bound=0, upper_bound=None, **kwargs):
         """
         Required: must provide either 'n' or 'l', but not both.
@@ -531,6 +535,7 @@ class _IntervalEncoder(_EncoderBase):
 
         self.config()
 
+    @profile
     def encode(self, X):
         """
         transform one or many values from the input domain into the output encoding
@@ -674,7 +679,7 @@ class PeriodicCellEncoder(_EncoderBase):
             return True
         else:
             return False
-
+    @profile
     def encode(self, X):
         """
         transform one or many values from the input domain into the output encoding
@@ -705,7 +710,7 @@ class PeriodicCellEncoder(_EncoderBase):
                     [int(self._is_x_in_periodic_bin(x_origin, self.origin, self.periods[k], self.bins[k],
                                                     self.straddles[k])) for k in range(self.n)])
             return gnome
-
+    @profile
     def config(self):
         """
         - create n random bins in specified interval
@@ -941,6 +946,7 @@ class _PeriodicEncoder(_EncoderBase):
         # number of boundary crossings at each region boundary
         self.region_deltas = []
 
+    @profile
     def _is_x_in_periodic_bin(self, x_input, origin, period, b, is_straddle):
 
         #
@@ -999,6 +1005,7 @@ class _PeriodicEncoder(_EncoderBase):
         else:
             return False
 
+    @profile
     def _generate_periodic_features(self, xmin, xmax, bins, periods):
 
         # xmin, xmax, bins, periods
@@ -1056,6 +1063,7 @@ class _PeriodicEncoder(_EncoderBase):
 
         return bin_congruence, region_boundaries
 
+    @profile
     def encode(self, X):
         """
         transform one or many values from the input domain into the output encoding

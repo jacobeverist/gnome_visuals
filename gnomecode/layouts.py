@@ -1,5 +1,6 @@
 # plotting
 
+from line_profiler_pycharm import profile
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
@@ -11,6 +12,7 @@ from .axesplots import *
 __all__ = ['plot_diff_heatmap', 'plot_code_heatmap', 'plot_realspace_heatmap', 'plot_interval_multi_encoder', 'save_fig']
 
 
+@profile
 def save_fig(path, encoder, plot_name, experiment_name, do_close=True):
     file_path = path + "%03u_%04u_" % (
             encoder.n, len(encoder.region_centers)) + plot_name + "_" + experiment_name + ".png"
@@ -22,7 +24,7 @@ def save_fig(path, encoder, plot_name, experiment_name, do_close=True):
         sns.reset_defaults()
 
 
-
+@profile
 def plot_diff_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, draw_manual_grid=True,
                       draw_minor_tick_grid=False):
     y_spacing = 0.05
@@ -99,6 +101,7 @@ def plot_diff_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, d
                         zorder=1)
 
 
+@profile
 def plot_code_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, draw_manual_grid=True,
                       draw_minor_tick_grid=False):
     y_spacing = 0.05
@@ -173,6 +176,7 @@ def plot_code_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, d
                         zorder=1)
 
 
+@profile
 def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, draw_manual_grid=True,
                            draw_minor_tick_grid=False):
     y_spacing = 0.05
@@ -367,6 +371,7 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
                         zorder=1)
 
 
+@profile
 def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
     n_bits = encoder.n
     markersize = 4
