@@ -8,6 +8,18 @@ np.set_printoptions(
         formatter={'bool': lambda bin_val: 'X' if bin_val else '-'})
 
 
+# 1) singleton input:  input array, synapses gated with valves, accumulator circle with sigma sum (input stage)
+# 2) singleton output:  circle with sigma sum, WTA-rod, activation line, bit box
+# 3) ensemble:  input array, gated synapses, dendriditic sum array, accumulator layer, sum line, WTA-layer, activations line, output layer
+# 4) layers:  input layer, synapse line, accumulator layer, sum line, WTA-layer, activations line, output layer
+
+class Neuron(Circle):
+    CONFIG = {}
+
+    def __init__(self, **kwargs):
+        pass
+
+
 class NetworkMobject(VGroup):
     CONFIG = {
             "neuron_radius": 0.15,
@@ -38,7 +50,8 @@ class NetworkMobject(VGroup):
         VGroup.__init__(self, **kwargs)
 
         # set CONFIG key-value pairs as member variables of this class instance
-        self.__dict__.update(**self.CONFIG)
+        for attr, value in self.CONFIG.items():
+            setattr(self, attr, value)
 
         # neural_networks needs to provide sizes array, integer size for each layer
         # and get_activation_of_all_layers(input_vector) method
@@ -204,7 +217,8 @@ class NetworkScene(Scene):
         Scene.__init__(self, **kwargs)
 
         # set CONFIG key-value pairs as member variables of this class instance
-        self.__dict__.update(**self.CONFIG)
+        for attr, value in self.CONFIG.items():
+            setattr(self, attr, value)
 
     def construct(self):
         self.network_mob = NetworkMobject(self.layer_sizes, include_output_labels=True, **self.network_mob_config)
