@@ -1,14 +1,12 @@
 # Colors
 import colorcet as cc
-import matplotlib as mpl
+import matplotlib as mpl  # mpl.colormaps.get_cmap
+# import seaborn as sns
 from manim import *
 from manim.utils.color import Colors
 
 testcc = cc.gray
-
-
-# from matplotlib.colormaps import get_cmap
-# import seaborn as sns
+cmap = mpl.colormaps.get_cmap
 
 
 class Neuron(Circle):
@@ -105,6 +103,9 @@ class GnomeCode(VGroup):
         self.bins = []
         self.rng = np.random.default_rng(0)
 
+        self.show_index = False
+        self.show_value = True
+
         # mpl
         # "cet_CET_L1" (black-white)
         # "cet_CET_CBTD1" (color-blind green/purple)
@@ -147,6 +148,18 @@ class GnomeCode(VGroup):
             # update colors based on value
             cell.set_fill(color=cell_color, opacity=1)
             label.set_color(text_color)  # .move_to(cell.get_center())
+
+            # update text
+            if self.show_value:
+                label.set_opacity(1)
+                label.set_value(label.tracker.get_value())
+            elif self.show_index and not self.show_value:
+                label.set_opacity(1)
+                label.set_value(label.index)
+            else:
+                label.set_opacity(0)
+
+            self.fit_text()
 
     def __add_updater(self) -> None:
         """Attaches the value tracker updater function to array animation"""
@@ -191,11 +204,18 @@ class GnomeCode(VGroup):
                 cell = None
 
             # cell index label
-            # label = Integer(number=k, font_size=fontsizes[num_digits]).set_color(BLACK).scale(1.5)
-            label = Integer(number=k).set_color(text_color)
+            if self.show_value:
+                label = Integer(number=self.trackers[k].get_value(), edge_to_fix=[0, 0, 0])
+            elif self.show_index and not self.show_value:
+                label = Integer(number=k, edge_to_fix=[0, 0, 0])
+            else:
+                label = Integer(edge_to_fix=[0, 0, 0]).set_opacity(0)
+
+            # noinspection PyTypeChecker
+            label.set_color(text_color)
 
             # book-keeping attributes to control each cell's state
-            label = label.set(index=k, tracker=self.trackers[k])  # , width=self.cell_side_length)
+            label = label.set(index=k, tracker=self.trackers[k])
 
             # create VGroup to associate this label and cell
             vgroup = VDict(dict(cell=cell, label=label))
@@ -203,6 +223,13 @@ class GnomeCode(VGroup):
             # add to book-keeping list of bins
             self.bins.append(vgroup)
             self.add(vgroup)
+
+        self.fit_text()
+
+        # add updater function to mobjects
+        self.__add_updater()
+
+    def fit_text(self):
 
         # fit all digit labels in their cells and make sure all have same font size
         max_height = -1e100
@@ -234,9 +261,7 @@ class GnomeCode(VGroup):
         for b in self.bins:
             label = b["label"]
             label.set_font_size(scaled_font_size)
-
-        # add updater function to mobjects
-        self.__add_updater()
+            #label.move_to(b["cell"].get_center())
 
     def set_value(self, new_code, anim=True):
         if anim:
@@ -254,7 +279,7 @@ class GnomeCode(VGroup):
         np.random.shuffle(permutated_indices)
         permutated_bins = [self.bins[i].copy() for i in permutated_indices]
 
-        ## move bins to their new index positions, but preserve index labels
+        # move bins to their new index positions, but preserve index labels
         for i in range(self.num_bins):
             b = permutated_bins[i]
             b.generate_target()

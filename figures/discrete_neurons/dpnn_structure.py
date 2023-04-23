@@ -1,15 +1,13 @@
-
 # Math Animation
-from manim import *
-
 # Colors
 import colorcet as cc
+import matplotlib as mpl  # mpl.colormaps.get_cmap
 import seaborn as sns
-import matplotlib as mpl
-# from matplotlib.colormaps import get_cmap
+from manim import *
 from manim.utils.color import Colors
-testcc = cc.gray
 
+testcc = cc.gray
+cmap = mpl.colormaps.get_cmap
 
 # Parts
 from gnome import GnomeCode, Neuron, Cell
@@ -143,4 +141,7 @@ class GnomeInputNeuronScene(Scene):
         new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
         print(new_code)
         code.set_value(new_code, anim=False)
-        # self.play(code.set_value(new_code), run_time=1)
+
+        new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        print(new_code)
+        self.play(code.set_value(new_code), run_time=1)
