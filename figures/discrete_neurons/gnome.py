@@ -33,7 +33,28 @@ class Synapse(VGroup):
         # get point on neuron boundary in the direction of mob we connect to
         diff_vec = mob.get_center() - neuron.get_center()
         normvec = diff_vec / np.linalg.norm(diff_vec)
-        end_point = neuron.radius * normvec + neuron.get_center()
+        try:
+            end_point = neuron.radius * normvec + neuron.get_center()
+        except:
+            # neuron is not a circle, so perhaps it is a square
+            # find closest boundary edge of mob to connect to
+            min_dist = 1e100
+            min_pnt = None
+            if ori == "vert":
+                cand_points = [neuron.get_edge_center(direction) for direction in [UP, DOWN]]
+            elif ori == "hori":
+                cand_points = [neuron.get_edge_center(direction) for direction in [LEFT, RIGHT]]
+            else:
+                cand_points = [neuron.get_edge_center(direction) for direction in [UP, DOWN, LEFT, RIGHT]]
+
+            for pnt in cand_points:
+                diff_vec = pnt - mob.get_center()
+                dist = np.linalg.norm(diff_vec)
+                if dist < min_dist:
+                    min_dist = dist
+                    min_pnt = pnt
+            end_point = min_pnt
+
 
         # find closest boundary edge of mob to connect to
         min_dist = 1e100
@@ -164,36 +185,36 @@ class NeuronWithOperations(VGroup):
                                     width=box_len * 1.5)
         self.activation.next_to(self.counter, UP, buff=buff)
 
+
         # scale of unit step function
         scale = 0.4
         width_scale = 0.7
 
-
         # individual lines to create unit step function (3 lines)
-        #line1 = Line(ORIGIN, RIGHT * scale, buff=0, color=BLACK, stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
+        # line1 = Line(ORIGIN, RIGHT * scale, buff=0, color=BLACK, stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
 
-        #line2 = Line(line1.get_end(), line1.get_end() + 1.2 * UP * scale, buff=0, color=BLACK,
+        # line2 = Line(line1.get_end(), line1.get_end() + 1.2 * UP * scale, buff=0, color=BLACK,
         #             stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
 
-        #line3 = Line(line2.get_end(), line2.get_end() + RIGHT * scale, buff=0, color=BLACK,
+        # line3 = Line(line2.get_end(), line2.get_end() + RIGHT * scale, buff=0, color=BLACK,
         #             stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
-
 
         # Raw VMObject to draw unit step function
-        vertices = [ORIGIN, RIGHT*scale*width_scale, RIGHT*scale*width_scale + 1.2 * UP * scale, 2 * RIGHT*scale*width_scale + 1.2 * UP * scale]
-        poly_path = VMobject(color=BLACK, stroke_width=1.8*DEFAULT_STROKE_WIDTH)
+        vertices = [ORIGIN, RIGHT * scale * width_scale, RIGHT * scale * width_scale + 1.2 * UP * scale,
+                    2 * RIGHT * scale * width_scale + 1.2 * UP * scale]
+        poly_path = VMobject(color=BLACK, stroke_width=1.8 * DEFAULT_STROKE_WIDTH)
         first_vertex, *vertices = vertices
         first_vertex = np.array(first_vertex)
         poly_path.start_new_path(first_vertex)
         poly_path.add_points_as_corners(np.array([np.array(vertex) for vertex in vertices]))
 
-
-        #self.activation_label = VDict(dict(line1=line1, line2=line2, line3=line3))
+        # self.activation_label = VDict(dict(line1=line1, line2=line2, line3=line3))
         self.activation_label = VDict(dict(step_func=poly_path))
         self.activation_label.move_to(self.activation.get_center())
 
         # counter as sigma summation symbol
-        self.counter_label = MathTex("\sum", color=BLACK, stroke_width=0.8*DEFAULT_STROKE_WIDTH).move_to(self.counter.get_center()).scale(0.8)
+        self.counter_label = MathTex("\sum", color=BLACK, stroke_width=0.8 * DEFAULT_STROKE_WIDTH).move_to(
+            self.counter.get_center()).scale(0.8)
 
         # noinspection PyTypeChecker
         # label1.set_color(text_color)

@@ -274,6 +274,16 @@ class DiscreteOperationsScene(Scene):
         neuron = NeuronWithOperations().shift(UP)
         self.add(neuron)
 
+        sum_arrow = Arrow(start=neuron.counter.get_edge_center(RIGHT),
+                          end=neuron.counter.get_edge_center(RIGHT) + 5*RIGHT,
+                          buff=0.05)
+        winner_arrow = Arrow(start=neuron.activation.get_edge_center(RIGHT) + 5*RIGHT,
+                             end=neuron.activation.get_edge_center(RIGHT),
+                             buff=0.05)
+        self.add(sum_arrow)
+        self.add(winner_arrow)
+
+
         # output layer
         num_outputs = 17
         output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=DARK_BROWN)
@@ -291,7 +301,8 @@ class DiscreteOperationsScene(Scene):
         self.add(input_code)
 
         # connect neuron to output layer with axon
-        self.add(Synapse(neuron, output_code.bins[int(num_outputs / 2)], do_cross=False))
+        #self.add(Synapse(neuron, output_code.bins[int(num_outputs / 2)], do_cross=False))
+        self.add(Synapse(neuron.activation, output_code.bins[int(num_outputs / 2)], do_cross=False))
 
         # connect input layer to neuron with synapses
         sparse_elements = [0, ] * int(input_code.num_bins / 2) + [1, ] * (
@@ -299,7 +310,7 @@ class DiscreteOperationsScene(Scene):
         connections = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
         for i, is_connected in enumerate(connections):
             if is_connected:
-                self.add(Synapse(neuron, input_code.bins[i]))
+                self.add(Synapse(neuron.counter, input_code.bins[i]))
 
         # set the current input and output codes
         w = int(input_code.num_bins / 2)
