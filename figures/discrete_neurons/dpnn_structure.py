@@ -10,7 +10,7 @@ testgray = cc.gray
 cmap = mpl.colormaps.get_cmap
 
 # Parts
-from gnome import GnomeCode, Neuron, Cell
+from gnome import GnomeCode, NaiveNeuron, Cell, Synapse, NeuronWithOperations
 
 # printing boolean arrays neatly
 np.set_printoptions(
@@ -62,7 +62,7 @@ class NaiveNeuronScene(Scene):
         # colors = cc.b_glasbey_category10
 
         # add single neuron
-        neuron = Neuron(neuron_fill_color=colors[0]).shift(UP * 3)
+        neuron = NaiveNeuron(neuron_fill_color=colors[0]).shift(UP * 3)
         self.add(neuron)
 
         # add input layer
@@ -139,7 +139,7 @@ class GnomeInputNeuronScene(Scene):
 
         # add single neuron
         # neuron = Neuron(neuron_fill_color=colors[0]).shift(UP * 3)
-        neuron = Neuron(neuron_fill_color=colors[0]).shift(UP)
+        neuron = NaiveNeuron(neuron_fill_color=colors[0]).shift(UP)
         self.add(neuron)
 
         # output axon
@@ -187,70 +187,24 @@ class DiscreteSynapseScene(Scene):
             "num_inputs": 17,
     }
     rng = np.random.default_rng(0)
+
+    # Name of a seaborn palette (deep, muted, bright, pastel, dark, colorblind)
     colors = sns.color_palette("colorblind").as_hex()
 
-    def create_edge(self, neuron, mob, ori="vert", do_cross=True):
-
-        # get point on neuron boundary in the direction of mob we connect to
-        diff_vec = mob.get_center() - neuron.get_center()
-        normvec = diff_vec / np.linalg.norm(diff_vec)
-        end_point = neuron.radius * normvec + neuron.get_center()
-
-        # find closest boundary edge of mob to connect to
-        min_dist = 1e100
-        min_pnt = None
-        if ori == "vert":
-            cand_points = [mob.get_edge_center(direction) for direction in [UP, DOWN]]
-        elif ori == "hori":
-            cand_points = [mob.get_edge_center(direction) for direction in [LEFT, RIGHT]]
-        else:
-            cand_points = [mob.get_edge_center(direction) for direction in [UP, DOWN, LEFT, RIGHT]]
-
-        for pnt in cand_points:
-            diff_vec = pnt - end_point
-            dist = np.linalg.norm(diff_vec)
-            if dist < min_dist:
-                min_dist = dist
-                min_pnt = pnt
-        start_point = min_pnt
-
-        # tip_length = 1,
-        line = Line(
-                start_point,
-                end_point,
-                # max_tip_length_to_length_ratio=0.08,
-                # max_stroke_width_to_length_ratio=2,
-                buff=0,
-                stroke_color=self.CONFIG["edge_color"],
-                # stroke_width=self.CONFIG["edge_stroke_width"],
-                stroke_opacity=0.8,
-        )
-
-        self.add(line)
-
-        if do_cross:
-            # noinspection PyTypeChecker
-            cross = Cross(stroke_width=self.CONFIG["edge_stroke_width"],
-                          stroke_color=self.colors[8])
-                          #stroke_color = self.colors[mob['label'].index % len(self.colors)])
-            cross.move_to(line.get_center()).set_height(0.2).rotate(line.get_angle())
-
-            self.add(cross)
+    # colorcet category palette
+    # colors = cc.b_glasbey_category10
 
     def construct(self):
 
         self.camera.background_color = BLACK
-
-        # Name of a seaborn palette (deep, muted, bright, pastel, dark, colorblind)
-        # colors = sns.color_palette("colorblind").as_hex()
         colors = self.colors
 
-        # colorcet category palette
-        # colors = cc.b_glasbey_category10
 
         # add single neuron
         # neuron = Neuron(neuron_fill_color=colors[0]).shift(UP * 3)
-        neuron = Neuron(neuron_fill_color=colors[0]).shift(UP)
+        #neuron = NaiveNeuron(neuron_fill_color=colors[0]).shift(UP)
+        #neuron = NeuronWithOperations(neuron_fill_color=colors[0]).shift(UP)
+        neuron = NeuronWithOperations(neuron_fill_color=BLACK).shift(UP)
         self.add(neuron)
 
         # output layer
@@ -270,7 +224,7 @@ class DiscreteSynapseScene(Scene):
         self.add(input_code)
 
         # connect neuron to output layer with axon
-        self.create_edge(neuron, output_code.bins[int(num_outputs / 2)], do_cross=False)
+        self.add(Synapse(neuron, output_code.bins[int(num_outputs / 2)], do_cross=False))
 
         # connect input layer to neuron with synapses
         sparse_elements = [0, ] * int(input_code.num_bins / 2) + [1, ] * (
@@ -278,7 +232,7 @@ class DiscreteSynapseScene(Scene):
         connections = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
         for i, is_connected in enumerate(connections):
             if is_connected:
-                self.create_edge(neuron, input_code.bins[i])
+                self.add(Synapse(neuron, input_code.bins[i]))
 
         # set the current input and output codes
         w = int(input_code.num_bins / 2)

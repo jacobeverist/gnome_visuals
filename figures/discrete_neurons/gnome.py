@@ -1,7 +1,7 @@
 # Colors
 import colorcet as cc
 import matplotlib as mpl  # mpl.colormaps.get_cmap
-# import seaborn as sns
+import seaborn as sns
 from manim import *
 from manim.utils.color import Colors
 
@@ -9,7 +9,74 @@ testcc = cc.gray
 cmap = mpl.colormaps.get_cmap
 
 
-class Neuron(Circle):
+class Synapse(VGroup):
+    CONFIG = {
+            "edge_color": WHITE,
+            "edge_stroke_width": 3,
+            "num_inputs": 17,
+    }
+    rng = np.random.default_rng(0)
+    colors = sns.color_palette("colorblind").as_hex()
+
+    def __init__(self, neuron, mob, ori="vert", do_cross=True, **kwargs):
+
+        # update local CONFIG
+        for k, v in {k: v for k, v in kwargs.items() if k in self.CONFIG}.items():
+            self.CONFIG[k] = kwargs.pop(k)
+
+        # set CONFIG key-value pairs as member variables of this class instance
+        for attr, value in self.CONFIG.items():
+            setattr(self, attr, value)
+
+        super().__init__(**kwargs)
+
+        # get point on neuron boundary in the direction of mob we connect to
+        diff_vec = mob.get_center() - neuron.get_center()
+        normvec = diff_vec / np.linalg.norm(diff_vec)
+        end_point = neuron.radius * normvec + neuron.get_center()
+
+        # find closest boundary edge of mob to connect to
+        min_dist = 1e100
+        min_pnt = None
+        if ori == "vert":
+            cand_points = [mob.get_edge_center(direction) for direction in [UP, DOWN]]
+        elif ori == "hori":
+            cand_points = [mob.get_edge_center(direction) for direction in [LEFT, RIGHT]]
+        else:
+            cand_points = [mob.get_edge_center(direction) for direction in [UP, DOWN, LEFT, RIGHT]]
+
+        for pnt in cand_points:
+            diff_vec = pnt - end_point
+            dist = np.linalg.norm(diff_vec)
+            if dist < min_dist:
+                min_dist = dist
+                min_pnt = pnt
+        start_point = min_pnt
+
+        # tip_length = 1,
+        self.line = Line(
+                start_point,
+                end_point,
+                # max_tip_length_to_length_ratio=0.08,
+                # max_stroke_width_to_length_ratio=2,
+                buff=0,
+                stroke_color=self.CONFIG["edge_color"],
+                # stroke_width=self.CONFIG["edge_stroke_width"],
+                stroke_opacity=0.8,
+        )
+
+        self.add(self.line)
+
+        if do_cross:
+            # noinspection PyTypeChecker
+            self.cross = Cross(stroke_width=self.CONFIG["edge_stroke_width"],
+                               stroke_color=self.colors[8])
+            self.cross.move_to(self.line.get_center()).set_height(0.2).rotate(self.line.get_angle())
+
+            self.add(self.cross)
+
+
+class NaiveNeuron(Circle):
     CONFIG = {
             "neuron_radius": 0.5,
             "neuron_stroke_color": WHITE,
@@ -37,6 +104,88 @@ class Neuron(Circle):
                 fill_opacity=1,
                 **kwargs,
         )
+
+
+class NeuronWithOperations(VGroup):
+    CONFIG = {
+            "neuron_radius": 1.0,
+            "neuron_stroke_color": WHITE,
+            "neuron_stroke_width": 3,
+            "neuron_fill_color": BLACK,
+    }
+
+    def __init__(self, **kwargs):
+
+        # update local CONFIG
+        for k, v in {k: v for k, v in kwargs.items() if k in self.CONFIG}.items():
+            self.CONFIG[k] = kwargs.pop(k)
+
+        # set CONFIG key-value pairs as member variables of this class instance
+        for attr, value in self.CONFIG.items():
+            setattr(self, attr, value)
+        self.radius = self.neuron_radius
+
+        super().__init__(**kwargs)
+
+        # create circle
+        self.circle = Circle(
+                radius=self.neuron_radius,
+                stroke_color=self.neuron_stroke_color,
+                stroke_width=self.neuron_stroke_width,
+                fill_color=self.neuron_fill_color,
+                fill_opacity=1,
+                **kwargs,
+        )
+
+        self.add(self.circle)
+
+        # box_factor = box_len / self.neuron_radius
+        # box_factor = 0.72
+        box_factor = 0.74
+
+        buff = 0.05
+        # box_len = self.neuron_radius/2.0
+        # box_len = 0.36
+        box_len = box_factor * self.neuron_radius
+
+        #  Rectangle(height=side_length, width=side_length, **kwargs)
+
+        #         self.add_background_rectangle(opacity=0.25, stroke_opacity=1, stroke_width=3, stroke_color=GREY_B,
+        #                                       buff=2.5 * SMALL_BUFF, color=Colors.gray_a.value,
+        #                                       corner_radius=self.cell_side_length)
+
+        self.counter = Rectangle(fill_color=Colors.gray_d.value, fill_opacity=1, stroke_color=GREY_A, height=box_len,
+                                 width=box_len * 1.5).shift(DOWN * (self.neuron_radius / 2.0 - buff / 2.0 - 1.5 * buff))
+
+        self.activation = Rectangle(fill_color=Colors.gray_d.value, fill_opacity=1, stroke_color=GREY_A, height=box_len,
+                                    width=box_len * 1.5).next_to(self.counter, UP, buff=buff)
+
+        # unit step function (3 lines)
+
+        scale = 0.4
+
+        line1 = Line(ORIGIN, RIGHT * scale, buff=0)
+        line2 = Line(line1.get_end(), line1.get_end() + 1.2*UP * scale, buff=0)
+        line3 = Line(line2.get_end(), line2.get_end() + RIGHT * scale, buff=0)
+        self.label2 = VDict(dict(line1=line1, line2=line2, line3=line3)).move_to(self.activation.get_center())
+
+        self.label1 = MathTex("\sum").move_to(self.counter.get_center()).scale(0.8)
+
+        #self.label2 = Integer(number=0, edge_to_fix=[0, 0, 0]).move_to(self.activation.get_center())
+        # self.label1 = Integer(number=0, edge_to_fix=[0, 0, 0]).move_to(self.counter.get_center())
+        # self.label2 = Integer(number=0, edge_to_fix=[0, 0, 0]).move_to(self.activation.get_center())
+        # noinspection PyTypeChecker
+        # label1.set_color(text_color)
+
+        # self.counter = Square(side_length=box_len).shift(DOWN*(self.neuron_radius/2.0-buff/2.0))
+        # self.activation = Square(side_length=box_len).next_to(self.counter, UP, buff=buff)
+
+        self.operations = VDict(dict(counter=self.counter,
+                                     activation=self.activation,
+                                     counter_label=self.label1,
+                                     activation_label=self.label2))
+
+        self.add(self.operations)
 
 
 class Cell(Square):
@@ -261,7 +410,7 @@ class GnomeCode(VGroup):
         for b in self.bins:
             label = b["label"]
             label.set_font_size(scaled_font_size)
-            #label.move_to(b["cell"].get_center())
+            # label.move_to(b["cell"].get_center())
 
     def set_value(self, new_code, anim=True):
         if anim:
