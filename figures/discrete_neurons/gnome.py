@@ -12,13 +12,13 @@ cmap = mpl.colormaps.get_cmap
 class Synapse(VGroup):
     CONFIG = {
             "edge_color": WHITE,
-            "edge_stroke_width": 3,
+            "edge_stroke_width": 4,
             "num_inputs": 17,
     }
     rng = np.random.default_rng(0)
     colors = sns.color_palette("colorblind").as_hex()
 
-    def __init__(self, neuron, mob, ori="vert", do_cross=True, **kwargs):
+    def __init__(self, neuron, mob, ori="vert", do_cross=True, cross_color=RED, **kwargs):
 
         # update local CONFIG
         for k, v in {k: v for k, v in kwargs.items() if k in self.CONFIG}.items():
@@ -74,6 +74,10 @@ class Synapse(VGroup):
                 min_pnt = pnt
         start_point = min_pnt
 
+        edge_color = mpl.colors.rgb2hex(mpl.colormaps.get_cmap("cet_blues")(0.25))
+        #edge_color = mpl.colors.rgb2hex(sns.color_palette("tab10")[9])
+
+
         # tip_length = 1,
         self.line = Line(
                 start_point,
@@ -81,9 +85,10 @@ class Synapse(VGroup):
                 # max_tip_length_to_length_ratio=0.08,
                 # max_stroke_width_to_length_ratio=2,
                 buff=0,
-                stroke_color=self.CONFIG["edge_color"],
+                #stroke_color=self.CONFIG["edge_color"],
+                stroke_color=edge_color,
                 # stroke_width=self.CONFIG["edge_stroke_width"],
-                stroke_opacity=0.8,
+                stroke_opacity=1,
         )
 
         self.add(self.line)
@@ -91,8 +96,12 @@ class Synapse(VGroup):
         if do_cross:
             # noinspection PyTypeChecker
             self.cross = Cross(stroke_width=self.CONFIG["edge_stroke_width"],
-                               stroke_color=self.colors[8])
-            self.cross.move_to(self.line.get_center()).set_height(0.2).rotate(self.line.get_angle())
+                               stroke_color=cross_color)
+            #self.cross = Cross(stroke_width=self.CONFIG["edge_stroke_width"],
+            #                   stroke_color=self.colors[8])
+            #self.cross = Cross(stroke_width=self.CONFIG["edge_stroke_width"],
+            #                   stroke_color=self.colors[8])
+            self.cross.move_to(self.line.get_center()).set_height(0.15).rotate(self.line.get_angle())
 
             self.add(self.cross)
 
@@ -132,7 +141,7 @@ class NeuronWithOperations(VGroup):
             "neuron_radius": 1.0,
             "neuron_stroke_color": WHITE,
             "neuron_stroke_width": 3,
-            "neuron_fill_color": GRAY_D,
+            "neuron_fill_color": GRAY_C,
     }
 
     def __init__(self, **kwargs):
@@ -169,8 +178,10 @@ class NeuronWithOperations(VGroup):
         # box_len = 0.36
         box_len = box_factor * self.neuron_radius
 
+        box_color = "#3b7cb2"
+
         # counter operation
-        self.counter = Rectangle(fill_color=WHITE,
+        self.counter = Rectangle(fill_color=box_color,
                                  fill_opacity=1,
                                  stroke_color=BLACK,
                                  height=box_len,
@@ -178,7 +189,7 @@ class NeuronWithOperations(VGroup):
         self.counter.shift(DOWN * (self.neuron_radius / 2.0 - buff / 2.0 - 1.5 * buff))
 
         # activation operation
-        self.activation = Rectangle(fill_color=WHITE,
+        self.activation = Rectangle(fill_color=box_color,
                                     fill_opacity=1,
                                     stroke_color=BLACK,
                                     height=box_len,
@@ -271,6 +282,8 @@ class GnomeCode(VGroup):
 
     def __init__(self, shape="square", n=32, **kwargs):
 
+        print(self.CONFIG)
+
         # update local CONFIG
         for k, v in {k: v for k, v in kwargs.items() if k in self.CONFIG}.items():
             self.CONFIG[k] = kwargs.pop(k)
@@ -308,8 +321,24 @@ class GnomeCode(VGroup):
         # seaborn
         # "rocket_r"
 
-        self.colormap = "cet_CET_L1"
+        #self.colormap = "cet_CET_L1"
+        self.colormap = "cet_blues"
+        #self.colormap = "cet_blues"
         self.cmap = mpl.colormaps.get_cmap(self.colormap)
+        #self.cmap = sns.color_palette("coolwarm", as_cmap=True)
+
+        print("blues:", self.cmap(0.0), self.cmap(1.0))
+        print("blues:", self.cmap(0), self.cmap(255))
+        print(self.cmap.N)
+        cell_color = mpl.colors.rgb2hex(self.cmap(1.0))
+        print(cell_color)
+        # (0.94334, 0.94353, 0.94348, 1.0)
+        #
+        # "#3b7cb2"
+
+        #mpl.colors.LinearSegmentedColormap
+
+        #mpl.colormaps.LinearSegmentedColormap
 
         self.__init_array()
 
@@ -326,12 +355,13 @@ class GnomeCode(VGroup):
             # change cell background color
             # cell_rgb = [(1.0 - val) for _ in range(3)]
             # cell_color = rgb_to_color(cell_rgb)
-            cell_color = mpl.colors.rgb2hex(self.cmap(1.0 - val))
+            cell_color = mpl.colors.rgb2hex(self.cmap(val))
 
             # change text value and color by "becoming" one of two different saved text mobjects
             # text_rgb = [val for _ in range(3)]
             # text_color = rgb_to_color(text_rgb)
-            text_color = mpl.colors.rgb2hex(self.cmap(val))
+            text_color = mpl.colors.rgb2hex(self.cmap(1.0-val))
+            text_color = BLACK
 
             # update colors based on value
             cell.set_fill(color=cell_color, opacity=1)
@@ -362,7 +392,8 @@ class GnomeCode(VGroup):
         """ gnome code animation of mobjects """
 
         cell_color = mpl.colors.rgb2hex(self.cmap(1.0))
-        text_color = mpl.colors.rgb2hex(self.cmap(0.0))
+        #text_color = mpl.colors.rgb2hex(self.cmap(0.0))
+        text_color = BLACK
 
         # array of values from 0 to 1 for each textbox
         self.trackers = [ValueTracker(0).set(index=k) for k in range(self.num_bins)]
@@ -479,6 +510,11 @@ class GnomeCode(VGroup):
         return AnimationGroup(*[MoveToTarget(b) for b in self.submobjects])
 
     def add_background(self):
-        self.add_background_rectangle(opacity=0.25, stroke_opacity=1, stroke_width=3, stroke_color=GREY_B,
-                                      buff=2.5 * SMALL_BUFF, color=Colors.gray_a.value,
+        self.add_background_rectangle(opacity=1,
+                                      color=Colors.gray_c.value,
+                                      stroke_opacity=1,
+                                      stroke_width=3,
+                                      stroke_color=Colors.white.value,
+                                      #buff=2.5 * SMALL_BUFF, color=Colors.gray_a.value,
+                                      buff=2.5 * SMALL_BUFF,
                                       corner_radius=self.cell_side_length)

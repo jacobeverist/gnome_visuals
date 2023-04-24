@@ -2,7 +2,11 @@
 # Colors
 import colorcet as cc
 import matplotlib as mpl  # mpl.colormaps.get_cmap
+
+# seaborn perceptually uniform color maps:
+# "rocket", "mako", "flare", "crest", "magma", "viridis"
 import seaborn as sns
+
 from manim import *
 from manim.utils.color import Colors
 
@@ -311,6 +315,91 @@ class DiscreteOperationsScene(Scene):
         for i, is_connected in enumerate(connections):
             if is_connected:
                 self.add(Synapse(neuron.counter, input_code.bins[i]))
+
+        # set the current input and output codes
+        w = int(input_code.num_bins / 2)
+        sparse_elements = [0, ] * (input_code.num_bins - w) + [1, ] * w
+        new_data = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
+        print(new_data)
+        input_code.set_value(new_data, anim=False)
+
+        out_data = np.zeros(17)
+        out_data[int(input_code.num_bins / 2)] = 1
+        print(out_data)
+        output_code.set_value(out_data, anim=False)
+
+        # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        # print(new_code)
+        # self.play(code.set_value(new_code), run_time=1)
+
+
+class SynapticBusScene(Scene):
+    CONFIG = {
+            "edge_color": WHITE,
+            "edge_stroke_width": 3,
+            "num_inputs": 17,
+    }
+    rng = np.random.default_rng(0)
+
+    # Name of a seaborn palette (deep, muted, bright, pastel, dark, colorblind)
+    colors = sns.color_palette("colorblind").as_hex()
+
+    # colorcet category palette
+    # colors = cc.b_glasbey_category10
+
+    def construct(self):
+
+        self.camera.background_color = BLACK
+        colors = self.colors
+
+
+        # add single neuron
+        neuron = NeuronWithOperations().shift(UP)
+        self.add(neuron)
+
+        arrow_color = mpl.colors.rgb2hex(sns.color_palette("tab10")[6])
+        sum_arrow = Arrow(start=neuron.counter.get_edge_center(RIGHT),
+                          end=neuron.counter.get_edge_center(RIGHT) + 5*RIGHT,
+                          buff=0.05, stroke_color=arrow_color, stroke_width=12)
+        winner_arrow = Arrow(start=neuron.activation.get_edge_center(RIGHT) + 5*RIGHT,
+                             end=neuron.activation.get_edge_center(RIGHT),
+                             buff=0.05, stroke_color=arrow_color, stroke_width=12)
+        self.add(sum_arrow)
+        self.add(winner_arrow)
+
+
+        # output layer
+        num_outputs = 17
+        output_code = GnomeCode(shape='square', n=num_outputs) #, cell_stroke_color=GRAY_C)
+        output_code.arrange(RIGHT, buff=0.01).move_to(config.top).shift(0.8 * DOWN)
+        diff_vec = neuron.get_x() - output_code.bins[int(num_outputs / 2)].get_x()
+        output_code.shift(RIGHT * diff_vec)
+        output_code.add_background()
+        self.add(output_code)
+
+        # input layer
+        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"]) #, cell_stroke_color=BLACK)
+        input_code.arrange(RIGHT, buff=0.01).move_to(config.bottom).shift(0.8 * UP)
+        input_code.shift(RIGHT * diff_vec)
+        input_code.add_background()
+        self.add(input_code)
+
+        # connect neuron to output layer with axon
+        self.add(Synapse(neuron.activation, output_code.bins[int(num_outputs / 2)], do_cross=False))
+
+        # connect input layer to neuron with synapses
+        sparse_elements = [0, ] * int(input_code.num_bins / 2) + [1, ] * (
+                input_code.num_bins - int(input_code.num_bins / 2))
+        connections = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
+        synapses = []
+        for i, is_connected in enumerate(connections):
+            if is_connected:
+                if i % 2 == 0:
+                    synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=GREEN)
+                else:
+                    synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=RED)
+                synapses.append(synapse)
+                self.add(synapse)
 
         # set the current input and output codes
         w = int(input_code.num_bins / 2)
