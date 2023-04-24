@@ -111,7 +111,7 @@ class NeuronWithOperations(VGroup):
             "neuron_radius": 1.0,
             "neuron_stroke_color": WHITE,
             "neuron_stroke_width": 3,
-            "neuron_fill_color": BLACK,
+            "neuron_fill_color": GRAY_D,
     }
 
     def __init__(self, **kwargs):
@@ -148,42 +148,60 @@ class NeuronWithOperations(VGroup):
         # box_len = 0.36
         box_len = box_factor * self.neuron_radius
 
-        #  Rectangle(height=side_length, width=side_length, **kwargs)
+        # counter operation
+        self.counter = Rectangle(fill_color=WHITE,
+                                 fill_opacity=1,
+                                 stroke_color=BLACK,
+                                 height=box_len,
+                                 width=box_len * 1.5)
+        self.counter.shift(DOWN * (self.neuron_radius / 2.0 - buff / 2.0 - 1.5 * buff))
 
-        #         self.add_background_rectangle(opacity=0.25, stroke_opacity=1, stroke_width=3, stroke_color=GREY_B,
-        #                                       buff=2.5 * SMALL_BUFF, color=Colors.gray_a.value,
-        #                                       corner_radius=self.cell_side_length)
+        # activation operation
+        self.activation = Rectangle(fill_color=WHITE,
+                                    fill_opacity=1,
+                                    stroke_color=BLACK,
+                                    height=box_len,
+                                    width=box_len * 1.5)
+        self.activation.next_to(self.counter, UP, buff=buff)
 
-        self.counter = Rectangle(fill_color=Colors.gray_d.value, fill_opacity=1, stroke_color=GREY_A, height=box_len,
-                                 width=box_len * 1.5).shift(DOWN * (self.neuron_radius / 2.0 - buff / 2.0 - 1.5 * buff))
-
-        self.activation = Rectangle(fill_color=Colors.gray_d.value, fill_opacity=1, stroke_color=GREY_A, height=box_len,
-                                    width=box_len * 1.5).next_to(self.counter, UP, buff=buff)
-
-        # unit step function (3 lines)
-
+        # scale of unit step function
         scale = 0.4
+        width_scale = 0.7
 
-        line1 = Line(ORIGIN, RIGHT * scale, buff=0)
-        line2 = Line(line1.get_end(), line1.get_end() + 1.2*UP * scale, buff=0)
-        line3 = Line(line2.get_end(), line2.get_end() + RIGHT * scale, buff=0)
-        self.label2 = VDict(dict(line1=line1, line2=line2, line3=line3)).move_to(self.activation.get_center())
 
-        self.label1 = MathTex("\sum").move_to(self.counter.get_center()).scale(0.8)
+        # individual lines to create unit step function (3 lines)
+        #line1 = Line(ORIGIN, RIGHT * scale, buff=0, color=BLACK, stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
 
-        #self.label2 = Integer(number=0, edge_to_fix=[0, 0, 0]).move_to(self.activation.get_center())
-        # self.label1 = Integer(number=0, edge_to_fix=[0, 0, 0]).move_to(self.counter.get_center())
-        # self.label2 = Integer(number=0, edge_to_fix=[0, 0, 0]).move_to(self.activation.get_center())
+        #line2 = Line(line1.get_end(), line1.get_end() + 1.2 * UP * scale, buff=0, color=BLACK,
+        #             stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
+
+        #line3 = Line(line2.get_end(), line2.get_end() + RIGHT * scale, buff=0, color=BLACK,
+        #             stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
+
+
+        # Raw VMObject to draw unit step function
+        vertices = [ORIGIN, RIGHT*scale*width_scale, RIGHT*scale*width_scale + 1.2 * UP * scale, 2 * RIGHT*scale*width_scale + 1.2 * UP * scale]
+        poly_path = VMobject(color=BLACK, stroke_width=1.8*DEFAULT_STROKE_WIDTH)
+        first_vertex, *vertices = vertices
+        first_vertex = np.array(first_vertex)
+        poly_path.start_new_path(first_vertex)
+        poly_path.add_points_as_corners(np.array([np.array(vertex) for vertex in vertices]))
+
+
+        #self.activation_label = VDict(dict(line1=line1, line2=line2, line3=line3))
+        self.activation_label = VDict(dict(step_func=poly_path))
+        self.activation_label.move_to(self.activation.get_center())
+
+        # counter as sigma summation symbol
+        self.counter_label = MathTex("\sum", color=BLACK, stroke_width=0.8*DEFAULT_STROKE_WIDTH).move_to(self.counter.get_center()).scale(0.8)
+
         # noinspection PyTypeChecker
         # label1.set_color(text_color)
 
-        # self.counter = Square(side_length=box_len).shift(DOWN*(self.neuron_radius/2.0-buff/2.0))
-        # self.activation = Square(side_length=box_len).next_to(self.counter, UP, buff=buff)
-
         self.operations = VDict(dict(counter=self.counter,
                                      activation=self.activation,
-                                     counter_label=self.label1,
-                                     activation_label=self.label2))
+                                     counter_label=self.counter_label,
+                                     activation_label=self.activation_label))
 
         self.add(self.operations)
 

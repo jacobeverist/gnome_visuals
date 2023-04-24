@@ -202,9 +202,76 @@ class DiscreteSynapseScene(Scene):
 
         # add single neuron
         # neuron = Neuron(neuron_fill_color=colors[0]).shift(UP * 3)
-        #neuron = NaiveNeuron(neuron_fill_color=colors[0]).shift(UP)
-        #neuron = NeuronWithOperations(neuron_fill_color=colors[0]).shift(UP)
-        neuron = NeuronWithOperations(neuron_fill_color=BLACK).shift(UP)
+        neuron = NaiveNeuron(neuron_fill_color=colors[0]).shift(UP)
+        self.add(neuron)
+
+        # output layer
+        num_outputs = 17
+        output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=DARK_BROWN)
+        output_code.arrange(RIGHT, buff=0.01).move_to(config.top).shift(0.8 * DOWN)
+        diff_vec = neuron.get_x() - output_code.bins[int(num_outputs / 2)].get_x()
+        output_code.shift(RIGHT * diff_vec)
+        output_code.add_background()
+        self.add(output_code)
+
+        # input layer
+        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"], cell_stroke_color=DARK_BROWN)
+        input_code.arrange(RIGHT, buff=0.01).move_to(config.bottom).shift(0.8 * UP)
+        input_code.shift(RIGHT * diff_vec)
+        input_code.add_background()
+        self.add(input_code)
+
+        # connect neuron to output layer with axon
+        self.add(Synapse(neuron, output_code.bins[int(num_outputs / 2)], do_cross=False))
+
+        # connect input layer to neuron with synapses
+        sparse_elements = [0, ] * int(input_code.num_bins / 2) + [1, ] * (
+                input_code.num_bins - int(input_code.num_bins / 2))
+        connections = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
+        for i, is_connected in enumerate(connections):
+            if is_connected:
+                self.add(Synapse(neuron, input_code.bins[i]))
+
+        # set the current input and output codes
+        w = int(input_code.num_bins / 2)
+        sparse_elements = [0, ] * (input_code.num_bins - w) + [1, ] * w
+        new_data = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
+        print(new_data)
+        input_code.set_value(new_data, anim=False)
+
+        out_data = np.zeros(17)
+        out_data[int(input_code.num_bins / 2)] = 1
+        print(out_data)
+        output_code.set_value(out_data, anim=False)
+
+        # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        # print(new_code)
+        # self.play(code.set_value(new_code), run_time=1)
+
+
+
+class DiscreteOperationsScene(Scene):
+    CONFIG = {
+            "edge_color": WHITE,
+            "edge_stroke_width": 3,
+            "num_inputs": 17,
+    }
+    rng = np.random.default_rng(0)
+
+    # Name of a seaborn palette (deep, muted, bright, pastel, dark, colorblind)
+    colors = sns.color_palette("colorblind").as_hex()
+
+    # colorcet category palette
+    # colors = cc.b_glasbey_category10
+
+    def construct(self):
+
+        self.camera.background_color = BLACK
+        colors = self.colors
+
+
+        # add single neuron
+        neuron = NeuronWithOperations().shift(UP)
         self.add(neuron)
 
         # output layer
