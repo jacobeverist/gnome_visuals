@@ -357,13 +357,15 @@ class SynapticBusScene(Scene):
         neuron = NeuronWithOperations().shift(UP)
         self.add(neuron)
 
-        arrow_color = mpl.colors.rgb2hex(sns.color_palette("tab10")[6])
+        arrow_color = mpl.colors.rgb2hex(mpl.colormaps.get_cmap("cet_blues")(0.25))
+        tip_color = mpl.colors.rgb2hex(mpl.colormaps.get_cmap("cet_blues")(1.0))
+        #arrow_color = mpl.colors.rgb2hex(sns.color_palette("tab10")[6])
         sum_arrow = Arrow(start=neuron.counter.get_edge_center(RIGHT),
                           end=neuron.counter.get_edge_center(RIGHT) + 5*RIGHT,
-                          buff=0.05, stroke_color=arrow_color, stroke_width=12)
+                          buff=0.05, stroke_color=arrow_color, stroke_width=12, fill_opacity=1, fill_color=tip_color)
         winner_arrow = Arrow(start=neuron.activation.get_edge_center(RIGHT) + 5*RIGHT,
                              end=neuron.activation.get_edge_center(RIGHT),
-                             buff=0.05, stroke_color=arrow_color, stroke_width=12)
+                             buff=0.05, stroke_color=arrow_color, stroke_width=12, fill_opacity=1, fill_color=tip_color)
         self.add(sum_arrow)
         self.add(winner_arrow)
 

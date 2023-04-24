@@ -74,6 +74,7 @@ class Synapse(VGroup):
                 min_pnt = pnt
         start_point = min_pnt
 
+
         edge_color = mpl.colors.rgb2hex(mpl.colormaps.get_cmap("cet_blues")(0.25))
         #edge_color = mpl.colors.rgb2hex(sns.color_palette("tab10")[9])
 
@@ -185,7 +186,7 @@ class NeuronWithOperations(VGroup):
                                  fill_opacity=1,
                                  stroke_color=BLACK,
                                  height=box_len,
-                                 width=box_len * 1.5)
+                                 width=box_len * 1.2)
         self.counter.shift(DOWN * (self.neuron_radius / 2.0 - buff / 2.0 - 1.5 * buff))
 
         # activation operation
@@ -193,7 +194,7 @@ class NeuronWithOperations(VGroup):
                                     fill_opacity=1,
                                     stroke_color=BLACK,
                                     height=box_len,
-                                    width=box_len * 1.5)
+                                    width=box_len * 1.2)
         self.activation.next_to(self.counter, UP, buff=buff)
 
 
