@@ -1,0 +1,4 @@
+// comment
+graph ethane {
+    C_0 -- H_0 [type = 2];
+}
