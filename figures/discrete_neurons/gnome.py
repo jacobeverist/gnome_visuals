@@ -78,7 +78,7 @@ class GnomeCode(VGroup):
             "cell_stroke_width": DEFAULT_STROKE_WIDTH,
             "cell_fill_color": WHITE,
             "cell_fill_opacity": 1,
-            "cell_text_buff": 0.1
+            "cell_text_buff": 0.2
     }
 
     def __init__(self, shape="square", n=32, **kwargs):
@@ -173,8 +173,8 @@ class GnomeCode(VGroup):
     def __init_array(self) -> None:
         """ gnome code animation of mobjects """
 
-        cell_color = mpl.colors.rgb2hex(self.cmap(1))
-        text_color = mpl.colors.rgb2hex(self.cmap(0))
+        cell_color = mpl.colors.rgb2hex(self.cmap(1.0))
+        text_color = mpl.colors.rgb2hex(self.cmap(0.0))
 
         # array of values from 0 to 1 for each textbox
         self.trackers = [ValueTracker(0).set(index=k) for k in range(self.num_bins)]
@@ -205,7 +205,7 @@ class GnomeCode(VGroup):
 
             # cell index label
             if self.show_value:
-                label = Integer(number=self.trackers[k].get_value(), edge_to_fix=[0, 0, 0])
+                label = Integer(number=0, edge_to_fix=[0, 0, 0])
             elif self.show_index and not self.show_value:
                 label = Integer(number=k, edge_to_fix=[0, 0, 0])
             else:

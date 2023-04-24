@@ -6,7 +6,7 @@ import seaborn as sns
 from manim import *
 from manim.utils.color import Colors
 
-testcc = cc.gray
+testgray = cc.gray
 cmap = mpl.colormaps.get_cmap
 
 # Parts
@@ -90,13 +90,30 @@ class GnomeInputNeuronScene(Scene):
     }
     rng = np.random.default_rng(0)
 
-    def create_edge(self, neuron, mob):
+    def create_edge(self, neuron, mob, ori="vert"):
 
+        # get point on neuron boundary in the direction of mob we connect to
         diff_vec = mob.get_center() - neuron.get_center()
         normvec = diff_vec / np.linalg.norm(diff_vec)
-        # end_point = mob.get_center() - mob.height/2 * vec
-        start_point = mob.get_edge_center(UP)
         end_point = neuron.radius * normvec + neuron.get_center()
+
+        # find closest boundary edge of mob to connect to
+        min_dist = 1e100
+        min_pnt = None
+        if ori == "vert":
+            cand_points = [mob.get_edge_center(direction) for direction in [UP, DOWN]]
+        elif ori == "hori":
+            cand_points = [mob.get_edge_center(direction) for direction in [LEFT, RIGHT]]
+        else:
+            cand_points = [mob.get_edge_center(direction) for direction in [UP, DOWN, LEFT, RIGHT]]
+
+        for pnt in cand_points:
+            diff_vec = pnt - end_point
+            dist = np.linalg.norm(diff_vec)
+            if dist < min_dist:
+                min_dist = dist
+                min_pnt = pnt
+        start_point = min_pnt
 
         # tip_length = 1,
         return Line(
@@ -121,27 +138,160 @@ class GnomeInputNeuronScene(Scene):
         # colors = cc.b_glasbey_category10
 
         # add single neuron
-        neuron = Neuron(neuron_fill_color=colors[0]).shift(UP * 3)
+        # neuron = Neuron(neuron_fill_color=colors[0]).shift(UP * 3)
+        neuron = Neuron(neuron_fill_color=colors[0]).shift(UP)
         self.add(neuron)
 
-        code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"])
-        code.arrange(RIGHT, buff=0.08).move_to(config.bottom).shift(UP)
-        code.add_background()
-        self.add(code)
+        # output axon
+        num_outputs = 16
+        output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=DARK_BROWN)
+        output_code.arrange(RIGHT, buff=0.01).move_to(config.top).shift(0.8 * DOWN)
+        diff_vec = neuron.get_x() - output_code.bins[int(num_outputs / 2)].get_x()
+        output_code.shift(RIGHT * diff_vec)
+        output_code.add_background()
+        self.add(output_code)
+
+        # connect neuron to output layer
+        self.add(self.create_edge(neuron, output_code.bins[int(num_outputs / 2)]))
+
+        # input layer
+        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"], cell_stroke_color=DARK_BROWN)
+        input_code.arrange(RIGHT, buff=0.01).move_to(config.bottom).shift(0.8 * UP)
+        input_code.shift(RIGHT * diff_vec)
+        input_code.add_background()
+        self.add(input_code)
 
         # connect input layer to neuron
-        sparse_elements = [0, ] * int(code.num_bins / 2) + [1, ] * int(code.num_bins / 2)
-        connections = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        sparse_elements = [0, ] * int(input_code.num_bins / 2) + [1, ] * (
+                input_code.num_bins - int(input_code.num_bins / 2))
+        connections = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
         for i, is_connected in enumerate(connections):
             if is_connected:
-                self.add(self.create_edge(neuron, code.bins[i]))
+                self.add(self.create_edge(neuron, input_code.bins[i]))
 
-        w = int(code.num_bins / 2)
-        sparse_elements = [0, ] * (code.num_bins - w) + [1, ] * w
-        new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        w = int(input_code.num_bins / 2)
+        sparse_elements = [0, ] * (input_code.num_bins - w) + [1, ] * w
+        new_code = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
         print(new_code)
-        code.set_value(new_code, anim=False)
+        input_code.set_value(new_code, anim=False)
 
-        new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
-        print(new_code)
-        self.play(code.set_value(new_code), run_time=1)
+        # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        # print(new_code)
+        # self.play(code.set_value(new_code), run_time=1)
+
+
+class DiscreteSynapseScene(Scene):
+    CONFIG = {
+            "edge_color": WHITE,
+            "edge_stroke_width": 3,
+            "num_inputs": 17,
+    }
+    rng = np.random.default_rng(0)
+    colors = sns.color_palette("colorblind").as_hex()
+
+    def create_edge(self, neuron, mob, ori="vert", do_cross=True):
+
+        # get point on neuron boundary in the direction of mob we connect to
+        diff_vec = mob.get_center() - neuron.get_center()
+        normvec = diff_vec / np.linalg.norm(diff_vec)
+        end_point = neuron.radius * normvec + neuron.get_center()
+
+        # find closest boundary edge of mob to connect to
+        min_dist = 1e100
+        min_pnt = None
+        if ori == "vert":
+            cand_points = [mob.get_edge_center(direction) for direction in [UP, DOWN]]
+        elif ori == "hori":
+            cand_points = [mob.get_edge_center(direction) for direction in [LEFT, RIGHT]]
+        else:
+            cand_points = [mob.get_edge_center(direction) for direction in [UP, DOWN, LEFT, RIGHT]]
+
+        for pnt in cand_points:
+            diff_vec = pnt - end_point
+            dist = np.linalg.norm(diff_vec)
+            if dist < min_dist:
+                min_dist = dist
+                min_pnt = pnt
+        start_point = min_pnt
+
+        # tip_length = 1,
+        line = Line(
+                start_point,
+                end_point,
+                # max_tip_length_to_length_ratio=0.08,
+                # max_stroke_width_to_length_ratio=2,
+                buff=0,
+                stroke_color=self.CONFIG["edge_color"],
+                # stroke_width=self.CONFIG["edge_stroke_width"],
+                stroke_opacity=0.8,
+        )
+
+        self.add(line)
+
+        if do_cross:
+            # noinspection PyTypeChecker
+            cross = Cross(stroke_width=self.CONFIG["edge_stroke_width"],
+                          stroke_color=self.colors[8])
+                          #stroke_color = self.colors[mob['label'].index % len(self.colors)])
+            cross.move_to(line.get_center()).set_height(0.2).rotate(line.get_angle())
+
+            self.add(cross)
+
+    def construct(self):
+
+        self.camera.background_color = BLACK
+
+        # Name of a seaborn palette (deep, muted, bright, pastel, dark, colorblind)
+        # colors = sns.color_palette("colorblind").as_hex()
+        colors = self.colors
+
+        # colorcet category palette
+        # colors = cc.b_glasbey_category10
+
+        # add single neuron
+        # neuron = Neuron(neuron_fill_color=colors[0]).shift(UP * 3)
+        neuron = Neuron(neuron_fill_color=colors[0]).shift(UP)
+        self.add(neuron)
+
+        # output layer
+        num_outputs = 17
+        output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=DARK_BROWN)
+        output_code.arrange(RIGHT, buff=0.01).move_to(config.top).shift(0.8 * DOWN)
+        diff_vec = neuron.get_x() - output_code.bins[int(num_outputs / 2)].get_x()
+        output_code.shift(RIGHT * diff_vec)
+        output_code.add_background()
+        self.add(output_code)
+
+        # input layer
+        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"], cell_stroke_color=DARK_BROWN)
+        input_code.arrange(RIGHT, buff=0.01).move_to(config.bottom).shift(0.8 * UP)
+        input_code.shift(RIGHT * diff_vec)
+        input_code.add_background()
+        self.add(input_code)
+
+        # connect neuron to output layer with axon
+        self.create_edge(neuron, output_code.bins[int(num_outputs / 2)], do_cross=False)
+
+        # connect input layer to neuron with synapses
+        sparse_elements = [0, ] * int(input_code.num_bins / 2) + [1, ] * (
+                input_code.num_bins - int(input_code.num_bins / 2))
+        connections = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
+        for i, is_connected in enumerate(connections):
+            if is_connected:
+                self.create_edge(neuron, input_code.bins[i])
+
+        # set the current input and output codes
+        w = int(input_code.num_bins / 2)
+        sparse_elements = [0, ] * (input_code.num_bins - w) + [1, ] * w
+        new_data = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
+        print(new_data)
+        input_code.set_value(new_data, anim=False)
+
+        out_data = np.zeros(17)
+        out_data[int(input_code.num_bins / 2)] = 1
+        print(out_data)
+        output_code.set_value(out_data, anim=False)
+
+        # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        # print(new_code)
+        # self.play(code.set_value(new_code), run_time=1)
