@@ -55,7 +55,6 @@ class Synapse(VGroup):
                     min_pnt = pnt
             end_point = min_pnt
 
-
         # find closest boundary edge of mob to connect to
         min_dist = 1e100
         min_pnt = None
@@ -74,10 +73,8 @@ class Synapse(VGroup):
                 min_pnt = pnt
         start_point = min_pnt
 
-
         edge_color = mpl.colors.rgb2hex(mpl.colormaps.get_cmap("cet_blues")(0.25))
-        #edge_color = mpl.colors.rgb2hex(sns.color_palette("tab10")[9])
-
+        # edge_color = mpl.colors.rgb2hex(sns.color_palette("tab10")[9])
 
         # tip_length = 1,
         self.line = Line(
@@ -86,7 +83,7 @@ class Synapse(VGroup):
                 # max_tip_length_to_length_ratio=0.08,
                 # max_stroke_width_to_length_ratio=2,
                 buff=0,
-                #stroke_color=self.CONFIG["edge_color"],
+                # stroke_color=self.CONFIG["edge_color"],
                 stroke_color=edge_color,
                 # stroke_width=self.CONFIG["edge_stroke_width"],
                 stroke_opacity=1,
@@ -96,14 +93,32 @@ class Synapse(VGroup):
 
         if do_cross:
             # noinspection PyTypeChecker
-            self.cross = Cross(stroke_width=self.CONFIG["edge_stroke_width"],
-                               stroke_color=cross_color)
-            #self.cross = Cross(stroke_width=self.CONFIG["edge_stroke_width"],
-            #                   stroke_color=self.colors[8])
-            #self.cross = Cross(stroke_width=self.CONFIG["edge_stroke_width"],
-            #                   stroke_color=self.colors[8])
-            self.cross.move_to(self.line.get_center()).set_height(0.15).rotate(self.line.get_angle())
 
+            # Cross Gate
+            #self.cross = Cross(stroke_width=self.CONFIG["edge_stroke_width"],
+            #                   stroke_color=cross_color)
+            #self.cross.move_to(self.line.get_center()).set_height(0.15).rotate(self.line.get_angle())
+
+            # Square Gate
+            #self.cross = Square(side_length=0.15, stroke_width=0.5*self.CONFIG["edge_stroke_width"],
+            #                   stroke_color=GRAY_A, fill_color=cross_color, fill_opacity=1)
+            #self.cross.move_to(self.line.get_center()).rotate(self.line.get_angle())
+
+
+            # Valve Gate
+            tri1 = Triangle(radius=0.15/2.0, stroke_width=0.5*self.CONFIG["edge_stroke_width"],
+                                stroke_color=GRAY_A, fill_color=cross_color, fill_opacity=1)
+            tri1.move_to(ORIGIN, aligned_edge=UP)
+
+            tri2 = Triangle(radius=0.15/2.0, stroke_width=0.5*self.CONFIG["edge_stroke_width"],
+                                 stroke_color=GRAY_A, fill_color=cross_color, fill_opacity=1)
+            tri2.move_to(ORIGIN, aligned_edge=DOWN).rotate(PI)
+            self.cross = VGroup(tri1, tri2).rotate(PI/2.0)
+            self.add(vself.cross)
+
+
+            # align and put on the synapse line
+            self.cross.move_to(self.line.get_center()).rotate(self.line.get_angle())
             self.add(self.cross)
 
 
@@ -158,6 +173,9 @@ class NeuronWithOperations(VGroup):
 
         super().__init__(**kwargs)
 
+        colors = sns.color_palette("colorblind").as_hex()
+
+
         # create circle
         self.circle = Circle(
                 radius=self.neuron_radius,
@@ -182,20 +200,22 @@ class NeuronWithOperations(VGroup):
         box_color = "#3b7cb2"
 
         # counter operation
-        self.counter = Rectangle(fill_color=box_color,
+        self.counter = Rectangle(fill_color=colors[2],
                                  fill_opacity=1,
                                  stroke_color=BLACK,
                                  height=box_len,
                                  width=box_len * 1.2)
         self.counter.shift(DOWN * (self.neuron_radius / 2.0 - buff / 2.0 - 1.5 * buff))
+        # self.counter = Arc(fill_opacity=1, angle=-PI, radius=self.neuron_radius)
 
         # activation operation
-        self.activation = Rectangle(fill_color=box_color,
+        self.activation = Rectangle(fill_color=colors[1],
                                     fill_opacity=1,
                                     stroke_color=BLACK,
                                     height=box_len,
                                     width=box_len * 1.2)
         self.activation.next_to(self.counter, UP, buff=buff)
+        # self.activation = Arc(fill_opacity=1, angle=PI, radius=self.neuron_radius)
 
 
         # scale of unit step function
@@ -226,7 +246,7 @@ class NeuronWithOperations(VGroup):
 
         # counter as sigma summation symbol
         self.counter_label = MathTex("\sum", color=BLACK, stroke_width=0.8 * DEFAULT_STROKE_WIDTH).move_to(
-            self.counter.get_center()).scale(0.8)
+                self.counter.get_center()).scale(0.8)
 
         # noinspection PyTypeChecker
         # label1.set_color(text_color)
@@ -234,9 +254,134 @@ class NeuronWithOperations(VGroup):
         self.operations = VDict(dict(counter=self.counter,
                                      activation=self.activation,
                                      counter_label=self.counter_label,
-                                     activation_label=self.activation_label))
+                                     activation_label=self.activation_label, ))
 
         self.add(self.operations)
+
+
+class NeuronWithWindow(VGroup):
+    CONFIG = {
+            "neuron_radius": 1.0,
+            "neuron_stroke_color": WHITE,
+            "neuron_stroke_width": 3,
+            "neuron_fill_color": GRAY_C,
+    }
+
+    def __init__(self, **kwargs):
+
+        # update local CONFIG
+        for k, v in {k: v for k, v in kwargs.items() if k in self.CONFIG}.items():
+            self.CONFIG[k] = kwargs.pop(k)
+
+        # set CONFIG key-value pairs as member variables of this class instance
+        for attr, value in self.CONFIG.items():
+            setattr(self, attr, value)
+        self.radius = self.neuron_radius
+
+        super().__init__(**kwargs)
+
+        colors = sns.color_palette("colorblind").as_hex()
+
+
+        # create circle
+        self.circle = Circle(
+                radius=self.neuron_radius,
+                stroke_color=self.neuron_stroke_color,
+                stroke_width=self.neuron_stroke_width,
+                fill_color=self.neuron_fill_color,
+                fill_opacity=1,
+                **kwargs,
+        )
+
+        #self.add(self.circle)
+
+        # box_factor = box_len / self.neuron_radius
+        # box_factor = 0.72
+        box_factor = 0.74
+
+        buff = 0.05
+        # box_len = self.neuron_radius/2.0
+        # box_len = 0.36
+        box_len = box_factor * self.neuron_radius
+
+        box_color = "#3b7cb2"
+
+        self.counter_circle = Arc(angle=-PI, radius=self.neuron_radius,
+                                  stroke_color=self.neuron_stroke_color,
+                                  stroke_width=self.neuron_stroke_width,
+                                  fill_color=self.neuron_fill_color,
+                                  fill_opacity=1)
+        # self.counter_circle.shift(DOWN * (self.neuron_radius / 2.0 - buff / 2.0 - 1.5 * buff))
+        self.add(self.counter_circle)
+
+        self.activation_circle = Arc(angle=PI, radius=self.neuron_radius,
+                                     stroke_color=self.neuron_stroke_color,
+                                     stroke_width=self.neuron_stroke_width,
+                                     fill_color=self.neuron_fill_color,
+                                     fill_opacity=1)
+        # self.activation_circle.next_to(self.counter_circle, UP, buff=buff)
+        self.add(self.activation_circle)
+
+
+        # counter operation
+        self.counter = Rectangle(fill_color=colors[2],
+                                 fill_opacity=1,
+                                 stroke_color=BLACK,
+                                 height=box_len,
+                                 width=box_len * 1.2)
+        self.counter.shift(DOWN * (self.neuron_radius / 2.0 - buff / 2.0 - 1.5 * buff))
+        # self.counter = Arc(fill_opacity=1, angle=-PI, radius=self.neuron_radius)
+
+        # activation operation
+        self.activation = Rectangle(fill_color=colors[1],
+                                    fill_opacity=1,
+                                    stroke_color=BLACK,
+                                    height=box_len,
+                                    width=box_len * 1.2)
+        self.activation.next_to(self.counter, UP, buff=buff)
+        # self.activation = Arc(fill_opacity=1, angle=PI, radius=self.neuron_radius)
+
+
+        # scale of unit step function
+        scale = 0.4
+        width_scale = 0.7
+
+        # individual lines to create unit step function (3 lines)
+        # line1 = Line(ORIGIN, RIGHT * scale, buff=0, color=BLACK, stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
+
+        # line2 = Line(line1.get_end(), line1.get_end() + 1.2 * UP * scale, buff=0, color=BLACK,
+        #             stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
+
+        # line3 = Line(line2.get_end(), line2.get_end() + RIGHT * scale, buff=0, color=BLACK,
+        #             stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
+
+        # Raw VMObject to draw unit step function
+        vertices = [ORIGIN, RIGHT * scale * width_scale, RIGHT * scale * width_scale + 1.2 * UP * scale,
+                    2 * RIGHT * scale * width_scale + 1.2 * UP * scale]
+        poly_path = VMobject(color=BLACK, stroke_width=1.8 * DEFAULT_STROKE_WIDTH)
+        first_vertex, *vertices = vertices
+        first_vertex = np.array(first_vertex)
+        poly_path.start_new_path(first_vertex)
+        poly_path.add_points_as_corners(np.array([np.array(vertex) for vertex in vertices]))
+
+        # self.activation_label = VDict(dict(line1=line1, line2=line2, line3=line3))
+        self.activation_label = VDict(dict(step_func=poly_path))
+        self.activation_label.move_to(self.activation.get_center())
+
+        # counter as sigma summation symbol
+        self.counter_label = MathTex("\sum", color=BLACK, stroke_width=0.8 * DEFAULT_STROKE_WIDTH).move_to(
+                self.counter.get_center()).scale(0.8)
+
+        # noinspection PyTypeChecker
+        # label1.set_color(text_color)
+
+        self.operations = VDict(dict(counter=self.counter,
+                                     activation=self.activation,
+                                     counter_label=self.counter_label,
+                                     activation_label=self.activation_label, ))
+
+        self.add(self.operations)
+
 
 
 class Cell(Square):
@@ -322,11 +467,11 @@ class GnomeCode(VGroup):
         # seaborn
         # "rocket_r"
 
-        #self.colormap = "cet_CET_L1"
+        # self.colormap = "cet_CET_L1"
         self.colormap = "cet_blues"
-        #self.colormap = "cet_blues"
+        # self.colormap = "cet_blues"
         self.cmap = mpl.colormaps.get_cmap(self.colormap)
-        #self.cmap = sns.color_palette("coolwarm", as_cmap=True)
+        # self.cmap = sns.color_palette("coolwarm", as_cmap=True)
 
         print("blues:", self.cmap(0.0), self.cmap(1.0))
         print("blues:", self.cmap(0), self.cmap(255))
@@ -337,9 +482,9 @@ class GnomeCode(VGroup):
         #
         # "#3b7cb2"
 
-        #mpl.colors.LinearSegmentedColormap
+        # mpl.colors.LinearSegmentedColormap
 
-        #mpl.colormaps.LinearSegmentedColormap
+        # mpl.colormaps.LinearSegmentedColormap
 
         self.__init_array()
 
@@ -361,7 +506,7 @@ class GnomeCode(VGroup):
             # change text value and color by "becoming" one of two different saved text mobjects
             # text_rgb = [val for _ in range(3)]
             # text_color = rgb_to_color(text_rgb)
-            text_color = mpl.colors.rgb2hex(self.cmap(1.0-val))
+            text_color = mpl.colors.rgb2hex(self.cmap(1.0 - val))
             text_color = BLACK
 
             # update colors based on value
@@ -393,7 +538,7 @@ class GnomeCode(VGroup):
         """ gnome code animation of mobjects """
 
         cell_color = mpl.colors.rgb2hex(self.cmap(1.0))
-        #text_color = mpl.colors.rgb2hex(self.cmap(0.0))
+        # text_color = mpl.colors.rgb2hex(self.cmap(0.0))
         text_color = BLACK
 
         # array of values from 0 to 1 for each textbox
@@ -516,6 +661,6 @@ class GnomeCode(VGroup):
                                       stroke_opacity=1,
                                       stroke_width=3,
                                       stroke_color=Colors.white.value,
-                                      #buff=2.5 * SMALL_BUFF, color=Colors.gray_a.value,
+                                      # buff=2.5 * SMALL_BUFF, color=Colors.gray_a.value,
                                       buff=2.5 * SMALL_BUFF,
                                       corner_radius=self.cell_side_length)

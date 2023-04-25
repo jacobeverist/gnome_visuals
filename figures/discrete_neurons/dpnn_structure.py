@@ -397,8 +397,10 @@ class SynapticBusScene(Scene):
         for i, is_connected in enumerate(connections):
             if is_connected:
                 if i % 2 == 0:
+                    #synapse = Synapse(neuron.counter, input_code.bins[i], cross_color="#3b7cb2")
                     synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=GREEN)
                 else:
+                    #synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=WHITE)
                     synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=RED)
                 synapses.append(synapse)
                 self.add(synapse)
@@ -414,6 +416,8 @@ class SynapticBusScene(Scene):
         out_data[int(input_code.num_bins / 2)] = 1
         print(out_data)
         output_code.set_value(out_data, anim=False)
+
+
 
         # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
         # print(new_code)
