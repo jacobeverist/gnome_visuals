@@ -272,7 +272,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
             ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
 
-def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1,
+def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1,
                             draw_regions=False, draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True,
                             draw_folded_bins=False, label_bins=False):
     # constants
@@ -320,8 +320,8 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, fon
     keys = list(range(n_grids))
     keys.sort()
 
-    colors = sns.color_palette("muted", n_colors=n_grids)
-    grid_label_templates = [prefix + "%d" for prefix in grid_names]
+    #colors = sns.color_palette("muted", n_colors=n_grids)
+    #grid_label_templates = [prefix + "%d" for prefix in grid_names]
     grid_colors = [colors[j] for j in range(n_grids)]
 
     # grid_colors = ['k',] + grid_colors
@@ -419,6 +419,18 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, fon
             # length of bin
             box_width = bin_upper_bound - bin_lower_bound
 
+
+            """
+            min_size = min(box_width, box_height)
+            draw_text = True
+            if min_size < 10:
+                #label_fontsize = min_size * 4. * 32. / 0.2
+                label_fontsize = min_size * 64
+            else:
+                label_fontsize = 0
+                draw_text = False
+            """
+
             # clip the bin if it hits visual boundary, or dont draw altogether if beyond range
             draw_bin = True
             if clip_on:
@@ -439,6 +451,8 @@ def draw_multi_encoder_bins(ax, encoder, xmin=None, xmax=None, clip_on=True, fon
 
             # draw bin
             if draw_bin:
+
+
                 rect = add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
                                      box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
                                      text_str=bin_text_str, clip_on=clip_on, linewidth=bin_linewidth,
@@ -828,12 +842,12 @@ def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
         scores_y = np.append(scores_extended[:, k], [scores_extended[-1, k], ])
 
         ax.step(boundaries_x, scores_y, where='post', color=colors[k], label=float(ref_points[k]))
-        ax.fill_between(boundaries_x, -1, scores_y, step='post', color=colors[k], alpha=0.3, zorder=1)
+        ax.fill_between(boundaries_x, -1, scores_y, step='post', color=colors[k], alpha=0.6, zorder=1)
 
     if draw_v_values:
         # draw vertical line indicating reference value on x-axis
         for k in range(len(ref_points)):
-            ax.axvline(x=ref_points[k], ymax=3.2, alpha=1.0, linewidth=1.5, color=colors[k], linestyle='--',
+            ax.axvline(x=ref_points[k], ymax=2.0, alpha=1.0, linewidth=1.5, color=colors[k], linestyle='--',
                        clip_on=False)
 
     if draw_regions:
@@ -1031,8 +1045,9 @@ def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_
     y_vals.append(-100)
 
     # do swarm plot
-    sns.swarmplot(x=repeat_boundaries, y=y_vals, orient='h', color=colors[0], ax=ax, size=markersize, native_scale=True,
-                  legend=False, label="Crossings")
+    #sns.swarmplot(x=repeat_boundaries, y=y_vals, orient='h', color=colors[0], ax=ax, size=markersize, native_scale=True,
+    sns.swarmplot(x=repeat_boundaries, y=y_vals, orient='h', color='k', ax=ax, size=markersize, native_scale=True,
+                  legend=False, label="Crossings", marker='D')
 
     # remove extra category
     repeat_boundaries.pop(-1)
@@ -1050,8 +1065,10 @@ def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_
                       zorder=-1)
 
     # draw gnome weights
-    ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=0.6, zorder=1, label="Weight")
-    ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.3, zorder=1)
+    ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=1, zorder=1, label="Weight")
+    ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.4, zorder=1)
+    #ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=0.6, zorder=1, label="Weight")
+    #ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.3, zorder=1)
 
     # legend labels and handles
     handles1, labels1 = ax.get_legend_handles_labels()

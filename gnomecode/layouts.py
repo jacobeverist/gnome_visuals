@@ -1,21 +1,27 @@
 # plotting
 
-from line_profiler_pycharm import profile
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from line_profiler_pycharm import profile
 from matplotlib import ticker, axis
 
 from .axesplots import *
 
-__all__ = ['plot_diff_heatmap', 'plot_code_heatmap', 'plot_realspace_heatmap', 'plot_interval_multi_encoder', 'save_fig']
+__all__ = ['plot_diff_heatmap', 'plot_code_heatmap', 'plot_realspace_heatmap', 'plot_interval_multi_encoder',
+           'save_fig']
 
 
 @profile
-def save_fig(path, encoder, plot_name, experiment_name, do_close=True):
-    file_path = path + "%03u_%04u_" % (
-            encoder.n, len(encoder.region_centers)) + plot_name + "_" + experiment_name + ".png"
+def save_fig(path, encoder, plot_name, experiment_name, do_close=True, w_param=None):
+
+    if w_param:
+        file_path = path + "%03u_%04u_" % (
+                encoder.n, w_param) + plot_name + "_" + experiment_name + ".png"
+    else:
+        file_path = path + "%03u_%04u_" % (
+                encoder.n, len(encoder.region_centers)) + plot_name + "_" + experiment_name + ".png"
 
     plt.savefig(file_path, bbox_inches='tight')
 
@@ -178,8 +184,11 @@ def plot_code_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, d
 
 @profile
 def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, draw_manual_grid=True,
-                           draw_minor_tick_grid=False):
-    y_spacing = 0.05
+                           draw_minor_tick_grid=False, w_param=None):
+
+    n_bits = encoder.n
+
+    y_spacing = 0.03
     inset_fraction = 0.25
 
     # plot range for this multi encoder
@@ -313,7 +322,13 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
         ax_features = axes[1]
 
     ax_heatmap.invert_yaxis()
-    fig.suptitle(desc_str)
+
+    # set title of whole figure
+    if w_param:
+        fig.suptitle("%s, n=%d, w=%d" % (desc_str, n_bits, w_param))
+    else:
+        fig.suptitle("%s, n=%d" % (desc_str, n_bits))
+
 
     # hide the spines
     # for side in ["top", "right", "bottom", "left"]:
@@ -345,6 +360,9 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
     ax_features.xaxis.set_minor_locator(ticker.FixedLocator(boundaries))
     ax_heatmap.yaxis.set_minor_locator(ticker.FixedLocator(boundaries))
 
+    ax_features.tick_params(which='major', labelbottom=False, bottom=False)
+    # ax_features.xticks
+
     # ax_features.set_ylabel("Bit Encoding vs.\nReal Value")
 
     grid_linewidth = 0.3
@@ -372,10 +390,18 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
 
 
 @profile
-def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
+def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, w_param=None):
     n_bits = encoder.n
+    n_grids = 1
+
+    try:
+        sub_encoders = encoder.encoders
+        n_grids = len(sub_encoders)
+    except:
+        pass
+
     markersize = 4
-    fontsize = 6
+    fontsize = 8
 
     # TODO: plot distribution of periods, bin sizes, offsets, duty cycles, of a multi-encoder
 
@@ -386,8 +412,23 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
     # reference points for comparison
     ref_points = np.array([[0.21], [0.69]])
 
+    n_points = len(ref_points)
+
     # color palette
-    colors = sns.color_palette("Set1", n_colors=len(ref_points))
+    # colors = sns.color_palette("Set1", n_colors=len(ref_points))
+    # colors = sns.color_palette("muted", n_colors=(n_grids+n_points))
+    # colors = sns.color_palette("Set1", n_colors=(n_grids+n_points+2))
+    # colors = sns.color_palette("cet_glasbey_hv", n_colors=(n_grids+n_points+2))
+    # colors = sns.color_palette("cet_glasbey_hv", as_cmap=True).colors
+    # colors = sns.color_palette("cet_glasbey_category10", as_cmap=True).colors
+    colors = sns.color_palette("cet_glasbey_dark", as_cmap=True).colors
+
+    encoder_colors = colors[0:n_grids]
+    # similarity_colors = colors[n_grids:n_grids+n_points]
+    # feature_colors = colors[n_grids+n_points:n_grids+n_points+2]
+
+    similarity_colors = colors[-2 - n_points:-2]
+    feature_colors = colors[-2:]
 
     # seaborn style
     sns.set_theme(style="white")
@@ -403,7 +444,10 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
     ax3 = axes[3]
 
     # set title of whole figure
-    fig.suptitle("%s, n=%d" % (desc_str, n_bits))
+    if w_param:
+        fig.suptitle("%s, n=%d, w=%d" % (desc_str, n_bits, w_param))
+    else:
+        fig.suptitle("%s, n=%d" % (desc_str, n_bits))
 
     # same tick configuration for each axes
     tick_args = {'axis': 'both', 'which': 'both',
@@ -416,29 +460,30 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
     ax0.tick_params(**tick_args)
 
     # draw encoder bins
-    draw_multi_encoder_bins(ax0, encoder, fontsize=fontsize, xmin=xmin, xmax=xmax, draw_h_grid=True, bin_linewidth=0.5,
+    draw_multi_encoder_bins(ax0, encoder, encoder_colors, fontsize=fontsize, xmin=xmin, xmax=xmax, draw_h_grid=True,
+                            bin_linewidth=0.5,
                             clip_on=False, draw_regions=False, draw_region_by_encoder=False, draw_h_border=False,
-                            draw_folded_bins=True, label_bins=True)
+                            draw_folded_bins=False, label_bins=True)
 
     # Features Subplot (Boundaries, Weight, Crossings)
-    # ax1.tick_params(**tick_args)
+    ax2.tick_params(**tick_args)
 
     # share ax0 and ax1 x-axis
-    ax1.get_shared_x_axes().join(ax1, ax0)
+    ax2.get_shared_x_axes().join(ax2, ax0)
 
     # draw weight, crossings, and boundary features
-    draw_features(ax1, encoder, colors, markersize, draw_regions=True)
+    draw_features(ax2, encoder, similarity_colors, markersize, draw_regions=True)
 
     # draw_barcode(ax1, encoder.region_codes)
 
     # # Similarity Subplot
-    ax2.tick_params(**tick_args)
+    ax1.tick_params(**tick_args)
 
     # share ax0 and ax2 x-axis
-    ax2.get_shared_x_axes().join(ax2, ax0)
+    ax1.get_shared_x_axes().join(ax1, ax0)
 
     # draw similarity plot
-    draw_similarity(ax2, encoder, ref_points, colors, draw_regions=False,
+    draw_similarity(ax1, encoder, ref_points, feature_colors, draw_regions=False,
                     draw_h_grid=True, draw_v_values=True)
 
     # # Encoding Bits Subplot
@@ -460,5 +505,8 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1):
                       draw_uniform_samples=False, permute_bits=False, clip_on=False, draw_boundaries=False)
 
     # draw input interval boundary lines across axes with vertical lines
-    ax3.axvline(x=encoder.lower_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
-    ax3.axvline(x=encoder.upper_bound, ymax=4.3, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
+    ax3.axvline(x=encoder.lower_bound, ymax=4.1, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
+    ax3.axvline(x=encoder.upper_bound, ymax=4.1, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
+
+    ax3.set_xlabel("Value to Encode")
+    ax3.set_ylabel("Binary Encoding")
