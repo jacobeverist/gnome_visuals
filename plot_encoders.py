@@ -68,7 +68,8 @@ def run_experiment():
     #experiment = "PlaceCellEncoder"
 
     # Initalize Encoder
-    multi_encoder = MultiEncoder(upper_bound=2.0, lower_bound=-1.0)
+    multi_encoder = MultiEncoder()
+    #multi_encoder = MultiEncoder(upper_bound=2.0, lower_bound=-1.0)
     #multi_encoder = PeriodicScalarEncoder(n=8, period=0.5, xmin=0, xmax=2)
 
     #for i in [2, 3, 5, 7]:
@@ -114,8 +115,12 @@ def run_experiment():
     #multi_encoder.add_encoder(PeriodicCellEncoder(n=100, seed=0))
     #multi_encoder.add_encoder(PeriodicCellEncoder(n=20, seed=0))
     #multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, lower_bound=-1, upper_bound=2))
-    multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, xmin=-1, xmax=2))
-    multi_encoder.add_encoder(PeriodicScalarEncoder(n=10, period=0.5, xmin=-1, xmax=2))
+    #multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, xmin=-1, xmax=2))
+    multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0))
+    #multi_encoder.add_encoder(PeriodicScalarEncoder(n=10, period=0.5, xmin=-1, xmax=2))
+    multi_encoder.add_encoder(PeriodicScalarEncoder(n=10, period=0.5))
+
+    multi_encoder.set_view(-0.5, 1.5)
 
     for i in range(10, 11):
         # Change Encoder
@@ -132,7 +137,7 @@ def run_experiment():
         #print(multi_encoder.straddles)
 
         # Plot Feature
-        plot_interval_multi_encoder(multi_encoder, desc_str=experiment, w_param=w_param, x_pad=1.0)
+        plot_interval_multi_encoder(multi_encoder, desc_str=experiment, w_param=w_param)
         save_fig(file_dir, multi_encoder, "Features", experiment, w_param=w_param)
 
         # Plot Similarity Matrix by Code
@@ -140,8 +145,8 @@ def run_experiment():
         #save_fig(file_dir, multi_encoder, "Similarity_Matrix_by_Region_Code", experiment)
 
         # Plot Similarity Matrix by Real Space
-        plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param)
-        save_fig(file_dir, multi_encoder, "Similarity_Matrix_Projected_to_Real_Space", experiment, w_param=w_param)
+        #plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param)
+        #save_fig(file_dir, multi_encoder, "Similarity_Matrix_Projected_to_Real_Space", experiment, w_param=w_param)
 
         # Plot Difference Matrix by Code
         #plot_diff_heatmap(multi_encoder, desc_str=experiment, annot=False)

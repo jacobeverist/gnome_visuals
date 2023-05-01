@@ -405,10 +405,20 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, w_param=
 
     # TODO: plot distribution of periods, bin sizes, offsets, duty cycles, of a multi-encoder
 
-    # plot range for this multi encoder
-    xmin = encoder.lower_bound - x_pad
-    xmax = encoder.upper_bound + x_pad
+    print(encoder.xmin, encoder.xmax, encoder.lower_bound, encoder.upper_bound)
+    for enc in encoder.encoders:
+        print(enc.xmin, enc.xmax, enc.lower_bound, enc.upper_bound)
 
+    # plot range for this multi encoder
+    try:
+        # if xmin/xmax doesn't exist, use input bounds
+        xmin = encoder.xmin - x_pad
+        xmax = encoder.xmax + x_pad
+    except AttributeError:
+        xmin = encoder.lower_bound - x_pad
+        xmax = encoder.upper_bound + x_pad
+
+    print(xmin, xmax)
     # reference points for comparison
     ref_points = np.array([[0.21], [0.69]])
 

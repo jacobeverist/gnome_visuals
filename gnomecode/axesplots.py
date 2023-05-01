@@ -476,9 +476,40 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
             # draw congruent bins if exist
             if do_cong_bins:
 
-                congruent_bins = []
+                congruent_bins = e.bin_congruence[k]
+
+                # draw each congruent bin if it is within view
+                for j in range(len(congruent_bins)):
+                    cb = congruent_bins[j]
+                    bin_upper_bound = cb.upper
+                    bin_lower_bound = cb.lower
+
+                    box_x = bin_lower_bound
+                    box_width = bin_upper_bound - bin_lower_bound
+
+                    draw_cong_bin = True
+                    if clip_on:
+                        try:
+                            box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, xmin, xmax)
+                        except:
+                            draw_cong_bin = False
+
+                    # draw bin
+                    if draw_cong_bin:
+                        rect = add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
+                                             box_height - y_shrink, alpha=cong_alpha, clip_on=True, add_patch=False,
+                                             facecolor=grid_colors[encoder_count], linewidth=bin_linewidth)
+                        patches.append(rect)
+
+            """
+            # draw congruent bins if exist
+            if do_cong_bins:
+
+                congruent_bins = e.bin_congruence[k]
 
                 b = e.bins[k]
+
+                congruent_bins = []
 
                 # lower bounds of congruent bins
                 x_lower = b.lower
@@ -519,18 +550,7 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
                                              facecolor=grid_colors[encoder_count], linewidth=bin_linewidth)
                         patches.append(rect)
 
-                        """
-                        if label_bins:
-                            add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
-                                          box_height - y_shrink, alpha=cong_alpha, facecolor=grid_colors[encoder_count],
-                                          clip_on=True, linewidth=bin_linewidth, fontsize=fontsize, zorder=10)
-                        else:
-                            rect = new_rect(box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
-                                            box_height - y_shrink, alpha=cong_alpha,
-                                            facecolor=grid_colors[encoder_count],
-                                            clip_on=True, linewidth=bin_linewidth, zorder=10)
-                            patches.append(rect)
-                        """
+            """
 
             # draw fundamental region if exist
             if do_fund_regions:
