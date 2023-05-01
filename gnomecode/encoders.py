@@ -495,8 +495,10 @@ class _PeriodicEncoder(_EncoderBase):
     """
 
     # base periodic encoder
-    def __init__(self, xmin=0.0, xmax=1.0, **kwargs):
+    def __init__(self, lower_bound=0.0, upper_bound=1.0, xmin=0.0, xmax=1.0, **kwargs):
         """
+        :param lower_bound: lower bound of interval, default '0'
+        :param upper_bound: upper bound of interval, default '1'
         :param xmin: lower bound of input range, default '0'
         :param xmax: upper bound of input range, default '1'
         """
@@ -504,14 +506,20 @@ class _PeriodicEncoder(_EncoderBase):
         # superclass constructor
         super().__init__(oob_method="silent", **kwargs)
 
-        # interval size and bounds
+        # view size and bounds
         if xmax <= xmin:
             raise Exception("xmax %0.2f should be greater than xmin %0.2f" % (xmax, xmin))
 
-        # bounds here refer to the pre-configured input range and are not hard stops on the encoder capability.
-        self.lower_bound = xmin
-        self.upper_bound = xmax
+        self.xmin = xmin
+        self.xmax = xmax
 
+        # interval size and bounds
+        if upper_bound <= lower_bound:
+            raise Exception("upper_bound %0.2f should be greater than lower_bound %0.2f" % (upper_bound, lower_bound))
+
+        # bounds here refer to the pre-configured input range and are not hard stops on the encoder capability.
+        self.lower_bound = lower_bound
+        self.upper_bound = upper_bound
         self.input_width = self.upper_bound - self.lower_bound
 
         # number of bins
@@ -556,10 +564,17 @@ class _PeriodicEncoder(_EncoderBase):
     @profile
     def _is_x_in_periodic_bin(self, x_input, origin, period, b, is_straddle):
 
-        # FIXME: optimize this bin-checking calculation
-        # FIXME: create two arrays, one for upper bounds, and one for lower bounds
-        # is_in_bin = (x_region1 >= b.lower and x_region1 < b.upper)
-        #               or is_straddle and (x_region1+period >= b.lower and x_region1+period < b.upper)
+        # TODO: optimize this bin-checking calculation
+        # TODO: create two arrays, one for upper bounds, and one for lower bounds
+
+        # x_region = np.mod(x_input-origin, period) + origin
+        # x1 = x_region
+        # x2 = x_region + period
+        # bl = b.lower
+        # bu = b.upper
+        # is_in_bin = (x1 >= bl and x1 < bu)
+        #                or (is_straddle and (x2 >= bl and x2 < bu))
+        # return is_in_bin
 
         # value with respect to fund. region origin
         x_offset = x_input - origin
@@ -632,7 +647,6 @@ class _PeriodicEncoder(_EncoderBase):
             bin_multiples.append((x_lower, x_upper))
 
             bin_multiples = sorted(bin_multiples)
-            #print("multiples", b, ":", bin_multiples)
 
             # add to complete collection of bins
             bin_lower_multiples += bin_multiples
@@ -644,21 +658,11 @@ class _PeriodicEncoder(_EncoderBase):
         region_boundaries = np.concatenate(([xmin], region_boundaries, [xmax]))
         region_boundaries = np.sort(region_boundaries)
 
-        #for k in range(len(bins)):
-        #   print(bins[k], ":", *bin_congruence[k])
-        #print("multiples:")
-        #print(bin_lower_multiples)
-
-        #print(region_boundaries)
-
-        # return bin_congruence, region_boundaries
-
         sorted_boundaries = region_boundaries
 
         # find pairs of boundary points that are near enough to each other to be considered identical
         # remove these as duplicates and merge delta counts
         unique_boundaries = []
-        # unique_delta_count = {}
         boundary_groups = []
 
         # find groups of near boundaries
@@ -689,7 +693,6 @@ class _PeriodicEncoder(_EncoderBase):
                 index = boundary_group[0]
                 min_key = sorted_boundaries[index]
                 unique_boundaries.append(min_key)
-                # unique_delta_count[key] = sorted_deltas[index]
 
             # multiple boundaries to be merged
             else:
@@ -699,7 +702,6 @@ class _PeriodicEncoder(_EncoderBase):
                 for index in boundary_group:
                     float_val = sorted_boundaries[index]
                     char_count = len(str(float_val))
-                    # print(char_count, str(float_val), float_val)
                     if char_count < min_count:
                         min_count = char_count
                         min_index = index
@@ -708,21 +710,7 @@ class _PeriodicEncoder(_EncoderBase):
                 # create smallest digit boundary value
                 unique_boundaries.append(min_key)
 
-                # unique_delta_count[min_key] = 0
-                # for index in boundary_group:
-                #    unique_delta_count[min_key] += sorted_deltas[index]
-            # print("min:", min_key)
-            # print()
-
-        # unique_deltas = [unique_delta_count[k] for k in unique_boundaries]
-
-        # return unique_boundaries, unique_deltas
-
         unique_boundaries = np.array(unique_boundaries)
-
-        # np.set_printoptions(precision=5)
-        #print("boundaries:")
-        #print(unique_boundaries)
 
         return bin_congruence, unique_boundaries
 
@@ -780,14 +768,12 @@ class PeriodicCellEncoder(_PeriodicEncoder):
 
     """
 
-    def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, min_period=None, max_period=None,
+    def __init__(self, n=1, l=None, min_period=None, max_period=None,
                  **kwargs):
         """
 
         :param n: number of bins, number of bits
         :param l: size of bin, if unspecified, l is random for each bin
-        :param lower_bound: lower bound of interval, default '0'
-        :param upper_bound: upper bound of interval, default '1'
         :param min_period:
         :param max_period:
         :param kwargs:
@@ -796,25 +782,18 @@ class PeriodicCellEncoder(_PeriodicEncoder):
         # superclass constructor
         super().__init__(**kwargs)
 
-        # interval size and bounds
-        if upper_bound <= lower_bound:
-            raise Exception("upper_bound %0.2f should be greater than lower_bound %0.2f" % (upper_bound, lower_bound))
-        self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
-        self.L = self.upper_bound - self.lower_bound
-
         # size of bins
         self.l_frac = 0.25
 
         if l is not None:
-            if l <= 0 or l > self.L:
+            if l <= 0 or l > self.input_width:
                 raise Exception("Bin size 'l' must be greater than 0, but less than 'L'.")
             self.min_l = l - 1e-100
             self.max_l = l + 1e-100
             # self.l = l
         else:
-            self.min_l = self.L * 0.05
-            self.max_l = self.L * 0.10
+            self.min_l = self.input_width * 0.05
+            self.max_l = self.input_width * 0.10
             # 5% of size of input interval
 
         # number of bins
@@ -825,7 +804,7 @@ class PeriodicCellEncoder(_PeriodicEncoder):
         # max period 50% of input interval
         self.max_period = max_period
         if self.max_period is None:
-            self.max_period = 0.5 * self.L
+            self.max_period = 0.5 * self.input_width
 
         self.min_period = min_period
         if self.min_period is None:
@@ -839,7 +818,7 @@ class PeriodicCellEncoder(_PeriodicEncoder):
             raise Exception("Period max and min must be positive")
 
         # origin mid-point of input interval
-        self.origin = self.lower_bound + self.L / 2.0
+        self.origin = self.lower_bound + self.input_width / 2.0
         self.origins = [self.origin for _ in range(self.n)]
 
         # modulus of grid cell, period
@@ -866,10 +845,12 @@ class PeriodicCellEncoder(_PeriodicEncoder):
         if len(self.bins) < 1:
             raise Exception("Encoder as configured doesn't allocate any bins")
 
-
-        self.bin_congruence, self.region_boundaries = self._generate_periodic_features(self.lower_bound,
-                                                                                       self.upper_bound, self.bins,
+        self.bin_congruence, self.region_boundaries = self._generate_periodic_features(self.xmin,
+                                                                                       self.xmax, self.bins,
                                                                                        self.periods)
+        #self.bin_congruence, self.region_boundaries = self._generate_periodic_features(self.lower_bound,
+        #                                                                               self.upper_bound, self.bins,
+        #                                                                               self.periods)
 
         # record region center points
         self.region_centers = self.region_boundaries[:-1] + np.diff(self.region_boundaries) / 2
@@ -897,10 +878,11 @@ class PeriodicCellEncoder(_PeriodicEncoder):
         self.region_deltas = np.concatenate(
                 ([self.region_weights[0]], deltas, [self.region_weights[-1]]))
 
-        #print("boundaries:", len(self.region_boundaries))
-        #print(self.region_boundaries)
-        #print("deltas:", len(self.region_deltas))
-        #print(self.region_deltas)
+        # print("boundaries:", len(self.region_boundaries))
+        # print(self.region_boundaries)
+        # print("deltas:", len(self.region_deltas))
+        # print(self.region_deltas)
+
 
 class PeriodicScalarEncoder(_PeriodicEncoder):
 
@@ -914,8 +896,6 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
 
         # superclass constructor
         super().__init__(**kwargs)
-
-        # xmin=0.0, xmax=1.0,
 
         # weight
         if not isinstance(w, int) or w < 1:
@@ -959,9 +939,12 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
         self.bins = [I.closed_open(bin_lowers[k], bin_lowers[k] + self.bin_sizes[k]) for k in range(0, self.n)]
 
         # region boundaries and congruent bins
-        self.bin_congruence, self.region_boundaries = self._generate_periodic_features(self.lower_bound,
-                                                                                       self.upper_bound, self.bins,
+        self.bin_congruence, self.region_boundaries = self._generate_periodic_features(self.xmin,
+                                                                                       self.xmax, self.bins,
                                                                                        self.periods)
+        #self.bin_congruence, self.region_boundaries = self._generate_periodic_features(self.lower_bound,
+        #                                                                               self.upper_bound, self.bins,
+        #                                                                               self.periods)
 
         # record region center points
         self.region_centers = self.region_boundaries[:-1] + np.diff(self.region_boundaries) / 2
@@ -993,10 +976,10 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
         self.region_deltas = np.concatenate(
                 ([self.region_weights[0]], deltas, [self.region_weights[-1]]))
 
-        #print("boundaries:", len(self.region_boundaries))
-        #print(self.region_boundaries)
-        #print("deltas:", len(self.region_deltas))
-        #print(self.region_deltas)
+        # print("boundaries:", len(self.region_boundaries))
+        # print(self.region_boundaries)
+        # print("deltas:", len(self.region_deltas))
+        # print(self.region_deltas)
 
 
 class _PlaceCellEncoder(_EncoderBase):

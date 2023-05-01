@@ -113,7 +113,8 @@ def run_experiment():
 
     #multi_encoder.add_encoder(PeriodicCellEncoder(n=100, seed=0))
     #multi_encoder.add_encoder(PeriodicCellEncoder(n=20, seed=0))
-    multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, lower_bound=-1, upper_bound=2))
+    #multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, lower_bound=-1, upper_bound=2))
+    multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, xmin=-1, xmax=2))
     multi_encoder.add_encoder(PeriodicScalarEncoder(n=10, period=0.5, xmin=-1, xmax=2))
 
     for i in range(10, 11):
