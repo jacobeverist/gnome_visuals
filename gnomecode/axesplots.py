@@ -29,7 +29,7 @@ __all__ = ["draw_bits_by_data", "draw_multi_encoder_bins", "draw_decomposition",
 
 # printing boolean arrays neatly
 np.set_printoptions(
-        precision=3, suppress=True, threshold=1000000, linewidth=400,
+        precision=5, suppress=True, threshold=1000000, linewidth=400,
         formatter={'bool': lambda bin_val: 'X' if bin_val else '-'})
 
 
@@ -252,7 +252,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                 w_adj = box_width - x_shrink_adj
                 h_adj = box_height - y_shrink
 
-                print("create rect:", y_index, x_adj, y_adj, w_adj, h_adj)
+                #print("create rect:", y_index, x_adj, y_adj, w_adj, h_adj)
 
                 # create box representing the bin
                 rect = new_rect(x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
@@ -344,7 +344,7 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
     # grid_labels = ['\n'.join(textwrap.wrap(l, 20)) for l in grid_labels]
     # grid_labels = ["%s %d" % (sub_encoders[j].__class__.__name__, keys[j]) for j in range(n_grids)]
 
-    print(grid_labels)
+    #print(grid_labels)
 
     encoder_count = 0
     bin_id_count = 0
@@ -825,8 +825,14 @@ def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
             (X_gnome_lower, X_gnomes, X_gnome_upper), axis=0)
     boundaries_extended = np.concatenate(
             ([lower_bound - 1.0], encoder.region_boundaries, [upper_bound + 1.0]))
+    boundaries_x = encoder.region_boundaries
 
     scores_extended = count_similarity(X_gnomes_extended, ref_gnomes)
+
+    #print(boundaries_x)
+    #print(X_gnomes.shape, ref_gnomes.shape, scores2.shape, len(boundaries_x))
+    #print(boundaries_extended)
+    #print(X_gnomes_extended.shape, scores_extended.shape, boundaries_extended.shape)
 
     # data to plot
     max_score = np.max(scores2)
@@ -838,8 +844,9 @@ def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
 
     # plot similarity scores for each reference value
     for k in range(len(ref_points)):
-        boundaries_x = boundaries_extended
-        scores_y = np.append(scores_extended[:, k], [scores_extended[-1, k], ])
+        #boundaries_x = boundaries_extended
+        #scores_y = np.append(scores_extended[:, k], [scores_extended[-1, k], ])
+        scores_y = np.append(scores2[:, k], [scores2[-1, k], ])
 
         ax.step(boundaries_x, scores_y, where='post', color=colors[k], label=float(ref_points[k]))
         ax.fill_between(boundaries_x, -1, scores_y, step='post', color=colors[k], alpha=0.6, zorder=1)

@@ -62,12 +62,13 @@ def run_experiment():
     # Constants
     file_dir = "out/"
     #experiment = "PeriodicCellEncoder"
-    #experiment = "PeriodicScalarEncoder"
-    experiment = "FixedWeightEncoder"
+    experiment = "PeriodicScalarEncoder"
+    #experiment = "FixedWeightEncoder"
     #experiment = "TaperingWeightEncoder"
+    #experiment = "PlaceCellEncoder"
 
     # Initalize Encoder
-    multi_encoder = MultiEncoder()
+    multi_encoder = MultiEncoder(upper_bound=2.0, lower_bound=-1.0)
     #multi_encoder = PeriodicScalarEncoder(n=8, period=0.5, xmin=0, xmax=2)
 
     #for i in [2, 3, 5, 7]:
@@ -101,13 +102,19 @@ def run_experiment():
 
     w_param = 1
     # multi_encoder.add_encoder(FixedWeightEncoder(n=16, w=w_param))
-    multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=w_param))
+    #multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=w_param))
 
     #for i in [4, 8, 12, 16]:
     #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=w_param))
 
     #for i in [5, 7, 11, 13]:
     #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=w_param))
+    #multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=100, seed=0))
+
+    #multi_encoder.add_encoder(PeriodicCellEncoder(n=100, seed=0))
+    #multi_encoder.add_encoder(PeriodicCellEncoder(n=20, seed=0))
+    multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, lower_bound=-1, upper_bound=2))
+    multi_encoder.add_encoder(PeriodicScalarEncoder(n=10, period=0.5, xmin=-1, xmax=2))
 
     for i in range(10, 11):
         # Change Encoder
@@ -124,7 +131,7 @@ def run_experiment():
         #print(multi_encoder.straddles)
 
         # Plot Feature
-        plot_interval_multi_encoder(multi_encoder, desc_str=experiment, w_param=w_param)
+        plot_interval_multi_encoder(multi_encoder, desc_str=experiment, w_param=w_param, x_pad=1.0)
         save_fig(file_dir, multi_encoder, "Features", experiment, w_param=w_param)
 
         # Plot Similarity Matrix by Code

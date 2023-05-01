@@ -52,7 +52,7 @@ def plot_diff_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, d
     # title of figure
     fig.suptitle(desc_str)
 
-    print("X_gnomes:", encoder.region_codes.shape)
+    #print("X_gnomes:", encoder.region_codes.shape)
 
     draw_code_difference(ax_heatmap, encoder, triangle=triangle, annot=annot)
 
