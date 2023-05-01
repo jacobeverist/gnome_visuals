@@ -1,9 +1,9 @@
 from collections.abc import Iterable
 from heapq import merge
-from line_profiler_pycharm import profile
 
 import numpy as np
 from intervals import FloatInterval as I
+from line_profiler_pycharm import profile
 
 # Scikit-Learn's numpy array input validation and reformatting that we've found useful in the past
 # #from sklearn.utils.validation import check_X_y, check_array
@@ -42,6 +42,10 @@ class _EncoderBase:
             self.rng = np.random.RandomState(seed=seed)
 
     def _input(self, X):
+
+        # enforces well-formed input with options,
+        # here input should be 2D array where X.shape == (num_samples, num_features)
+        # X = check_array(X, ensure_2d=True)
 
         if self.oob_method == "exception" and (np.any(X > self.upper_bound) or np.any(X < self.lower_bound)):
             raise Exception("Attempting to encode input value out of bounds of interval [%.2f,%.2f)" % (
@@ -92,7 +96,7 @@ class _EncoderBase:
 
 class MultiEncoder(_EncoderBase):
 
-    def __init__(self, **kwargs):
+    def __init__(self, upper_bound=None, lower_bound=None, **kwargs):
 
         # superclass constructor
         super().__init__(**kwargs)
@@ -102,14 +106,18 @@ class MultiEncoder(_EncoderBase):
         self.w = 3
         self.l = 0.1
         self.n = 0
-        self.upper_bound = None
-        self.lower_bound = None
+        self.upper_bound = upper_bound
+        self.lower_bound = lower_bound
         self.L = None
         self.region_boundaries = []
         self.region_centers = []
         self.region_codes = []
         self.region_weights = []
         self.region_deltas = []
+        self.bins = []
+        self.regions = []
+        self.region_sizes = []
+        self.region_indices = []
 
         self.is_init = False
 
@@ -117,38 +125,86 @@ class MultiEncoder(_EncoderBase):
     def add_encoder(self, encoder):
         self.encoders.append(encoder)
         self.config()
+
     @profile
     def config(self):
-        """
-        w = property(get_w)
-        lower_bound = property(get_lower_bound)
-        upper_bound = property(get_upper_bound)
-        L = property(get_L)
-        n = property(get_n)
-        l = property(get_l)
 
-        boundaries = property(get_boundaries)
-        region_centers = property(get_region_centers)
-        region_codes = property(get_region_codes)
-        region_weights = property(get_region_weights)
-        """
+        self.upper_bound = self.compute_upper_bound()
+        self.lower_bound = self.compute_lower_bound()
+        self.L = self.compute_L()
+        self.n = self.compute_n()
 
-        # self.region_boundaries = self.get_boundaries()
-        # print("boundaries:")
-        # print(self.region_boundaries)
+        self.region_boundaries, self.region_deltas = self.compute_boundaries()
 
-        self.upper_bound = self.get_upper_bound()
-        self.lower_bound = self.get_lower_bound()
-        self.L = self.get_L()
-        self.n = self.get_n()
+        # find region centers between boundary points
+        self.region_centers = self.region_boundaries[:-1] + np.diff(self.region_boundaries) / 2
 
-        # self.region_centers = self.get_region_centers()
-        # self.region_codes = self.get_region_codes()
-        # self.region_weights = self.get_region_weights()
-        # self.region_deltas = self.get_region_deltas()
+        self.bins = []
+        for encoder in self.encoders:
+            self.bins += encoder.bins
+
+        if len(self.bins) < 1:
+            raise Exception("Encoder as configured doesn't allocate any bins")
+
+        # unique regions intersected by combinations of bins
+        self.regions = [I.closed_open(self.region_boundaries[i], self.region_boundaries[i + 1]) for i in
+                        range(0, len(self.region_boundaries) - 1)]
+
+        self.region_sizes = np.diff(self.region_boundaries) / 2
+
+        self.is_init = True
+
+        # compute codes for each center point
+        self.region_codes = self.encode(self.region_centers)
+
+        # compute weights for each region
+        self.region_weights = np.count_nonzero(self.region_codes, axis=1)
+
+        self.region_indices = [tuple(np.nonzero(region)[0]) for region in self.region_codes]
+
+    @profile
+    def encode(self, X):
+        if not self.is_init:
+            raise Exception("Multi-Encoder is not properly configured.")
+
+        # encode value for each subencoder and concatenate result
+        if isinstance(X, np.ndarray):
+            codes_by_encoder = [encoder.encode(X) for encoder in self.encoders]
+            codes_by_value = np.concatenate(codes_by_encoder, axis=1)
+        else:
+            codes_by_encoder = [encoder.encode(X) for encoder in self.encoders]
+            codes_by_value = np.concatenate(codes_by_encoder)
+
+        return codes_by_value
+
+    def compute_lower_bound(self):
+        lower_bound = min([self.encoders[k].lower_bound for k in range(len(self.encoders))])
+
+        if self.lower_bound is None or lower_bound < self.lower_bound:
+            return lower_bound
+        else:
+            return self.lower_bound
+
+    def compute_upper_bound(self):
+        upper_bound = max([self.encoders[k].upper_bound for k in range(len(self.encoders))])
+
+        if self.upper_bound is None or upper_bound > self.upper_bound:
+            return upper_bound
+        else:
+            return self.upper_bound
+
+    def compute_L(self):
+        L = self.upper_bound - self.lower_bound
+        return L
+
+    def compute_n(self):
+        # n_tuple = tuple([encoder.n for encoder in self.encoders])
+        total_n = sum([encoder.n for encoder in self.encoders])
+        return total_n
+
+    def compute_boundaries(self):
 
         # merge boundaries from each of the sub-encoders
-        sub_boundaries = []
         delta_count = {}
         for encoder in self.encoders:
             boundaries = encoder.region_boundaries
@@ -162,18 +218,8 @@ class MultiEncoder(_EncoderBase):
                 except:
                     delta_count[key] = cnt
 
-            # sub_boundaries.append(boundaries)
-
-        # print("delta counts")
-        # for k, v in delta_count.items():
-        #    print(v, k)
-
         sorted_boundaries = sorted(list(delta_count.keys()))
-        # print(len(sorted_boundaries), "boundaries:", type(sorted_boundaries))
-        # print(sorted_boundaries)
         sorted_deltas = [delta_count[k] for k in sorted_boundaries]
-        # print("deltas:")
-        # print(sorted_deltas)
 
         # find pairs of boundary points that are near enough to each other to be considered identical
         # remove these as duplicates and merge delta counts
@@ -226,179 +272,48 @@ class MultiEncoder(_EncoderBase):
                 for index in boundary_group:
                     unique_delta_count[min_key] += sorted_deltas[index]
 
-        # print("unique_delta_count")
-        # print(unique_delta_count)
-        # print(len(unique_boundaries), "unique_boundaries")
-        # print(unique_boundaries)
+        unique_deltas = [unique_delta_count[k] for k in unique_boundaries]
 
-        # self.region_boundaries = sorted_boundaries
-        self.region_boundaries = unique_boundaries
-        # print("boundaries:", type(self.region_boundaries))
-        # self.region_deltas = [delta_count[k] for k in self.region_boundaries]
-        self.region_deltas = [unique_delta_count[k] for k in self.region_boundaries]
-        # print("deltas:")
-        # print(self.region_deltas)
+        return unique_boundaries, unique_deltas
 
-        # record region center points
-        self.region_centers = self.region_boundaries[:-1] + np.diff(self.region_boundaries) / 2
-        # print("region_centers:", type(self.region_centers), self.region_centers.shape)
-        # print(self.region_centers)
-
-        self.bins = []
-        for encoder in self.encoders:
-            self.bins += encoder.bins
-
-        if len(self.bins) < 1:
-            raise Exception("Encoder as configured doesn't allocate any bins")
-
-        # unique regions intersected by combinations of bins
-        self.regions = [I.closed_open(self.region_boundaries[i], self.region_boundaries[i + 1]) for i in
-                        range(0, len(self.region_boundaries) - 1)]
-
-        self.region_sizes = np.diff(self.region_boundaries) / 2
-
-        self.is_init = True
-
-        # print("boundary count:", len(self.region_boundaries))
-
-        # print("region_boundaries:")
-        # print(self.region_boundaries)
-
-        # print("region_deltas:")
-        # print(self.region_deltas)
-
-        #print("region_centers:")
-        #print(len(self.region_centers))
-
-        self.region_codes = self.encode(self.region_centers)
-        # print("region_codes:")
-        # print(self.region_codes)
-
-        self.region_weights = np.count_nonzero(self.region_codes, axis=1)
-        # print("region_weights:")
-        # print(self.region_weights)
-
-        self.region_indices = [tuple(np.nonzero(region)[0]) for region in self.region_codes]
-        # print("region_indices:")
-        # print(self.region_indices)
-
-        # print()
-        #:wprint(delta_count.values())
-        # foo = np.array(sub_boundaries)
-        # print(foo)
-        # print(foo.shape)
-        # print(*sub_boundaries)
-
-        # print(sorted_boundaries)
-        # merged_boundaries = list(merge(*sub_boundaries))
-
-        # 1) get count of duplicates for the delta count
-        # - extract sub-encoder counts as well for computation
-        # use dict, with key as boundary, and delta count added to value
-
-        # 2) remove duplicates and resort remainder
-        # res = sorted([*set(merged_boundaries)])
-        # print(res)
-
-        # 3) find region centers between boundary points
-
-        # 4) compute codes for each center point
-
-        # 5) capture weights for each region
-
-    @profile
-    def encode(self, X):
-        if not self.is_init:
-            raise Exception("Multi-Encoder is not properly configured.")
-
-        # encode value for each subencoder and concatenate result
-        if isinstance(X, np.ndarray):
-            codes_by_encoder = [encoder.encode(X) for encoder in self.encoders]
-            codes_by_value = np.concatenate(codes_by_encoder, axis=1)
-        else:
-            codes_by_encoder = [encoder.encode(X) for encoder in self.encoders]
-            codes_by_value = np.concatenate(codes_by_encoder)
-
-        # composite_codes_by_value = np.stack(codes_by_encoder, axis=1).reshape((X.shape[0], -1))
-        # codes_by_value = np.stack(codes_by_encoder, axis=1)
-        # codes_by_value = np.concatenate(codes_by_encoder, axis=1)
-        # print("codes_by_value:", codes_by_value.shape)
-        # print(codes_by_value)
-        # composite_codes_by_value = codes_by_value.reshape((X.shape[0], -1))
-        # print("composite_codes_by_value:", composite_codes_by_value.shape)
-        # print(composite_codes_by_value)
-        # return composite_codes_by_value
-
-        return codes_by_value
-
-    def get_lower_bound(self):
-        lower_bound = min([self.encoders[k].lower_bound for k in range(len(self.encoders))])
-        return lower_bound
-
-    def get_upper_bound(self):
-        upper_bound = max([self.encoders[k].upper_bound for k in range(len(self.encoders))])
-        return upper_bound
-
-    def get_L(self):
-        L = self.get_upper_bound() - self.get_lower_bound()
-        return L
-
+    """
+    # getter methods
+    
     def get_w(self):
-        w_tuple = tuple([self.encoders[k].w for k in range(len(self.encoders))])
-        # print(w_tuple)
+        w_tuple = tuple([encoder.w for encoder in self.encoders])
         return w_tuple
-
-    def get_n(self):
-        total_n = sum([encoder.n for encoder in self.encoders])
-        return total_n
-        # n_tuple = tuple([self.encoders[k].n for k in range(len(self.encoders))])
-        # print(n_tuple)
-        # return n_tuple
 
     def get_l(self):
         l_tuple = tuple([self.encoders[k].l for k in range(len(self.encoders))])
-        # print(l_tuple)
         return l_tuple
 
-    def get_boundaries(self):
-        # merge boundaries from each of the sub-encoders
-        sub_boundaries = []
-        for encoder in self.encoders:
-            boundaries = encoder.region_boundaries
-            sub_boundaries.append(boundaries)
-
-        merged_result = list(merge(*sub_boundaries))
-
-        # 1) get count of duplicates for the delta count
-        # - extract sub-encoder counts as well for computation
-        # use dict, with key as boundary, and delta count added to value
-
-        # 2) remove duplicates and resort remainder
-        res = sorted([*set(merged_result)])
-
-        # 3) find region centers between boundary points
-
-        # 4) compute codes for each center point
-
-        # 5) capture weights for each region
-
-        return res
-
     def get_region_centers(self):
-        return self.encoders[0].region_centers
+        return self.region_centers
 
     def get_region_codes(self):
-        return self.encoders[0].region_codes
+        return self.region_codes
 
     def get_region_weights(self):
-        return self.encoders[0].region_weights
+        return self.region_weights
 
     def get_region_deltas(self):
-        return self.encoders[0].region_deltas
+        return self.region_deltas
+    """
 
-    # w = property(get_w)
-    # n = property(get_n)
-    # l = property(get_l)
+    """
+    # property decorators
+    
+    w = property(get_w)
+    n = property(get_n)
+    l = property(get_l)
+    L = property(get_L)
+    lower_bound = property(get_lower_bound)
+    upper_bound = property(get_upper_bound)
+    boundaries = property(get_boundaries)
+    region_centers = property(get_region_centers)
+    region_codes = property(get_region_codes)
+    region_weights = property(get_region_weights)
+    """
 
 
 class _IntervalEncoder(_EncoderBase):
@@ -543,12 +458,7 @@ class _IntervalEncoder(_EncoderBase):
         :return:
         """
 
-        # enforces well-formed input with options,
-        # here input should be 2D array where X.shape == (num_samples, num_features)
-        # X = check_array(X, ensure_2d=True)
         X = self._input(X)
-
-        # print("input:", X)
 
         # list of values to encode
         if isinstance(X, Iterable):
@@ -588,10 +498,14 @@ class PeriodicCellEncoder(_EncoderBase):
     def __init__(self, n=1, l=None, lower_bound=0, upper_bound=1, min_period=None, max_period=None,
                  **kwargs):
         """
+
         :param n: number of bins, number of bits
         :param l: size of bin, if unspecified, l is random for each bin
         :param lower_bound: lower bound of interval, default '0'
         :param upper_bound: upper bound of interval, default '1'
+        :param min_period:
+        :param max_period:
+        :param kwargs:
         """
 
         # superclass constructor
@@ -605,7 +519,6 @@ class PeriodicCellEncoder(_EncoderBase):
         self.L = self.upper_bound - self.lower_bound
 
         # size of bins
-
         self.l_frac = 0.25
 
         if l is not None:
@@ -679,6 +592,8 @@ class PeriodicCellEncoder(_EncoderBase):
             return True
         else:
             return False
+
+
     @profile
     def encode(self, X):
         """
@@ -687,9 +602,6 @@ class PeriodicCellEncoder(_EncoderBase):
         :return:
         """
 
-        # enforces well-formed input with options,
-        # here input should be 2D array where X.shape == (num_samples, num_features)
-        # X = check_array(X, ensure_2d=True)
         X = self._input(X)
 
         # values with respect to an origin
@@ -710,6 +622,7 @@ class PeriodicCellEncoder(_EncoderBase):
                     [int(self._is_x_in_periodic_bin(x_origin, self.origin, self.periods[k], self.bins[k],
                                                     self.straddles[k])) for k in range(self.n)])
             return gnome
+
     @profile
     def config(self):
         """
@@ -720,39 +633,22 @@ class PeriodicCellEncoder(_EncoderBase):
 
         rand = self.rng
 
-        # random modulus for each grid cell
-        # self.periods = rand.uniform(2 * self.l, self.max_period, self.n)
-        # self.periods = rand.uniform(self.l, self.max_period, self.n)
-        # self.periods = rand.uniform(self.min_period, self.max_period, self.n)
-
+        # modulus for each grid cell
         self.periods = np.linspace(self.min_period, self.max_period, self.n)
 
         # fundamental regions for each period
-        # [self.origin, self.periods]
-        # self.fund_regions = [(self.origin, period) for period in self.periods]
         self.fund_regions = [I.closed_open(self.origin, self.origin + self.periods[c]) for c in range(self.n)]
 
         # sizes of bins
-        # self.bin_sizes = rand.uniform(self.min_l, self.max_l, self.n)
-        # self.bin_sizes = np.linspace(self.min_l, self.max_l, self.n)
-        # self.bin_sizes = np.linspace(self.min_l, self.max_l, self.n)
-
-        # region_frac = np.flip(np.linspace(0.05, 0.5, self.n))
         region_frac = np.repeat(self.l_frac, self.n)
         self.bin_sizes = np.multiply(region_frac, self.periods)
 
         # create n random points in interval as bin centroids
-        # bin_centers = rand.uniform(self.origin, self.max_period, self.n)
-        # bin_mins = rand.uniform(self.origin-self.l, self.periods-self.l, self.n)
         bin_lowers = rand.uniform(self.origin, self.origin + self.periods, self.n)
 
         # True/False whether bin straddles fund. region boundary
-        # self.straddles = np.array([True if (self.bin_lowers[k] + self.l) >= (self.origin + self.periods[k])
-        #                           else False for k in range(self.n)])
-        # self.straddles = np.where((self.bin_lowers + self.l) >= (self.origin + self.periods), True, False)
         self.straddles = np.array(
                 [False if (bin_lowers[k] + self.bin_sizes[k]) in self.fund_regions[k] else True for k in range(self.n)])
-        # [False if (bin_lowers[k] + self.l) in self.fund_regions[k] else True for k in range(self.n)])
 
         # compute bins in their fundamental regions
         self.bins = [I.closed_open(bin_lowers[k], bin_lowers[k] + self.bin_sizes[k]) for k in range(0, self.n)]
@@ -760,23 +656,9 @@ class PeriodicCellEncoder(_EncoderBase):
         if len(self.bins) < 1:
             raise Exception("Encoder as configured doesn't allocate any bins")
 
-        # region_boundaries = np.array(bin_lower_multiples)
-
-        # record region boundary points
-        # region_boundaries = np.concatenate(region_boundaries)
-        # region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
-        # region_boundaries = np.sort(region_boundaries)
-        # self.region_boundaries = region_boundaries
-
-        # self.region_boundaries = self.generate_periodic_boundaries()
-
         self.bin_congruence, self.region_boundaries = self._generate_periodic_features(self.lower_bound,
                                                                                        self.upper_bound, self.bins,
                                                                                        self.periods)
-
-        # self.region_boundaries = region_boundaries
-        # print("region_boundaries:", self.region_boundaries.shape)
-        # print(self.region_boundaries)
 
         # record region center points
         self.region_centers = self.region_boundaries[:-1] + np.diff(self.region_boundaries) / 2
@@ -788,19 +670,13 @@ class PeriodicCellEncoder(_EncoderBase):
         self.region_sizes = np.diff(self.region_boundaries) / 2
 
         self.region_codes = self.encode(self.region_centers)
-        # print("region_codes:", self.region_codes.shape)
-        # print(self.region_codes)
 
         self.region_weights = np.count_nonzero(self.region_codes, axis=1)
-        # print("region_weights:", self.region_weights.shape)
-        # print(self.region_weights)
 
         self.region_indices = [tuple(np.nonzero(region)[0]) for region in self.region_codes]
 
         self.region_deltas = np.concatenate(
                 ([self.region_weights[0]], np.abs(np.diff(self.region_weights)), [self.region_weights[-1]]))
-        # print("region_deltas", self.region_deltas.shape)
-        # print(self.region_deltas)
 
     def _generate_periodic_features(self, xmin, xmax, bins, periods):
 
@@ -884,14 +760,12 @@ class _PeriodicEncoder(_EncoderBase):
 
     """
 
-    #  (n=None, l=None, L=1.0, w=1, lower_bound=0, upper_bound=None, **kwargs)
 
     # base periodic encoder
-
     def __init__(self, xmin=0.0, xmax=1.0, **kwargs):
         """
         :param xmin: lower bound of input range, default '0'
-        :param xmax: upper bound of input range,, default '1'
+        :param xmax: upper bound of input range, default '1'
         """
 
         # superclass constructor
@@ -949,42 +823,10 @@ class _PeriodicEncoder(_EncoderBase):
     @profile
     def _is_x_in_periodic_bin(self, x_input, origin, period, b, is_straddle):
 
-        #
-
-
-        #print("_is_in_periodic_bin:", x_input, origin, period, bin, is_straddle)
-        # x - origin
-
-        #  FIXME: optimize this bin-checking calculation
+        # FIXME: optimize this bin-checking calculation
         # FIXME: create two arrays, one for upper bounds, and one for lower bounds
-        """
-            gnomes = []
-            for x_input in _X:
-                gnome = np.array(
-                            [int(self._is_x_in_periodic_bin(
-                                        x_input, self.origins[k], self.periods[k], self.bins[k], self.straddles[k]
-                                    )
-                                )
-                             for k in range(self.n)
-                            ]
-                        )
-                gnomes.append(gnome)
-            return np.array(gnomes)
-
-           # value with respect to fund. region origin
-            x_offset = x_input - origin
-
-            # values modulo a period
-            x_modulo = np.mod(x_offset, period)
-
-            # back into real coordinates within fund. region
-            x_region1 = x_modulo + origin
-            x_region2 = x_region1 + period
-
-            is_in_bin = (x_region1 >= b.lower and x_region1 < b.upper) or (x_region2 >= b.lower and x_region2 < b.upper)
-
-
-        """
+        # is_in_bin = (x_region1 >= b.lower and x_region1 < b.upper)
+        #               or is_straddle and (x_region1+period >= b.lower and x_region1+period < b.upper)
 
         # value with respect to fund. region origin
         x_offset = x_input - origin
@@ -995,10 +837,9 @@ class _PeriodicEncoder(_EncoderBase):
         # back into real coordinates within fund. region
         x_region = x_modulo + origin
 
-        # print("_is_in_periodic_bin:", x_input, x_offset, x_modulo, x_region, origin, period, bin, is_straddle)
-
         if x_region in b:
             return True
+
         # if this bin overlaps upper boundary of its fundamental region, check near the lower boundary too
         elif is_straddle and (x_region + period) in b:
             return True
@@ -1072,13 +913,13 @@ class _PeriodicEncoder(_EncoderBase):
         """
 
         # enforces well-formed input with options,
-        # here input should be 2D array where X.shape == (num_samples, num_features)
         # X = check_array(X, ensure_2d=True)
+
+        # here input should be 2D array where X.shape == (num_samples, num_features)
         _X = self._input(X)
 
         # values with respect to an origin
         # x_origin = X - self.origin
-        # self.origins
 
         # list of values to encode
         if isinstance(_X, Iterable):
@@ -1121,6 +962,8 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
         # superclass constructor
         super().__init__(**kwargs)
 
+        # xmin=0.0, xmax=1.0,
+
         # weight
         if not isinstance(w, int) or w < 1:
             raise Exception("Weight 'w' must be a positive integer")
@@ -1128,7 +971,7 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
             self.w = w
 
         # number of bins
-        if not isinstance(n, int) and n <= 0:
+        if not isinstance(n, int) or n <= 0:
             raise Exception("Number of bins 'n' must be positive integer.")
         self.n = n
 
@@ -1138,10 +981,10 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
         self.period = period
 
         # origins are mid-point of input range
-        #self.origins = [self.lower_bound + self.input_width / 2.0 for k in range(self.n)]
+        # self.origins = [self.lower_bound + self.input_width / 2.0 for k in range(self.n)]
 
         # origins are lower bound of input range
-        self.origins = [self.lower_bound for k in range(self.n)]
+        self.origins = [self.lower_bound for _ in range(self.n)]
 
         # fixed modulus for each grid cell
         self.periods = np.repeat(self.period, self.n)
@@ -1163,45 +1006,6 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
         # compute bins in their fundamental regions
         self.bins = [I.closed_open(bin_lowers[k], bin_lowers[k] + self.bin_sizes[k]) for k in range(0, self.n)]
 
-        # self.w = 1
-        #num_partitions = self.n - (self.w - 1)
-        #self.step_size = self.input_width / num_partitions
-        # equidist_points = np.linspace(self.lower_bound, self.upper_bound, endpoint=True, num=num_partitions + 1)
-        #bin_steps = list(equidist_points)
-
-        #self.bins = [I.closed_open(bin_steps[k], bin_steps[k + self.w]) for k in range(0, len(bin_steps) - self.w)]
-        #self.bins += [I.closed_open(bin_steps[k], bin_steps[-1])
-        #              for k in range(len(bin_steps) - self.w, len(bin_steps) - 1)]
-
-        # self.region_boundaries = equidist_points
-
-        #         # compute step size for subsequent bins
-        #         num_partitions = self.n - (self.w - 1)
-        #         self.step_size = self.L / num_partitions
-        #
-        #         # internal bin-boundary transition points
-        #         equidist_points = np.linspace(self.lower_bound, self.upper_bound, endpoint=True, num=num_partitions + 1)
-        #
-        #         # record region boundary points
-        #         self.region_boundaries = equidist_points
-        #
-        #         # record region center points
-        #         self.region_centers = self.region_boundaries[:-1] + np.diff(self.region_boundaries) / 2
-        #
-        #         bin_steps = list(equidist_points)
-
-        # self.bins = []
-        # self.bins = [I.closed_open(bin_steps[0], bin_steps[c]) for c in range(1, self.w)]
-        # self.bins += [I.closed_open(bin_steps[c], bin_steps[c + self.w]) for c in range(0, len(bin_steps) - self.w)]
-        # self.bins += [I.closed_open(bin_steps[c], bin_steps[-1]) for c in
-        #              range(len(bin_steps) - self.w, len(bin_steps) - 1)]
-
-        # origins = [self.lower_bound + self.input_width / 2.0 for k in range(self.n)]
-        # periods = np.repeat(self.period, self.n)
-        # fund_regions = [I.closed_open(self.origins[k], self.origins[k] + self.periods[k]) for k in range(self.n)]
-        # bin_sizes = np.repeat(self.period / self.n, self.n)
-        # bin_lowers = [self.origins[k] + self.periods[k] * float(k) / self.n for k in range(self.n)]
-
         # region boundaries and congruent bins
         self.bin_congruence, self.region_boundaries = self._generate_periodic_features(self.lower_bound,
                                                                                        self.upper_bound, self.bins,
@@ -1216,10 +1020,6 @@ class PeriodicScalarEncoder(_PeriodicEncoder):
 
         # size of unique regions
         self.region_sizes = np.diff(self.region_boundaries) / 2
-
-
-        print("region_centers:")
-        print(len(self.region_centers))
 
         # encoding for each region
         self.region_codes = self.encode(self.region_centers)
@@ -1294,8 +1094,9 @@ class _PlaceCellEncoder(_EncoderBase):
         """
 
         # enforces well-formed input with options,
-        # here input should be 2D array where X.shape == (num_samples, num_features)
         # X = check_array(X, ensure_2d=True)
+
+        # here input should be 2D array where X.shape == (num_samples, num_features)
         X = self._input(X)
 
         # list of values to encode
@@ -1321,7 +1122,6 @@ class RandomizedPlaceCellEncoder(_PlaceCellEncoder):
         rand = self.rng
 
         # create n random points in interval as bin centroids
-        # bin_centers = np.random.uniform(self.lower_bound, self.upper_bound, self.n)
         bin_centers = rand.uniform(self.lower_bound, self.upper_bound, self.n)
 
         # compute bins
@@ -1334,15 +1134,11 @@ class RandomizedPlaceCellEncoder(_PlaceCellEncoder):
         # record region boundary points
         get_boundaries = lambda x: (
                 np.maximum(x - self.l / 2.0, self.lower_bound), np.minimum(x + self.l / 2.0, self.upper_bound))
-        # get_boundaries = lambda x: (x - self.l / 2.0, x + self.l / 2.0)
         region_boundaries = get_boundaries(bin_centers)
-        ##print(region_boundaries)
         region_boundaries = np.concatenate(region_boundaries)
         region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
         region_boundaries = np.sort(region_boundaries)
         self.region_boundaries = region_boundaries
-        # print("region_boundaries:", self.region_boundaries.shape)
-        # print(self.region_boundaries)
 
         # record region center points
         self.region_centers = self.region_boundaries[:-1] + np.diff(self.region_boundaries) / 2
@@ -1354,19 +1150,13 @@ class RandomizedPlaceCellEncoder(_PlaceCellEncoder):
         self.region_sizes = np.diff(self.region_boundaries) / 2
 
         self.region_codes = self.encode(self.region_centers)
-        # print("region_codes:", self.region_codes.shape)
-        # print(self.region_codes)
 
         self.region_weights = np.count_nonzero(self.region_codes, axis=1)
-        # print("region_weights:", self.region_weights.shape)
-        # print(self.region_weights)
 
         self.region_indices = [tuple(np.nonzero(region)[0]) for region in self.region_codes]
 
         self.region_deltas = np.concatenate(
                 ([self.region_weights[0]], np.abs(np.diff(self.region_weights)), [self.region_weights[-1]]))
-        # print("region_deltas", self.region_deltas.shape)
-        # print(self.region_deltas)
 
 
 class FixedWeightEncoder(_IntervalEncoder):
@@ -1422,28 +1212,6 @@ class FixedWeightEncoder(_IntervalEncoder):
         self.bins += [I.closed_open(bin_steps[c], bin_steps[-1]) for c in
                       range(len(bin_steps) - self.w, len(bin_steps) - 1)]
 
-        # origins = [self.lower_bound + self.input_width / 2.0 for k in range(self.n)]
-        # periods = np.repeat(self.period, self.n)
-        # fund_regions = [I.closed_open(self.origins[k], self.origins[k] + self.periods[k]) for k in range(self.n)]
-        # bin_sizes = np.repeat(self.period / self.n, self.n)
-        # bin_lowers = [self.origins[k] + self.periods[k] * float(k) / self.n for k in range(self.n)]
-
-        # print("bins")
-        # for bin in self.bins:
-        #    print(bin)
-
-        # prepend interval boundaries out-of-bounds
-        # for i in range(self.w - 1):
-        # new_boundary = bin_steps[0] - self.step_size
-        # bin_steps = [new_boundary, ] + bin_steps
-
-        # append interval boundaries out-of-bounds
-        # for i in range(self.w - 1):
-        #    new_boundary = bin_steps[-1] + self.step_size
-        #    bin_steps = bin_steps + [new_boundary, ]
-
-        # self.bins = [I.closed_open(bin_steps[c], bin_steps[c + self.w]) for c in range(0, len(bin_steps) - self.w)]
-
         if len(self.bins) < 1:
             raise Exception("Encoder as configured doesn't allocate any bins")
 
@@ -1454,8 +1222,6 @@ class FixedWeightEncoder(_IntervalEncoder):
         self.region_sizes = [self.step_size, ] * len(self.region_centers)
         self.region_codes = self.encode(self.region_centers)
         self.region_weights = np.count_nonzero(self.region_codes, axis=1)
-        # print("region_weights:")
-        # print(self.region_weights)
         self.region_indices = [tuple(np.nonzero(region)[0]) for region in self.region_codes]
         self.region_deltas = np.ones(len(self.region_boundaries), dtype=int)
         self.region_deltas[0] = self.w
