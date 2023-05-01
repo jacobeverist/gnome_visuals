@@ -95,7 +95,7 @@ class _EncoderBase:
 
 class MultiEncoder(_EncoderBase):
 
-    def __init__(self, xmin=None, xmax=None, **kwargs):
+    def __init__(self, xmin=None, xmax=None, x_pad=None, **kwargs):
 
         # superclass constructor
         super().__init__(**kwargs)
@@ -113,6 +113,7 @@ class MultiEncoder(_EncoderBase):
 
         self.xmin = xmin
         self.xmax = xmax
+        self.x_pad = x_pad
 
         # bounds here refer to the pre-configured input range and are not hard stops on the encoder capability.
         self.lower_bound = None
@@ -142,6 +143,12 @@ class MultiEncoder(_EncoderBase):
         # recompute all regions
         self.config()
 
+    def set_x_pad(self, x_pad):
+        self.x_pad = x_pad
+
+        # recompute all regions
+        self.config()
+
     @profile
     def add_encoder(self, encoder):
         self.encoders.append(encoder)
@@ -165,12 +172,22 @@ class MultiEncoder(_EncoderBase):
 
         # if periodic encoder, recompute regions with new bounds
         for encoder in self.encoders:
+
             try:
-                encoder.generate_regions
+                # set new view parameters
                 if encoder.xmin > xmin or encoder.xmax < xmax:
-                    encoder.xmin = xmin
-                    encoder.xmax = xmax
-                    encoder.generate_regions()
+                    try:
+                        encoder.set_view(xmin, xmax)
+                    except AttributeError:
+                        encoder.xmin = xmin
+                        encoder.xmax = xmax
+            except AttributeError:
+                # xmin/xmax don't exist
+                pass
+
+            # generate regions with new view
+            try:
+                encoder.generate_regions()
             except AttributeError:
                 pass
 
@@ -224,6 +241,11 @@ class MultiEncoder(_EncoderBase):
 
         if self.xmin is None:
             self.xmin = self.lower_bound
+
+        if self.x_pad is not None:
+            self.xmax = max(self.upper_bound + self.x_pad, self.xmax)
+            self.xmin = min(self.lower_bound - self.x_pad, self.xmin)
+
 
     def compute_input_bounds(self):
         upper_bound = max([self.encoders[k].upper_bound for k in range(len(self.encoders))])

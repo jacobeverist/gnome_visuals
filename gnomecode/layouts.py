@@ -405,9 +405,12 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, w_param=
 
     # TODO: plot distribution of periods, bin sizes, offsets, duty cycles, of a multi-encoder
 
-    print(encoder.xmin, encoder.xmax, encoder.lower_bound, encoder.upper_bound)
-    for enc in encoder.encoders:
-        print(enc.xmin, enc.xmax, enc.lower_bound, enc.upper_bound)
+    # print(encoder.xmin, encoder.xmax, encoder.lower_bound, encoder.upper_bound)
+    # for enc in encoder.encoders:
+    #     try:
+    #         print(enc.xmin, enc.xmax, enc.lower_bound, enc.upper_bound)
+    #     except:
+    #         print(enc.lower_bound, enc.upper_bound)
 
     # plot range for this multi encoder
     try:
@@ -418,7 +421,7 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, w_param=
         xmin = encoder.lower_bound - x_pad
         xmax = encoder.upper_bound + x_pad
 
-    print(xmin, xmax)
+    # print(xmin, xmax)
     # reference points for comparison
     ref_points = np.array([[0.21], [0.69]])
 
@@ -511,7 +514,9 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, w_param=
 
     # draw encoding bits along x-axis values
     # FIXME: still some encoding bin errors
-    draw_bits_by_data(ax3, encoder, xmin=xmin, xmax=xmax, x_pad=0.0, draw_region_bits=True,
+    #draw_bits_by_data(ax3, encoder, xmin=xmin, xmax=xmax, x_pad=0.0, draw_region_bits=True,
+    #                  draw_uniform_samples=False, permute_bits=False, clip_on=False, draw_boundaries=False)
+    draw_bits_by_data(ax3, encoder, x_pad=0.0, draw_region_bits=True,
                       draw_uniform_samples=False, permute_bits=False, clip_on=False, draw_boundaries=False)
 
     # draw input interval boundary lines across axes with vertical lines

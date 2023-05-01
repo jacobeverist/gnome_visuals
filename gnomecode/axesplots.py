@@ -34,7 +34,7 @@ np.set_printoptions(
 
 
 def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, draw_region_bits=False,
-                      draw_boundaries=False, draw_bit_grid=True, permute_bits=False, xmin=None, xmax=None, clip_on=True,
+                      draw_boundaries=False, draw_bit_grid=True, permute_bits=False, clip_on=True,
                       box_height=1, num_samples=150, x_pad=0.002, y_pad=0.15, y_margin=0.5):
     """
 
@@ -60,14 +60,31 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
 
     n_bits = encoder.n
 
+
+    # plot range for this multi encoder
+    # if xmin/xmax doesn't exist, use input bounds
+    try:
+        xmax = encoder.xmax if encoder.xmax > encoder.upper_bound else encoder.upper_bound
+    except AttributeError:
+        xmax = encoder.upper_bound
+
+    try:
+        xmin = encoder.xmin if encoder.xmin < encoder.lower_bound else encoder.lower_bound
+    except AttributeError:
+        xmin = encoder.lower_bound
+
+    # add padding
+    xmin = xmin - x_pad
+    xmax = xmax + x_pad
+
     upper_bound = encoder.upper_bound
     lower_bound = encoder.lower_bound
     interval_length = upper_bound - lower_bound
 
-    if xmax is None:
-        xmax = upper_bound
-    if xmin is None:
-        xmin = lower_bound
+    #if xmax is None:
+    #    xmax = upper_bound
+    #if xmin is None:
+    #    xmin = lower_bound
 
     # print("draw_bits:", xmin, xmax)
 
@@ -75,10 +92,11 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
     # ax.yaxis.set_major_locator(ticker.IndexLocator(5, 0))
     # ax.yaxis.set_minor_locator(ticker.IndexLocator(1, 0))
     ax.set_ylim(-y_margin, n_bits + y_margin)
-    ax.set_xlim(xmin, xmax)
     ax.yaxis.set_major_locator(ticker.MultipleLocator(10))
     # ax.yaxis.set_minor_locator(ticker.MultipleLocator(1))
     ax.yaxis.set_major_formatter(lambda x, pos: str(int(x)))
+
+    #ax.set_xlim(xmin, xmax)
 
     indices = np.random.permutation(np.arange(n_bits))
 
@@ -827,6 +845,18 @@ def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
     upper_bound = encoder.upper_bound
     lower_bound = encoder.lower_bound
 
+    # plot range for this multi encoder
+    # if xmin/xmax doesn't exist, use input bounds
+    try:
+        xmax = encoder.xmax if encoder.xmax > encoder.upper_bound else encoder.upper_bound
+    except AttributeError:
+        xmax = encoder.upper_bound
+
+    try:
+        xmin = encoder.xmin if encoder.xmin < encoder.lower_bound else encoder.lower_bound
+    except AttributeError:
+        xmin = encoder.lower_bound
+
     # region_codes = self.encode(self.region_centers)
     X_gnomes = encoder.region_codes
 
@@ -837,22 +867,18 @@ def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
     scores2 = count_similarity(X_gnomes, ref_gnomes)
 
     # for plotting purposes
-    X_point_lower = lower_bound - 0.5
-    X_point_upper = upper_bound + 0.5
-    X_gnome_lower = encoder.encode(X_point_lower).reshape(1, -1)
-    X_gnome_upper = encoder.encode(X_point_upper).reshape(1, -1)
-    X_gnomes_extended = np.concatenate(
-            (X_gnome_lower, X_gnomes, X_gnome_upper), axis=0)
-    boundaries_extended = np.concatenate(
-            ([lower_bound - 1.0], encoder.region_boundaries, [upper_bound + 1.0]))
+    # X_point_lower = lower_bound - 0.5
+    # X_point_upper = upper_bound + 0.5
+    # X_gnome_lower = encoder.encode(X_point_lower).reshape(1, -1)
+    # X_gnome_upper = encoder.encode(X_point_upper).reshape(1, -1)
+    # X_gnomes_extended = np.concatenate(
+    #        (X_gnome_lower, X_gnomes, X_gnome_upper), axis=0)
+    # boundaries_extended = np.concatenate(
+    #        ([lower_bound - 1.0], encoder.region_boundaries, [upper_bound + 1.0]))
+    # scores_extended = count_similarity(X_gnomes_extended, ref_gnomes)
+
     boundaries_x = encoder.region_boundaries
 
-    scores_extended = count_similarity(X_gnomes_extended, ref_gnomes)
-
-    #print(boundaries_x)
-    #print(X_gnomes.shape, ref_gnomes.shape, scores2.shape, len(boundaries_x))
-    #print(boundaries_extended)
-    #print(X_gnomes_extended.shape, scores_extended.shape, boundaries_extended.shape)
 
     # data to plot
     max_score = np.max(scores2)
@@ -884,7 +910,7 @@ def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
 
     if draw_h_grid:
         for k in range(max_score + 3):
-            ax.hlines(y=k, xmin=lower_bound - 0.1, xmax=upper_bound + 0.1, alpha=0.2, linewidth=0.5, color='k',
+            ax.hlines(y=k, xmin=xmin - 0.1, xmax=xmax + 0.1, alpha=0.2, linewidth=0.5, color='k',
                       zorder=-1)
 
     # show legend for each example value
@@ -1020,7 +1046,7 @@ def draw_similarity_heatmap(ax, encoder, ref_point, colors, draw_regions=True,
     # legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
 
 @profile
-def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_grid=True, draw_legend=True):
+def draw_features(ax, encoder, colors, markersize=4, hamming_y=0.5, draw_regions=False, draw_h_grid=True, draw_legend=True):
     """
     Features Subplot (Boundaries, Weight, Crossings)
 
@@ -1041,6 +1067,18 @@ def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_
     upper_bound = encoder.upper_bound
     lower_bound = encoder.lower_bound
 
+    # plot range for this multi encoder
+    # if xmin/xmax doesn't exist, use input bounds
+    try:
+        xmax = encoder.xmax if encoder.xmax > encoder.upper_bound else encoder.upper_bound
+    except AttributeError:
+        xmax = encoder.upper_bound
+
+    try:
+        xmin = encoder.xmin if encoder.xmin < encoder.lower_bound else encoder.lower_bound
+    except AttributeError:
+        xmin = encoder.lower_bound
+
     # Data for Features
     bin_weights = encoder.region_weights
     max_bin_weight = max(bin_weights)
@@ -1053,7 +1091,10 @@ def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_
 
     # set central ordinal value on y-axis for swarmplot
     bottom, top = ax.get_ylim()
-    swarm_ordinal = (top - bottom) / 2.0 + bottom
+    # swarm_ordinal = (top - bottom) / 2.0 + bottom
+    #swarm_ordinal = max_bin_weight + 1
+
+    swarm_ordinal = hamming_y * (top-bottom) + bottom
 
     # points repeated for each delta count
     repeat_boundaries = []
@@ -1071,51 +1112,81 @@ def draw_features(ax, encoder, colors, markersize=4, draw_regions=False, draw_h_
     repeat_boundaries.append(0.0)
     y_vals.append(-100)
 
+
     # do swarm plot
     #sns.swarmplot(x=repeat_boundaries, y=y_vals, orient='h', color=colors[0], ax=ax, size=markersize, native_scale=True,
     sns.swarmplot(x=repeat_boundaries, y=y_vals, orient='h', color='k', ax=ax, size=markersize, native_scale=True,
-                  legend=False, label="Crossings", marker='D')
+                  legend=False, label="Crossings", marker='o')
+                  #legend = False, label = "Crossings", marker = 'D')
 
     # remove extra category
     repeat_boundaries.pop(-1)
     y_vals.pop(-1)
 
+    # remove the hackish category label, so we only have one "Crossings" in the legend
+    # handles1, labels1 = ax.get_legend_handles_labels()
+    # min_category = -1
+    # min_elements = 1e100
+    # for k in range(len(labels1)):
+    #     if labels1[k] == "Crossings":
+    #         handle = handles1[k]
+    #         num_points = len(handle.get_offsets())
+    #         if num_points < min_elements:
+    #             min_elements = num_points
+    #             min_category = k
+    # handles1.pop(min_category)
+    # labels1.pop(min_category)
+
+
+    # find first instance of label with "Crossings" label
+    handles1, labels1 = ax.get_legend_handles_labels()
+    cross_handle = None
+    for k in range(len(labels1)):
+        if labels1[k] == "Crossings":
+            cross_handle = handles1[k]
+
+    # build up list of legend entries
+    local_handles = []
+    local_labels = []
+    local_handles.append(cross_handle)
+    local_labels.append("Crossings")
+
+
     if draw_regions:
         # draw grid lines representing boundaries between regions
-        ax.axvline(x=boundaries[0], alpha=0.2, linewidth=0.5, color='k', zorder=-1, label="Boundary")
+        result = ax.axvline(x=boundaries[0], alpha=0.2, linewidth=0.5, color='k', zorder=-1, label="Boundary")
+
+        # track this item for legend
+        local_handles.append(result)
+        local_labels.append("Boundary")
+
         for k in range(1, len(boundaries)):
             ax.axvline(x=boundaries[k], alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
     if draw_h_grid:
         for k in range(0, max_bin_weight + 3):
-            ax.hlines(y=k, xmin=lower_bound - 0.1, xmax=upper_bound + 0.1, alpha=0.2, linewidth=0.5, color='k',
+            ax.hlines(y=k, xmin=xmin - 0.1, xmax=xmax + 0.1, alpha=0.2, linewidth=0.5, color='k',
                       zorder=-1)
 
     # draw gnome weights
-    ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=1, zorder=1, label="Weight")
+    handle3 = ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=1, zorder=1, label="Weight")
     ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.4, zorder=1)
     #ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=0.6, zorder=1, label="Weight")
     #ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.3, zorder=1)
 
-    # legend labels and handles
-    handles1, labels1 = ax.get_legend_handles_labels()
+    # track this item for legend
+    local_handles.append(handle3[0])
+    local_labels.append("Weight")
 
-    # remove the hackish category label, so we only have one "Crossings" in the legend
-    min_category = -1
-    min_elements = 1e100
-    for k in range(len(labels1)):
-        if labels1[k] == "Crossings":
-            handle = handles1[k]
-            num_points = len(handle.get_offsets())
-            if num_points < min_elements:
-                min_elements = num_points
-                min_category = k
-    handles1.pop(min_category)
-    labels1.pop(min_category)
+    #labels = ["Crossings", "Boundary", "Weight"]
 
     if draw_legend:
+        # legend labels and handles
+        handles2, labels2 = ax.get_legend_handles_labels()
+
         # plot legend for property data
-        legend = ax.legend(handles1, labels1, title="Features", ncol=3, fontsize=8, title_fontsize=9)
+        #legend = ax.legend(handles2, labels2, title="Features", ncol=3, fontsize=8, title_fontsize=9)
+        legend = ax.legend(local_handles, local_labels, title="Features", ncol=3, fontsize=8, title_fontsize=9)
 
 
 def draw_code_difference(ax, encoder, triangle=False, annot=True):

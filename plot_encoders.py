@@ -1,7 +1,4 @@
-import numpy as np
 from gnomecode import *
-from line_profiler_pycharm import profile
-
 
 # TODO:
 """
@@ -61,96 +58,99 @@ from line_profiler_pycharm import profile
 def run_experiment():
     # Constants
     file_dir = "out/"
-    #experiment = "PeriodicCellEncoder"
+    # experiment = "PeriodicCellEncoder"
     experiment = "PeriodicScalarEncoder"
-    #experiment = "FixedWeightEncoder"
-    #experiment = "TaperingWeightEncoder"
-    #experiment = "PlaceCellEncoder"
+    # experiment = "FixedWeightEncoder"
+    # experiment = "TaperingWeightEncoder"
+    # experiment = "PlaceCellEncoder"
 
     # Initalize Encoder
-    multi_encoder = MultiEncoder()
-    #multi_encoder = MultiEncoder(upper_bound=2.0, lower_bound=-1.0)
-    #multi_encoder = PeriodicScalarEncoder(n=8, period=0.5, xmin=0, xmax=2)
+    multi_encoder = MultiEncoder(x_pad=0.7)
+    # multi_encoder = MultiEncoder(upper_bound=2.0, lower_bound=-1.0)
+    # multi_encoder = PeriodicScalarEncoder(n=8, period=0.5, xmin=0, xmax=2)
 
-    #for i in [2, 3, 5, 7]:
+    # for i in [2, 3, 5, 7]:
     #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=i, period=0.5, xmin=0, xmax=2))
-        #multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=1))
-    #for i in [5, 7, 11, 13]:
+    # multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=1))
+    # for i in [5, 7, 11, 13]:
     #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=2))
 
-    #multi_encoder.add_encoder(PeriodicScalarEncoder(n=3, w=1, period=0.5, xmin=0, xmax=2))
-    #multi_encoder.add_encoder(PeriodicScalarEncoder(n=5, w=2, period=0.5, xmin=0, xmax=2))
-    #multi_encoder.add_encoder(PeriodicScalarEncoder(n=7, w=3, period=0.5, xmin=0, xmax=2))
-    #multi_encoder.add_encoder(FixedWeightEncoder(n=5, w=2, lower_bound=0, upper_bound=1))
-    #multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=3, upper_bound=1))
+    # multi_encoder.add_encoder(PeriodicScalarEncoder(n=3, w=1, period=0.5, xmin=0, xmax=2))
+    # multi_encoder.add_encoder(PeriodicScalarEncoder(n=5, w=2, period=0.5, xmin=0, xmax=2))
+    # multi_encoder.add_encoder(PeriodicScalarEncoder(n=7, w=3, period=0.5, xmin=0, xmax=2))
+    # multi_encoder.add_encoder(FixedWeightEncoder(n=5, w=2, lower_bound=0, upper_bound=1))
+    # multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=3, upper_bound=1))
 
-    #multi_encoder.add_encoder(PeriodicScalarEncoder(n=1000, w=3, period=0.5, xmin=0, xmax=1))
-    #for i in range(0, 100):
+    # multi_encoder.add_encoder(PeriodicScalarEncoder(n=1000, w=3, period=0.5, xmin=0, xmax=1))
+    # for i in range(0, 100):
     #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=8, w=3, period=0.5, xmin=0, xmax=1))
 
-    #for i in range(7, 9):
+    # for i in range(7, 9):
     #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=i, w=3, period=0.5, xmin=0, xmax=1))
-    #multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=3, upper_bound=1))
+    # multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=3, upper_bound=1))
 
-    #for i in [7, 11, 13, 17]:
+    # for i in [7, 11, 13, 17]:
     #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=3, upper_bound=1))
 
-    #for i in range(4):
+    # for i in range(4):
     #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=2**i, period=0.5, xmin=0, xmax=1))
 
-    #for i in [7, 11, 13, 19]:
+    # for i in [7, 11, 13, 19]:
     #    multi_encoder.add_encoder(TaperingWeightEncoder(n=i, w=3))
 
     w_param = 1
     # multi_encoder.add_encoder(FixedWeightEncoder(n=16, w=w_param))
-    #multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=w_param))
+    # multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=w_param))
 
-    #for i in [4, 8, 12, 16]:
+    # for i in [4, 8, 12, 16]:
     #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=w_param))
 
-    #for i in [5, 7, 11, 13]:
+    # for i in [5, 7, 11, 13]:
     #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=w_param))
-    #multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=100, seed=0))
+    # multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=100, seed=0))
 
-    #multi_encoder.add_encoder(PeriodicCellEncoder(n=100, seed=0))
-    #multi_encoder.add_encoder(PeriodicCellEncoder(n=20, seed=0))
-    #multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, lower_bound=-1, upper_bound=2))
-    #multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, xmin=-1, xmax=2))
+    # multi_encoder.add_encoder(PeriodicCellEncoder(n=100, seed=0))
+    # multi_encoder.add_encoder(PeriodicCellEncoder(n=20, seed=0))
+    # multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, lower_bound=-1, upper_bound=2))
+    # multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, xmin=-1, xmax=2))
     multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0))
-    #multi_encoder.add_encoder(PeriodicScalarEncoder(n=10, period=0.5, xmin=-1, xmax=2))
+    # multi_encoder.add_encoder(PeriodicScalarEncoder(n=10, period=0.5, xmin=-1, xmax=2))
     multi_encoder.add_encoder(PeriodicScalarEncoder(n=10, period=0.5))
+    multi_encoder.add_encoder(FixedWeightEncoder(n=11, w=3))
+    multi_encoder.add_encoder(FixedWeightEncoder(n=9, w=2, lower_bound=0.5, upper_bound=1.5))
 
-    multi_encoder.set_view(-0.5, 1.5)
+    #multi_encoder.set_view(multi_encoder.lower_bound - 0.5, multi_encoder.upper_bound + 0.5)
 
     for i in range(10, 11):
         # Change Encoder
-        #multi_encoder.add_encoder(PeriodicCellEncoder(n=i, oob_method="modulo", seed=i))
-        #multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=1, seed=i))
-        #multi_encoder.add_encoder(FixedWeightEncoder(n=5+i, w=1))
-        #multi_encoder.add_encoder(TaperingWeightEncoder(n=6+i, w=3))
-        #multi_encoder.add_encoder(PeriodicScalarEncoder())
-        #multi_encoder.add_encoder(PeriodicScalarEncoder(n=8, period=0.5, xmin=0, xmax=2))
+        # multi_encoder.add_encoder(PeriodicCellEncoder(n=i, oob_method="modulo", seed=i))
+        # multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=1, seed=i))
+        # multi_encoder.add_encoder(FixedWeightEncoder(n=5+i, w=1))
+        # multi_encoder.add_encoder(TaperingWeightEncoder(n=6+i, w=3))
+        # multi_encoder.add_encoder(PeriodicScalarEncoder())
+        # multi_encoder.add_encoder(PeriodicScalarEncoder(n=8, period=0.5, xmin=0, xmax=2))
 
-        #print(multi_encoder.__dict__)
-        #for bin in multi_encoder.bins:
+        # print(multi_encoder.__dict__)
+        # for bin in multi_encoder.bins:
         #    print(bin)
-        #print(multi_encoder.straddles)
+        # print(multi_encoder.straddles)
 
         # Plot Feature
         plot_interval_multi_encoder(multi_encoder, desc_str=experiment, w_param=w_param)
         save_fig(file_dir, multi_encoder, "Features", experiment, w_param=w_param)
 
         # Plot Similarity Matrix by Code
-        #plot_code_heatmap(multi_encoder, desc_str=experiment, annot=False)
-        #save_fig(file_dir, multi_encoder, "Similarity_Matrix_by_Region_Code", experiment)
+        # plot_code_heatmap(multi_encoder, desc_str=experiment, annot=False)
+        # save_fig(file_dir, multi_encoder, "Similarity_Matrix_by_Region_Code", experiment)
 
         # Plot Similarity Matrix by Real Space
-        #plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param)
-        #save_fig(file_dir, multi_encoder, "Similarity_Matrix_Projected_to_Real_Space", experiment, w_param=w_param)
+        # plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param)
+        # save_fig(file_dir, multi_encoder, "Similarity_Matrix_Projected_to_Real_Space", experiment, w_param=w_param)
 
         # Plot Difference Matrix by Code
-        #plot_diff_heatmap(multi_encoder, desc_str=experiment, annot=False)
-        #save_fig(file_dir, multi_encoder, "Difference_Matrix_by_Region_Code", experiment)
+        # plot_diff_heatmap(multi_encoder, desc_str=experiment, annot=False)
+        # save_fig(file_dir, multi_encoder, "Difference_Matrix_by_Region_Code", experiment)
+
 
 if __name__ == "__main__":
     run_experiment()
