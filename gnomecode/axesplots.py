@@ -1,27 +1,27 @@
-from line_profiler_pycharm import profile
 import re
 import string
 import textwrap
 from fractions import Fraction
 
-import numpy as np
-import numpy.ma as ma
-from intervals import FloatInterval as I
-
+# import holoviews as hv
+# from colorcet.plotting import swatch, swatches
+import colorcet as cc
 import matplotlib as mpl
 import matplotlib.axes
 import matplotlib.patches as patches
+import numpy as np
+import numpy.ma as ma
+import seaborn as sns
+from line_profiler_pycharm import profile
 from matplotlib import ticker
+from matplotlib.cm import get_cmap
 from matplotlib.collections import PatchCollection
 from matplotlib.transforms import Affine2D
-#import holoviews as hv
-#from colorcet.plotting import swatch, swatches
-import colorcet
-from matplotlib.cm import get_cmap
-
-import seaborn as sns
 
 from .utils import *
+
+# ensures colorcet doesn't get autoformatted away by smart IDE
+testgray = cc.gray
 
 __all__ = ["draw_bits_by_data", "draw_multi_encoder_bins", "draw_decomposition", "draw_barcode", "draw_delta_count",
            "draw_similarity", "draw_similarity_heatmap", "draw_projected_self_similarity", "draw_code_self_similarity",
@@ -60,7 +60,6 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
 
     n_bits = encoder.n
 
-
     # plot range for this multi encoder
     # if xmin/xmax doesn't exist, use input bounds
     try:
@@ -81,9 +80,9 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
     lower_bound = encoder.lower_bound
     interval_length = upper_bound - lower_bound
 
-    #if xmax is None:
+    # if xmax is None:
     #    xmax = upper_bound
-    #if xmin is None:
+    # if xmin is None:
     #    xmin = lower_bound
 
     # print("draw_bits:", xmin, xmax)
@@ -96,7 +95,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
     # ax.yaxis.set_minor_locator(ticker.MultipleLocator(1))
     ax.yaxis.set_major_formatter(lambda x, pos: str(int(x)))
 
-    #ax.set_xlim(xmin, xmax)
+    # ax.set_xlim(xmin, xmax)
 
     indices = np.random.permutation(np.arange(n_bits))
 
@@ -270,7 +269,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                 w_adj = box_width - x_shrink_adj
                 h_adj = box_height - y_shrink
 
-                #print("create rect:", y_index, x_adj, y_adj, w_adj, h_adj)
+                # print("create rect:", y_index, x_adj, y_adj, w_adj, h_adj)
 
                 # create box representing the bin
                 rect = new_rect(x_adj, y_adj, w_adj, h_adj, alpha=1, facecolor='k', clip_on=clip_on, linewidth=0.2)
@@ -338,8 +337,8 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
     keys = list(range(n_grids))
     keys.sort()
 
-    #colors = sns.color_palette("muted", n_colors=n_grids)
-    #grid_label_templates = [prefix + "%d" for prefix in grid_names]
+    # colors = sns.color_palette("muted", n_colors=n_grids)
+    # grid_label_templates = [prefix + "%d" for prefix in grid_names]
     grid_colors = [colors[j] for j in range(n_grids)]
 
     # grid_colors = ['k',] + grid_colors
@@ -349,20 +348,20 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
 
     # convert class name to spaced words and wrap around
     grid_labels = [
-                textwrap.fill(
+            textwrap.fill(
                     "(%d) %s" %
-                        (keys[j], re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1',
-                                sub_encoders[j].__class__.__name__)
-                        ),
+                    (keys[j], re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1',
+                                     sub_encoders[j].__class__.__name__)
+                     ),
                     12)
-                for j in range(n_grids)]
+            for j in range(n_grids)]
 
-    #grid_labels = [textwrap.fill(l, 10) for l in grid_labels]
+    # grid_labels = [textwrap.fill(l, 10) for l in grid_labels]
 
     # grid_labels = ['\n'.join(textwrap.wrap(l, 20)) for l in grid_labels]
     # grid_labels = ["%s %d" % (sub_encoders[j].__class__.__name__, keys[j]) for j in range(n_grids)]
 
-    #print(grid_labels)
+    # print(grid_labels)
 
     encoder_count = 0
     bin_id_count = 0
@@ -437,7 +436,6 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
             # length of bin
             box_width = bin_upper_bound - bin_lower_bound
 
-
             """
             min_size = min(box_width, box_height)
             draw_text = True
@@ -469,8 +467,6 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
 
             # draw bin
             if draw_bin:
-
-
                 rect = add_text_rect(ax, box_x + x_shrink / 2.0, box_y + y_shrink / 2.0, box_width - x_shrink,
                                      box_height - y_shrink, alpha=1.0, facecolor=grid_colors[encoder_count],
                                      text_str=bin_text_str, clip_on=clip_on, linewidth=bin_linewidth,
@@ -828,7 +824,7 @@ def draw_delta_count(ax, boundary_x, grid_delta_counts):
 
 
 def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
-                    draw_h_grid=True, draw_v_values=True):
+                    draw_h_grid=True, draw_v_values=True, draw_legend=True):
     """
     Draw count similarity of reference values to existing encodings
 
@@ -879,7 +875,6 @@ def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
 
     boundaries_x = encoder.region_boundaries
 
-
     # data to plot
     max_score = np.max(scores2)
 
@@ -890,8 +885,8 @@ def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
 
     # plot similarity scores for each reference value
     for k in range(len(ref_points)):
-        #boundaries_x = boundaries_extended
-        #scores_y = np.append(scores_extended[:, k], [scores_extended[-1, k], ])
+        # boundaries_x = boundaries_extended
+        # scores_y = np.append(scores_extended[:, k], [scores_extended[-1, k], ])
         scores_y = np.append(scores2[:, k], [scores2[-1, k], ])
 
         ax.step(boundaries_x, scores_y, where='post', color=colors[k], label=float(ref_points[k]))
@@ -913,11 +908,16 @@ def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
             ax.hlines(y=k, xmin=xmin - 0.1, xmax=xmax + 0.1, alpha=0.2, linewidth=0.5, color='k',
                       zorder=-1)
 
-    # show legend for each example value
-    handles, labels = ax.get_legend_handles_labels()
-    handles.reverse()
-    labels.reverse()
-    legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
+    if draw_legend:
+
+
+        # show legend for each example value
+
+        # legend labels and handles
+        handles, labels = ax.get_legend_handles_labels()
+        handles.reverse()
+        labels.reverse()
+        legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
 
 
 def draw_similarity_heatmap(ax, encoder, ref_point, colors, draw_regions=True,
@@ -1045,8 +1045,10 @@ def draw_similarity_heatmap(ax, encoder, ref_point, colors, draw_regions=True,
     # labels.reverse()
     # legend = ax.legend(handles, labels, title="Similarity of", ncol=2, fontsize=8, title_fontsize=8)
 
+
 @profile
-def draw_features(ax, encoder, colors, markersize=4, hamming_y=0.5, draw_regions=False, draw_h_grid=True, draw_legend=True):
+def draw_features(ax, encoder, colors, markersize=4, hamming_y=0.5, fill_weight=True, draw_regions=False,
+                  draw_h_grid=True, draw_legend=True):
     """
     Features Subplot (Boundaries, Weight, Crossings)
 
@@ -1092,9 +1094,9 @@ def draw_features(ax, encoder, colors, markersize=4, hamming_y=0.5, draw_regions
     # set central ordinal value on y-axis for swarmplot
     bottom, top = ax.get_ylim()
     # swarm_ordinal = (top - bottom) / 2.0 + bottom
-    #swarm_ordinal = max_bin_weight + 1
+    # swarm_ordinal = max_bin_weight + 1
 
-    swarm_ordinal = hamming_y * (top-bottom) + bottom
+    swarm_ordinal = hamming_y * (top - bottom) + bottom
 
     # points repeated for each delta count
     repeat_boundaries = []
@@ -1112,12 +1114,11 @@ def draw_features(ax, encoder, colors, markersize=4, hamming_y=0.5, draw_regions
     repeat_boundaries.append(0.0)
     y_vals.append(-100)
 
-
     # do swarm plot
-    #sns.swarmplot(x=repeat_boundaries, y=y_vals, orient='h', color=colors[0], ax=ax, size=markersize, native_scale=True,
+    # sns.swarmplot(x=repeat_boundaries, y=y_vals, orient='h', color=colors[0], ax=ax, size=markersize, native_scale=True,
     sns.swarmplot(x=repeat_boundaries, y=y_vals, orient='h', color='k', ax=ax, size=markersize, native_scale=True,
                   legend=False, label="Crossings", marker='o')
-                  #legend = False, label = "Crossings", marker = 'D')
+    # legend = False, label = "Crossings", marker = 'D')
 
     # remove extra category
     repeat_boundaries.pop(-1)
@@ -1137,7 +1138,6 @@ def draw_features(ax, encoder, colors, markersize=4, hamming_y=0.5, draw_regions
     # handles1.pop(min_category)
     # labels1.pop(min_category)
 
-
     # find first instance of label with "Crossings" label
     handles1, labels1 = ax.get_legend_handles_labels()
     cross_handle = None
@@ -1150,7 +1150,6 @@ def draw_features(ax, encoder, colors, markersize=4, hamming_y=0.5, draw_regions
     local_labels = []
     local_handles.append(cross_handle)
     local_labels.append("Crossings")
-
 
     if draw_regions:
         # draw grid lines representing boundaries between regions
@@ -1170,22 +1169,24 @@ def draw_features(ax, encoder, colors, markersize=4, hamming_y=0.5, draw_regions
 
     # draw gnome weights
     handle3 = ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=1, zorder=1, label="Weight")
-    ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.4, zorder=1)
-    #ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=0.6, zorder=1, label="Weight")
-    #ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.3, zorder=1)
+
+    if fill_weight:
+        ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.4, zorder=1)
+    # ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=0.6, zorder=1, label="Weight")
+    # ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.3, zorder=1)
 
     # track this item for legend
     local_handles.append(handle3[0])
     local_labels.append("Weight")
 
-    #labels = ["Crossings", "Boundary", "Weight"]
+    # labels = ["Crossings", "Boundary", "Weight"]
 
     if draw_legend:
         # legend labels and handles
         handles2, labels2 = ax.get_legend_handles_labels()
 
         # plot legend for property data
-        #legend = ax.legend(handles2, labels2, title="Features", ncol=3, fontsize=8, title_fontsize=9)
+        # legend = ax.legend(handles2, labels2, title="Features", ncol=3, fontsize=8, title_fontsize=9)
         legend = ax.legend(local_handles, local_labels, title="Features", ncol=3, fontsize=8, title_fontsize=9)
 
 
@@ -1193,16 +1194,15 @@ def draw_code_difference(ax, encoder, triangle=False, annot=True):
     # sampled points over the space
     X_gnomes1 = encoder.region_codes
 
-
-    #diagonal_scores1 = count_similarity(X_gnomes1, X_gnomes1)
+    # diagonal_scores1 = count_similarity(X_gnomes1, X_gnomes1)
     diagonal_scores = count_difference(X_gnomes1, X_gnomes1)
 
-    #print(diagonal_scores1)
-    #print(diagonal_scores)
+    # print(diagonal_scores1)
+    # print(diagonal_scores)
 
-    #print(X_gnomes1.shape)
-    #print(diagonal_scores1.shape)
-    #print(diagonal_scores.shape)
+    # print(X_gnomes1.shape)
+    # print(diagonal_scores1.shape)
+    # print(diagonal_scores.shape)
     max_count = np.max(diagonal_scores)
 
     # Generate a mask for the upper triangle
@@ -1219,10 +1219,9 @@ def draw_code_difference(ax, encoder, triangle=False, annot=True):
     else:
         annot_data = False
 
-
-    #cmap = get_cmap("cet_fire")
-    #cmap = get_cmap("cet_CET_I1")
-    #cmap = get_cmap("cet_CET_CBTL2")
+    # cmap = get_cmap("cet_fire")
+    # cmap = get_cmap("cet_CET_I1")
+    # cmap = get_cmap("cet_CET_CBTL2")
     cmap = get_cmap("cet_CET_CBTL2_r")
 
     # cmap = sns.color_palette("rocket_r", as_cmap=True)
@@ -1263,14 +1262,12 @@ def draw_code_difference(ax, encoder, triangle=False, annot=True):
                 annot_kws={"fontsize": fontsize})
 
 
-
 def draw_code_self_similarity(ax, encoder, triangle=False, annot=True):
     # sampled points over the space
     X_gnomes1 = encoder.region_codes
 
     diagonal_scores = count_similarity(X_gnomes1, X_gnomes1)
     max_count = np.max(diagonal_scores)
-
 
     # Generate a mask for the upper triangle
     if triangle:
@@ -1289,11 +1286,11 @@ def draw_code_self_similarity(ax, encoder, triangle=False, annot=True):
     # Generate a custom diverging colormap
     # cmap = sns.diverging_palette(230, 20, as_cmap=True)
     # cmap = sns.color_palette("rocket_r", as_cmap=True)
-    #cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
+    # cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
 
-    #cmap = get_cmap("cet_CET_I1")
-    #cmap = get_cmap("cet_CET_CBL1_r")
-    #cmap = get_cmap("cet_CET_CBL1")
+    # cmap = get_cmap("cet_CET_I1")
+    # cmap = get_cmap("cet_CET_CBL1_r")
+    # cmap = get_cmap("cet_CET_CBL1")
     cmap = get_cmap("cet_CET_CBTL2")
 
     num_points = X_gnomes1.shape[0]
@@ -1335,7 +1332,7 @@ def draw_projected_self_similarity(ax, encoder, triangle=False, annot=True, cbar
     # sampled points over the space
     X_points = np.array(encoder.region_centers).reshape(-1, 1)
     X_gnomes1 = encoder.region_codes
-    X_gnomes2 = encoder.encode(X_points)
+    # X_gnomes2 = encoder.encode(X_points)
 
     x_vals = encoder.region_boundaries
     y_vals = encoder.region_boundaries
@@ -1346,8 +1343,10 @@ def draw_projected_self_similarity(ax, encoder, triangle=False, annot=True, cbar
     x_sizes = encoder.region_sizes
     y_sizes = encoder.region_sizes
 
-    diagonal_scores = count_similarity(X_gnomes1, X_gnomes2)
+    diagonal_scores = count_similarity(X_gnomes1, X_gnomes1)
     max_count = np.max(diagonal_scores)
+
+    #print(diagonal_scores.shape)
 
     # Generate a mask for the upper triangle
     if triangle:
@@ -1412,6 +1411,8 @@ def draw_projected_self_similarity(ax, encoder, triangle=False, annot=True, cbar
     # mask = _matrix_mask(data, mask) # Validate the mask and convert to DataFrame
     # plot_data = np.ma.masked_where(np.asarray(mask), plot_data)
     # mesh = ax.pcolormesh(plot_data, cmap=cmap, **kws)
+
+    # print(len(x_vals), len(y_vals), masked_scores.shape)
 
     mesh = ax.pcolormesh(x_vals, y_vals, masked_scores, vmax=max_count, vmin=0, edgecolor='1.0', linewidth=linewidth,
                          cmap=cmap)

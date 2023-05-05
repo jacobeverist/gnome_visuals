@@ -943,7 +943,9 @@ class PeriodicCellEncoder(_PeriodicEncoder):
         self.bin_sizes = np.multiply(region_frac, self.periods)
 
         # create n random points in interval as bin centroids
-        bin_lowers = self.rng.uniform(self.origin, self.origin + self.periods, self.n)
+        #bin_lowers = self.rng.uniform(self.origin, self.origin + self.periods, self.n)
+        #bin_lowers = np.array(self.origins) + self.periods - self.bin_sizes
+        bin_lowers = np.array(self.origins)
 
         # True/False whether bin straddles fund. region boundary
         # whether bin straddles the boundaries of their fundamental region
