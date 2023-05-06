@@ -1,7 +1,6 @@
 import random
 
 from gnomecode import *
-
 from stitch_images import stitch_images
 
 # TODO:
@@ -124,79 +123,50 @@ def run_experiment():
 
     # multi_encoder.add_encoder(PeriodicScalarEncoder(n=10, period=0.5))
 
+    # Random Periodic Cell Encoder Experiment
+    # experiment = "random_offset_PeriodicCellEncoder"
+    # multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
+    # for k in range(10):
+    #     multi_encoder.add_encoder(PeriodicCellEncoder(period=(k+1.0)/10.0, do_rand=True, seed=k))
+    #
+    # plot_periodic_cell_multi_encoder(multi_encoder, desc_str=experiment)
+    # save_fig(file_dir, multi_encoder, experiment + "_" + "Features")
+    # plot_realspace_heatmap(multi_encoder, desc_str=experiment, annot=False)
+    # save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space")
+
     offsets = [random.uniform(-0.2, 0.2)]
 
     feature_filenames = []
     heatmap_filenames = []
 
-
     for w_param in [1, 2, 3]:
 
         # 2^n, equal bin size
         experiment = "2n_equal_binsize_zerocenter_PeriodicScalarEncoder"
-        # multi_encoder = MultiEncoder(x_pad=1.0)
         multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
         for n in [4, 8, 12, 16]:
             period = n / 16.0
-            offset = -w_param * period / (2*n)
+            offset = -w_param * period / (2 * n)
 
             multi_encoder.add_encoder(
-                PeriodicScalarEncoder(n=n, w=w_param, period=n / 16.0, lower_bound=offset, upper_bound=1.0 + offset))
+                    PeriodicScalarEncoder(n=n, w=w_param, period=n / 16.0, lower_bound=offset,
+                                          upper_bound=1.0 + offset))
 
         plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
         feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
         plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
         heatmap_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space",
-                 w_param=w_param)
+                                w_param=w_param)
 
         feature_filenames.append(feature_file)
         heatmap_filenames.append(heatmap_file)
 
         # 2^n, equal period
         experiment = "2n_equal_period_zerocenter_PeriodicScalarEncoder"
-        multi_encoder = MultiEncoder(x_pad=1.0)
         multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
         for n in [4, 8, 12, 16]:
             period = 1.0
-            offset = -w_param * period / (2*n)
-            multi_encoder.add_encoder(
-                PeriodicScalarEncoder(n=n, w=w_param, period=1.0, lower_bound=offset, upper_bound=1.0 + offset))
-
-        plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
-        feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
-        plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
-        heatmap_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space",
-                 w_param=w_param)
-
-        feature_filenames.append(feature_file)
-        heatmap_filenames.append(heatmap_file)
-
-        # prime, equal binsize
-        experiment = "prime_equal_binsize_zerocenter_PeriodicScalarEncoder"
-        multi_encoder = MultiEncoder(x_pad=1.0)
-        multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
-        for n in [5, 7, 11, 13]:
-            period = n / 13.0
-            offset = -w_param * period / (2*n)
-            multi_encoder.add_encoder(
-                    PeriodicScalarEncoder(n=n, w=w_param, period=n / 13.0, lower_bound=offset, upper_bound=1.0 + offset))
-
-        plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
-        feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
-        plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
-        heatmap_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space",
-                 w_param=w_param)
-
-        feature_filenames.append(feature_file)
-        heatmap_filenames.append(heatmap_file)
-
-        # prime, equal period
-        experiment = "prime_equal_period_zerocenter_PeriodicScalarEncoder"
-        multi_encoder = MultiEncoder(x_pad=1.0)
-        multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
-        for n in [5, 7, 11, 13]:
-            period = 1.0
-            offset = -w_param * period / (2*n)
+            offset = -w_param * period / (2 * n)
             multi_encoder.add_encoder(
                     PeriodicScalarEncoder(n=n, w=w_param, period=1.0, lower_bound=offset, upper_bound=1.0 + offset))
 
@@ -204,7 +174,44 @@ def run_experiment():
         feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
         plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
         heatmap_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space",
-                 w_param=w_param)
+                                w_param=w_param)
+
+        feature_filenames.append(feature_file)
+        heatmap_filenames.append(heatmap_file)
+
+        # prime, equal binsize
+        experiment = "prime_equal_binsize_zerocenter_PeriodicScalarEncoder"
+        multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
+        for n in [5, 7, 11, 13]:
+            period = n / 13.0
+            offset = -w_param * period / (2 * n)
+            multi_encoder.add_encoder(
+                    PeriodicScalarEncoder(n=n, w=w_param, period=n / 13.0, lower_bound=offset,
+                                          upper_bound=1.0 + offset))
+
+        plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
+        feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
+        plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
+        heatmap_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space",
+                                w_param=w_param)
+
+        feature_filenames.append(feature_file)
+        heatmap_filenames.append(heatmap_file)
+
+        # prime, equal period
+        experiment = "prime_equal_period_zerocenter_PeriodicScalarEncoder"
+        multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
+        for n in [5, 7, 11, 13]:
+            period = 1.0
+            offset = -w_param * period / (2 * n)
+            multi_encoder.add_encoder(
+                    PeriodicScalarEncoder(n=n, w=w_param, period=1.0, lower_bound=offset, upper_bound=1.0 + offset))
+
+        plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
+        feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
+        plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
+        heatmap_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space",
+                                w_param=w_param)
 
         feature_filenames.append(feature_file)
         heatmap_filenames.append(heatmap_file)

@@ -23,7 +23,7 @@ class _EncoderBase:
 
     """
 
-    def __init__(self, oob_method="silent", lower_bound=0, upper_bound=1, seed=None):
+    def __init__(self, oob_method="silent", lower_bound=0.0, upper_bound=1.0, seed=None):
         """
         Constructor code
 
@@ -245,7 +245,6 @@ class MultiEncoder(_EncoderBase):
         if self.x_pad is not None:
             self.xmax = max(self.upper_bound + self.x_pad, self.xmax)
             self.xmin = min(self.lower_bound - self.x_pad, self.xmin)
-
 
     def compute_input_bounds(self):
         upper_bound = max([self.encoders[k].upper_bound for k in range(len(self.encoders))])
@@ -879,8 +878,8 @@ class PeriodicCellEncoder(_PeriodicEncoder):
 
     """
 
-    def __init__(self, n=1, l=None, min_period=None, max_period=None,
-                 **kwargs):
+    def __init__(self, n=1, l=None, period=None, min_period=None, max_period=None,
+                 origin=None, do_rand=False, **kwargs):
         """
 
         :param n: number of bins, number of bits
@@ -928,23 +927,40 @@ class PeriodicCellEncoder(_PeriodicEncoder):
         if self.max_period <= 0 or self.min_period <= 0:
             raise Exception("Period max and min must be positive")
 
+        self.period = period
+        if self.period is not None:
+            if not isinstance(self.period, (int, float)) or not self.period > 0.0:
+                raise Exception("Period must be positive number")
+
         # origin mid-point of input interval
-        self.origin = self.lower_bound + self.input_width / 2.0
-        self.origins = [self.origin for _ in range(self.n)]
+        if isinstance(origin, (float, int)) and (self.lower_bound <= origin <= self.upper_bound):
+            self.origin = origin
+        else:
+            self.origin = self.lower_bound + self.input_width / 2.0
+
+        if do_rand:
+            # create random placements of bins within input interval
+            self.origins = self.rng.uniform(self.lower_bound, self.upper_bound, self.n)
+        else:
+            # placements use the same origin
+            self.origins = [self.origin for _ in range(self.n)]
 
         # modulus of grid cell, period
-        self.periods = np.linspace(self.min_period, self.max_period, self.n)
+        if self.period is None:
+            self.periods = np.linspace(self.min_period, self.max_period, self.n)
+        else:
+            self.periods = np.repeat(self.period, self.n)
 
         # fundamental regions for each period
-        self.fund_regions = [I.closed_open(self.origin, self.origin + self.periods[c]) for c in range(self.n)]
+        self.fund_regions = [I.closed_open(self.origins[c], self.origins[c] + self.periods[c]) for c in range(self.n)]
 
         # sizes of bins
         region_frac = np.repeat(self.l_frac, self.n)
         self.bin_sizes = np.multiply(region_frac, self.periods)
 
         # create n random points in interval as bin centroids
-        #bin_lowers = self.rng.uniform(self.origin, self.origin + self.periods, self.n)
-        #bin_lowers = np.array(self.origins) + self.periods - self.bin_sizes
+        # bin_lowers = self.rng.uniform(self.origin, self.origin + self.periods, self.n)
+        # bin_lowers = np.array(self.origins) + self.periods - self.bin_sizes
         bin_lowers = np.array(self.origins)
 
         # True/False whether bin straddles fund. region boundary

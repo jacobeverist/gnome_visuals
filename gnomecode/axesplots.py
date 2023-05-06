@@ -291,7 +291,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
 
 def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1,
                             draw_regions=False, draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True,
-                            draw_folded_bins=False, label_bins=False):
+                            draw_folded_bins=False, label_bins=False, grid_label_size=8, grid_labels=None):
     # constants
     bin_alpha = 1
     cong_alpha = 0.3
@@ -347,14 +347,16 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
     # grid_labels = ["Encoder %d" % (keys[j],) for j in range(n_grids)]
 
     # convert class name to spaced words and wrap around
-    grid_labels = [
-            textwrap.fill(
-                    "(%d) %s" %
-                    (keys[j], re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1',
-                                     sub_encoders[j].__class__.__name__)
-                     ),
-                    12)
-            for j in range(n_grids)]
+
+    if grid_labels is None:
+        grid_labels = [
+                textwrap.fill(
+                        "(%d) %s" %
+                        (keys[j], re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1',
+                                         sub_encoders[j].__class__.__name__)
+                         ),
+                        12)
+                for j in range(n_grids)]
 
     # grid_labels = [textwrap.fill(l, 10) for l in grid_labels]
 
@@ -723,7 +725,7 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
     ax.yaxis.set_minor_locator(ticker.FixedLocator(encoder_centers))
     ax.yaxis.set_minor_formatter(ticker.FixedFormatter(grid_labels))
     # ax.yaxis.set_tick_params(which="minor", labelrotation=-45, labelsize=8)
-    ax.yaxis.set_tick_params(which="minor", labelsize=8)
+    ax.yaxis.set_tick_params(which="minor", labelsize=grid_label_size)
 
     for tick in ax.yaxis.get_minor_ticks():
         tick.tick1line.set_markersize(0)
@@ -879,7 +881,7 @@ def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
     max_score = np.max(scores2)
 
     # scale y-axis to maximum of weight
-    ax.set_ylim(-0.1, max_score + 2)
+    #ax.set_ylim(-0.1, max_score + 2)
     ax.yaxis.set_major_locator(ticker.IndexLocator(2, 1))
     ax.set_ylabel("Similarity of\nExample Values")
 

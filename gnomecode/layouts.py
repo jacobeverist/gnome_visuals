@@ -1,5 +1,7 @@
 # plotting
 
+import re
+import textwrap
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -11,7 +13,7 @@ from matplotlib import ticker
 from .axesplots import *
 
 __all__ = ['plot_diff_heatmap', 'plot_code_heatmap', 'plot_realspace_heatmap', 'plot_interval_multi_encoder',
-           'save_fig', 'plot_compact_multi_encoder']
+           'save_fig', 'plot_compact_multi_encoder', 'plot_periodic_cell_multi_encoder']
 
 
 @profile
@@ -29,7 +31,6 @@ def save_fig(path, encoder, plot_name, do_close=True, w_param=None):
     else:
         file_path = path + "%03u_%04u_" % (
                 encoder.n, len(encoder.region_centers)) + plot_name + ".png"
-
 
     # print(plt.gcf().get_size_inches())
 
@@ -331,7 +332,7 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
         ax_heatmap.grid(visible=True, which='minor', axis='both', alpha=grid_alpha, linewidth=grid_linewidth, color='k',
                         zorder=1)
 
-    #print(fig.get_size_inches())
+    # print(fig.get_size_inches())
 
 
 @profile
@@ -485,13 +486,11 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fol
 @profile
 def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_folded_bins=False, w_param=None):
     n_bits = encoder.n
-    n_grids = 1
-
     try:
         sub_encoders = encoder.encoders
         n_grids = len(sub_encoders)
     except:
-        pass
+        n_grids = 1
 
     markersize = 4
     fontsize = 8
@@ -528,6 +527,11 @@ def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fold
     # colors = sns.color_palette("cet_glasbey_hv", as_cmap=True).colors
     # colors = sns.color_palette("cet_glasbey_category10", as_cmap=True).colors
     colors = sns.color_palette("cet_glasbey_dark", as_cmap=True).colors
+
+    # grid_names = string.ascii_uppercase[:n_grids]
+    # keys = list(range(n_grids))
+    # keys.sort()
+    # grid_colors = [colors[j] for j in range(n_grids)]
 
     encoder_colors = colors[0:n_grids]
     # similarity_colors = colors[n_grids:n_grids+n_points]
@@ -587,7 +591,10 @@ def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fold
     ax1.get_shared_x_axes().join(ax1, ax0)
 
     # draw weight, crossings, and boundary features
-    draw_features(ax1, encoder, similarity_colors, markersize, draw_regions=True, fill_weight=False, draw_legend=False)
+    # draw_features(ax1, encoder, similarity_colors, markersize, draw_regions=True, fill_weight=False, draw_legend=False)
+    draw_features(ax1, encoder, similarity_colors, markersize, draw_regions=False, fill_weight=False, draw_legend=False)
+
+    #     ax.set_ylim(-0.1, max_bin_weight + 2)
 
     # draw similarity plot
     draw_similarity(ax1, encoder, ref_points, feature_colors, draw_regions=False,
@@ -667,3 +674,140 @@ def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fold
 
     # ax3.set_xlabel("Value to Encode")
     # ax3.set_ylabel("Binary Encoding")
+
+
+@profile
+def plot_periodic_cell_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_folded_bins=False, w_param=None):
+    n_bits = encoder.n
+    try:
+        sub_encoders = encoder.encoders
+        n_grids = len(sub_encoders)
+    except:
+        n_grids = 1
+
+    markersize = 4
+    fontsize = 8
+
+    # TODO: plot distribution of periods, bin sizes, offsets, duty cycles, of a multi-encoder
+
+    # plot range for this multi encoder
+    try:
+        # if xmin/xmax doesn't exist, use input bounds
+        xmin = encoder.xmin - x_pad
+        xmax = encoder.xmax + x_pad
+    except AttributeError:
+        xmin = encoder.lower_bound - x_pad
+        xmax = encoder.upper_bound + x_pad
+
+    # reference points for comparison
+    ref_points = np.array([[0.21], [0.75]])
+
+    n_points = len(ref_points)
+
+    # color palette
+    colors = sns.color_palette("cet_glasbey_dark", as_cmap=True).colors
+
+    encoder_colors = colors[0:n_grids]
+
+    similarity_colors = colors[-2 - n_points:-2]
+    feature_colors = colors[-2:]
+
+    # seaborn style
+    sns.set_theme(style="white")
+
+    # # Draw Plots in Each SubAxes
+
+    fig, axes = plt.subplots(2, 1, num=1, figsize=(10, 7), dpi=300, gridspec_kw={'height_ratios': [1, 1]},
+                             constrained_layout=True)
+    ax0 = axes[0]
+    ax1 = axes[1]
+
+    # set title of whole figure
+    if w_param:
+        fig.suptitle("%s, n=%d, w=%d" % (desc_str, n_bits, w_param))
+    else:
+        fig.suptitle("%s, n=%d" % (desc_str, n_bits))
+
+    # same tick configuration for each axes
+    tick_args0 = {'axis': 'both', 'which': 'both',
+                  'labelsize': 'small',
+                  'labelbottom': False, 'bottom': False,
+                  'left': False, 'labelleft': False,
+                  'right': False, 'labelright': True}
+
+    tick_args1 = {'axis': 'both', 'which': 'both',
+                  'labelsize': 'small',
+                  'labelbottom': True, 'bottom': True,
+                  'left': False, 'labelleft': False,
+                  'right': True, 'labelright': True}
+
+    # # Encoding Bins Subplot
+    ax0.tick_params(**tick_args0)
+
+    # multiple single-cell periodic cell encoders
+    # period, binsize, offset
+    grid_labels = [
+            textwrap.fill(
+                    "period=%0.1f binsize=%0.2f offset=%0.2f" % (
+                            encoder.encoders[j].periods[0], encoder.encoders[j].bin_sizes[0], encoder.encoders[j].origins[0]),
+                    22)
+            for j in range(n_grids)]
+
+    # draw encoder bins
+    draw_multi_encoder_bins(ax0, encoder, encoder_colors, fontsize=fontsize, xmin=xmin, xmax=xmax, draw_h_grid=False,
+                            bin_linewidth=0.5, clip_on=False, draw_regions=False, draw_region_by_encoder=False,
+                            draw_h_border=False, draw_folded_bins=draw_folded_bins, label_bins=True,
+                            grid_labels=grid_labels, grid_label_size=6)
+
+    # # Similarity Subplot
+    ax1.tick_params(**tick_args1)
+
+    # share ax0 and ax2 x-axis
+    ax1.get_shared_x_axes().join(ax1, ax0)
+
+    # draw weight, crossings, and boundary features
+    draw_features(ax1, encoder, similarity_colors, markersize, draw_regions=False, fill_weight=False, draw_legend=False)
+
+
+    # draw similarity plot
+    draw_similarity(ax1, encoder, ref_points, feature_colors, draw_regions=False,
+                    draw_h_grid=True, draw_v_values=True, draw_legend=False)
+
+    # DRAW LEGEND WHILE REMOVING DUPLICATE LABELS
+
+    handles2, labels2 = ax1.get_legend_handles_labels()
+
+    # duplicate handle indices
+    tally = defaultdict(list)
+    for i, item in enumerate(labels2):
+        tally[item].append(i)
+    dup_items = ((key, locs) for key, locs in tally.items() if len(locs) > 1)
+
+    indices_to_delete = []
+    for dup in sorted(dup_items):
+        # dup_value = dup[0]
+        num_dups = len(dup[1]) - 1
+
+        for i in range(num_dups):
+            indices_to_delete.append(dup[1][i])
+
+    for index in sorted(indices_to_delete, reverse=True):
+        del handles2[index]
+        del labels2[index]
+
+    legend = ax1.legend(handles2, labels2, title=None, ncol=len(labels2), fontsize=8, title_fontsize=9)
+
+    ax1.set_xlim(xmin, xmax)
+
+    ax0.axvline(x=encoder.lower_bound, ymax=1.0, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
+    ax0.axvline(x=encoder.upper_bound, ymax=1.0, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
+
+    ax1.axvline(x=encoder.lower_bound, ymax=1.0, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
+    ax1.axvline(x=encoder.upper_bound, ymax=1.0, alpha=0.3, linewidth=1.5, color='k', linestyle='--', clip_on=False)
+
+    # making the top and bottom spine invisible:
+    ax0.spines['top'].set_color('none')
+    ax0.spines['bottom'].set_color('none')
+    ax0.spines['left'].set_color('none')
+    ax0.spines['right'].set_color('none')
+
