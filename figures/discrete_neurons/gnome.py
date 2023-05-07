@@ -1,9 +1,9 @@
 # Colors
 import colorcet as cc
-import matplotlib as mpl  # mpl.colormaps.get_cmap
-import seaborn as sns
 from manim import *
 from manim.utils.color import Colors
+import matplotlib as mpl  # mpl.colormaps.get_cmap
+import seaborn as sns
 
 testcc = cc.gray
 cmap = mpl.colormaps.get_cmap
@@ -18,7 +18,7 @@ class Synapse(VGroup):
     rng = np.random.default_rng(0)
     colors = sns.color_palette("colorblind").as_hex()
 
-    def __init__(self, neuron, mob, ori="vert", do_gate=True, gate_shape="valve", cross_color=RED, **kwargs):
+    def __init__(self, neuron, mob, ori="vert", do_gate=True, gate_shape="valve", gate_color=RED, **kwargs):
         """
 
         :param neuron:
@@ -26,7 +26,7 @@ class Synapse(VGroup):
         :param ori:
         :param do_gate:
         :param gate_shape: "valve", "cross", "square"
-        :param cross_color:
+        :param gate_color:
         :param kwargs:
         """
 
@@ -108,23 +108,25 @@ class Synapse(VGroup):
 
                 # noinspection PyTypeChecker
                 self.gate = Cross(stroke_width=self.CONFIG["edge_stroke_width"],
-                                  stroke_color=cross_color)
+                                  stroke_color=gate_color)
                 self.gate.move_to(self.line.get_center()).set_height(0.15).rotate(self.line.get_angle())
 
             # Square Gate
             elif gate_shape == "cross":
                 self.gate = Square(side_length=0.15, stroke_width=0.5 * self.CONFIG["edge_stroke_width"],
-                                   stroke_color=GRAY_A, fill_color=cross_color, fill_opacity=1)
+                                   stroke_color=GRAY_A, fill_color=gate_color, fill_opacity=1)
                 self.gate.move_to(self.line.get_center()).rotate(self.line.get_angle())
 
             # Valve Gate
             elif gate_shape == "valve":
                 tri1 = Triangle(radius=0.2 / 2.0, stroke_width=0.5 * self.CONFIG["edge_stroke_width"],
-                                stroke_color=GRAY_A, fill_color=cross_color, fill_opacity=1)
+                                stroke_color=gate_color, fill_color=gate_color, fill_opacity=1)
+                # stroke_color=GRAY_A, fill_color=gate_color, fill_opacity=1)
                 tri1.move_to(ORIGIN, aligned_edge=UP)
 
                 tri2 = Triangle(radius=0.2 / 2.0, stroke_width=0.5 * self.CONFIG["edge_stroke_width"],
-                                stroke_color=GRAY_A, fill_color=cross_color, fill_opacity=1)
+                                stroke_color=gate_color, fill_color=gate_color, fill_opacity=1)
+                # stroke_color=GRAY_A, fill_color=gate_color, fill_opacity=1)
                 tri2.move_to(ORIGIN, aligned_edge=DOWN).rotate(PI)
                 self.gate = VGroup(tri1, tri2).rotate(PI / 2.0)
 
@@ -211,19 +213,19 @@ class NeuronWithOperations(VGroup):
 
         # counter operation
         self.counter_box = Rectangle(fill_color=colors[2],
-                                 fill_opacity=1,
-                                 stroke_color=BLACK,
-                                 height=box_len,
-                                 width=box_len * 1.2)
+                                     fill_opacity=1,
+                                     stroke_color=BLACK,
+                                     height=box_len,
+                                     width=box_len * 1.2)
         self.counter_box.shift(DOWN * (self.neuron_radius / 2.0 - buff / 2.0 - 1.5 * buff))
         # self.counter = Arc(fill_opacity=1, angle=-PI, radius=self.neuron_radius)
 
         # activation operation
         self.activation_box = Rectangle(fill_color=colors[1],
-                                    fill_opacity=1,
-                                    stroke_color=BLACK,
-                                    height=box_len,
-                                    width=box_len * 1.2)
+                                        fill_opacity=1,
+                                        stroke_color=BLACK,
+                                        height=box_len,
+                                        width=box_len * 1.2)
         self.activation_box.next_to(self.counter_box, UP, buff=buff)
         # self.activation = Arc(fill_opacity=1, angle=PI, radius=self.neuron_radius)
 
@@ -271,10 +273,14 @@ class NeuronWithOperations(VGroup):
 class NeuronWithWindow(VGroup):
     CONFIG = {
             "neuron_radius": 1.0,
-            "neuron_stroke_color": WHITE,
+            "neuron_stroke_color": '#79525f',
+            # "neuron_stroke_color": WHITE,
             "neuron_stroke_width": 3,
-            "neuron_fill_color": GRAY_C,
+            "neuron_fill_color": '#79525f',
+            # "neuron_fill_color": GRAY_C,
     }
+
+    # ['#79525f', '#b0a5ff', '#94ad84', '#9a6900', '#376a62', '#c86f66', '#a977ad', '#b8bb02']
 
     def __init__(self, **kwargs):
 
@@ -295,7 +301,7 @@ class NeuronWithWindow(VGroup):
 
         # box_factor = box_len / self.neuron_radius
         # box_factor = 0.72
-        #box_factor = 0.74
+        # box_factor = 0.74
         box_factor = 0.6
 
         buff = 0.05
@@ -333,16 +339,16 @@ class NeuronWithWindow(VGroup):
         # self.activation_circle.next_to(self.counter_circle, UP, buff=buff)
         # self.add(self.activation_circle)
 
-        #self.circle = VGroup(self.activation_circle, self.activation_close, self.counter_circle, self.counter_close)
+        # self.circle = VGroup(self.activation_circle, self.activation_close, self.counter_circle, self.counter_close)
         self.circle = VGroup(self.activation, self.counter)
 
         self.circle.arrange(DOWN, buff=0.1)
-           # .move_to(config.top).shift(0.8 * DOWN)
+        # .move_to(config.top).shift(0.8 * DOWN)
 
         self.add(self.circle)
 
         # counter operation
-        #self.counter_box = Rectangle(fill_color=colors[2],
+        # self.counter_box = Rectangle(fill_color=colors[2],
         self.counter_box = Rectangle(fill_color=WHITE,
                                      fill_opacity=1,
                                      stroke_width=1,
@@ -350,11 +356,11 @@ class NeuronWithWindow(VGroup):
                                      height=box_len,
                                      width=box_len * 1.2)
         self.counter_box.move_to(self.counter.get_center())
-        #self.counter_box.shift(DOWN * (self.neuron_radius / 2.0 - buff / 2.0 - 1.5 * buff))
+        # self.counter_box.shift(DOWN * (self.neuron_radius / 2.0 - buff / 2.0 - 1.5 * buff))
         # self.counter = Arc(fill_opacity=1, angle=-PI, radius=self.neuron_radius)
 
         # activation operation
-        #self.activation_box = Rectangle(fill_color=colors[1],
+        # self.activation_box = Rectangle(fill_color=colors[1],
         self.activation_box = Rectangle(fill_color=WHITE,
                                         fill_opacity=1,
                                         stroke_width=1,
@@ -362,7 +368,7 @@ class NeuronWithWindow(VGroup):
                                         height=box_len,
                                         width=box_len * 1.2)
         self.activation_box.move_to(self.activation.get_center())
-        #self.activation_box.next_to(self.counter_box, UP, buff=buff)
+        # self.activation_box.next_to(self.counter_box, UP, buff=buff)
         # self.activation = Arc(fill_opacity=1, angle=PI, radius=self.neuron_radius)
 
         # scale of unit step function
@@ -502,6 +508,10 @@ class GnomeCode(VGroup):
         print(self.cmap.N)
         cell_color = mpl.colors.rgb2hex(self.cmap(1.0))
         print(cell_color)
+
+        self.one_color = mpl.colors.rgb2hex(self.cmap(1.0))
+        self.zero_color = mpl.colors.rgb2hex(self.cmap(0.0))
+
         # (0.94334, 0.94353, 0.94348, 1.0)
         #
         # "#3b7cb2"
@@ -680,6 +690,36 @@ class GnomeCode(VGroup):
         return AnimationGroup(*[MoveToTarget(b) for b in self.submobjects])
 
     def add_background(self):
+        #    SMALL_BUFF: float = 0.1
+        #    buff=SMALL_BUFF
+        #    width=mobject.width + 2 * buff,
+        #    height=mobject.height + 2 * buff,
+        #    self.buff = buff
+        #    self.move_to(mobject)
+
+        #         color: Color = WHITE,
+        #         height: float = 2.0,
+        #         width: float = 4.0,
+
+        buff = 2.5 * SMALL_BUFF
+
+        self.background_rectangle = RoundedRectangle(corner_radius=self.cell_side_length,
+                                                color=Colors.gray_c.value,
+                                                height=self.height + 2 * buff,
+                                                width=self.width + 2 * buff,
+                                                fill_opacity=1,
+                                                stroke_opacity=1,
+                                                stroke_width=3,
+                                                stroke_color=Colors.white.value,
+                                                )
+                                                # buff=2.5 * SMALL_BUFF,
+                                                # sheen_factor=0.3)
+
+        self.background_rectangle.move_to(self)
+        self.add_to_back(self.background_rectangle)
+
+        #self.add_background_rectangle()
+        """
         self.add_background_rectangle(opacity=1,
                                       color=Colors.gray_c.value,
                                       stroke_opacity=1,
@@ -687,6 +727,6 @@ class GnomeCode(VGroup):
                                       stroke_color=Colors.white.value,
                                       # buff=2.5 * SMALL_BUFF, color=Colors.gray_a.value,
                                       buff=2.5 * SMALL_BUFF,
-                                      #sheen_factor=0.3,
+                                      # sheen_factor=0.3,
                                       corner_radius=self.cell_side_length)
-
+        """

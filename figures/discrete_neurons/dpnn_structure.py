@@ -1,7 +1,10 @@
 # Math Animation
 # Colors
 import colorcet as cc
+import holoviews as hv
 import matplotlib as mpl  # mpl.colormaps.get_cmap
+
+hv.extension
 
 # seaborn perceptually uniform color maps:
 # "rocket", "mako", "flare", "crest", "magma", "viridis"
@@ -36,7 +39,12 @@ class NaiveNeuronScene(Scene):
     }
 
     def create_edge(self, neuron, mob):
+        """
 
+        :param neuron:
+        :param mob:
+        :return:
+        """
         diff_vec = mob.get_center() - neuron.get_center()
         normvec = diff_vec / np.linalg.norm(diff_vec)
         # end_point = mob.get_center() - mob.height/2 * vec
@@ -95,7 +103,13 @@ class GnomeInputNeuronScene(Scene):
     rng = np.random.default_rng(0)
 
     def create_edge(self, neuron, mob, ori="vert"):
+        """
 
+        :param neuron:
+        :param mob:
+        :param ori:
+        :return:
+        """
         # get point on neuron boundary in the direction of mob we connect to
         diff_vec = mob.get_center() - neuron.get_center()
         normvec = diff_vec / np.linalg.norm(diff_vec)
@@ -203,7 +217,6 @@ class DiscreteSynapseScene(Scene):
         self.camera.background_color = BLACK
         colors = self.colors
 
-
         # add single neuron
         # neuron = Neuron(neuron_fill_color=colors[0]).shift(UP * 3)
         neuron = NaiveNeuron(neuron_fill_color=colors[0]).shift(UP)
@@ -253,7 +266,6 @@ class DiscreteSynapseScene(Scene):
         # self.play(code.set_value(new_code), run_time=1)
 
 
-
 class DiscreteOperationsScene(Scene):
     CONFIG = {
             "edge_color": WHITE,
@@ -273,20 +285,18 @@ class DiscreteOperationsScene(Scene):
         self.camera.background_color = BLACK
         colors = self.colors
 
-
         # add single neuron
         neuron = NeuronWithOperations().shift(UP)
         self.add(neuron)
 
         sum_arrow = Arrow(start=neuron.counter.get_edge_center(RIGHT),
-                          end=neuron.counter.get_edge_center(RIGHT) + 5*RIGHT,
+                          end=neuron.counter.get_edge_center(RIGHT) + 5 * RIGHT,
                           buff=0.05)
-        winner_arrow = Arrow(start=neuron.activation.get_edge_center(RIGHT) + 5*RIGHT,
+        winner_arrow = Arrow(start=neuron.activation.get_edge_center(RIGHT) + 5 * RIGHT,
                              end=neuron.activation.get_edge_center(RIGHT),
                              buff=0.05)
         self.add(sum_arrow)
         self.add(winner_arrow)
-
 
         # output layer
         num_outputs = 17
@@ -305,7 +315,7 @@ class DiscreteOperationsScene(Scene):
         self.add(input_code)
 
         # connect neuron to output layer with axon
-        #self.add(Synapse(neuron, output_code.bins[int(num_outputs / 2)], do_cross=False))
+        # self.add(Synapse(neuron, output_code.bins[int(num_outputs / 2)], do_cross=False))
         self.add(Synapse(neuron.activation, output_code.bins[int(num_outputs / 2)], do_gate=False))
 
         # connect input layer to neuron with synapses
@@ -352,27 +362,25 @@ class SynapticBusScene(Scene):
         self.camera.background_color = BLACK
         colors = self.colors
 
-
         # add single neuron
         neuron = NeuronWithOperations().shift(UP)
         self.add(neuron)
 
         arrow_color = mpl.colors.rgb2hex(mpl.colormaps.get_cmap("cet_blues")(0.25))
         tip_color = mpl.colors.rgb2hex(mpl.colormaps.get_cmap("cet_blues")(1.0))
-        #arrow_color = mpl.colors.rgb2hex(sns.color_palette("tab10")[6])
+        # arrow_color = mpl.colors.rgb2hex(sns.color_palette("tab10")[6])
         sum_arrow = Arrow(start=neuron.counter.get_edge_center(RIGHT),
-                          end=neuron.counter.get_edge_center(RIGHT) + 5*RIGHT,
+                          end=neuron.counter.get_edge_center(RIGHT) + 5 * RIGHT,
                           buff=0.05, stroke_color=arrow_color, stroke_width=12, fill_opacity=1, fill_color=tip_color)
-        winner_arrow = Arrow(start=neuron.activation.get_edge_center(RIGHT) + 5*RIGHT,
+        winner_arrow = Arrow(start=neuron.activation.get_edge_center(RIGHT) + 5 * RIGHT,
                              end=neuron.activation.get_edge_center(RIGHT),
                              buff=0.05, stroke_color=arrow_color, stroke_width=12, fill_opacity=1, fill_color=tip_color)
         self.add(sum_arrow)
         self.add(winner_arrow)
 
-
         # output layer
         num_outputs = 17
-        output_code = GnomeCode(shape='square', n=num_outputs) #, cell_stroke_color=GRAY_C)
+        output_code = GnomeCode(shape='square', n=num_outputs)  # , cell_stroke_color=GRAY_C)
         output_code.arrange(RIGHT, buff=0.01).move_to(config.top).shift(0.8 * DOWN)
         diff_vec = neuron.get_x() - output_code.bins[int(num_outputs / 2)].get_x()
         output_code.shift(RIGHT * diff_vec)
@@ -380,7 +388,7 @@ class SynapticBusScene(Scene):
         self.add(output_code)
 
         # input layer
-        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"]) #, cell_stroke_color=BLACK)
+        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"])  # , cell_stroke_color=BLACK)
         input_code.arrange(RIGHT, buff=0.01).move_to(config.bottom).shift(0.8 * UP)
         input_code.shift(RIGHT * diff_vec)
         input_code.add_background()
@@ -397,11 +405,11 @@ class SynapticBusScene(Scene):
         for i, is_connected in enumerate(connections):
             if is_connected:
                 if i % 2 == 0:
-                    #synapse = Synapse(neuron.counter, input_code.bins[i], cross_color="#3b7cb2")
-                    synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=GREEN)
+                    # synapse = Synapse(neuron.counter, input_code.bins[i], cross_color="#3b7cb2")
+                    synapse = Synapse(neuron.counter, input_code.bins[i], gate_color=GREEN)
                 else:
-                    #synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=WHITE)
-                    synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=RED)
+                    # synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=WHITE)
+                    synapse = Synapse(neuron.counter, input_code.bins[i], gate_color=RED)
                 synapses.append(synapse)
                 self.add(synapse)
 
@@ -419,10 +427,136 @@ class SynapticBusScene(Scene):
 
         print("DONE")
 
-
         # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
         # print(new_code)
         # self.play(code.set_value(new_code), run_time=1)
+
+
+class ColorScene(Scene):
+
+    # Name of a seaborn palette (deep, muted, bright, pastel, dark, colorblind)
+    # colors = sns.color_palette("colorblind").as_hex()
+    # colors = sns.color_palette("colorblind") #, as_cmap=True)
+
+    # colorcet category palette
+    # colors = cc.b_glasbey_category10
+
+    """
+    Favorite colors
+    0: red
+    1: deep green
+    2: purple
+    4: light green
+    5: light orange
+    6: pink
+    7: muted wood brown
+    9: muted light purple
+    10: muted stone
+    11: muted light brown
+    12: muted bluish stone
+    14: light light yellow
+    15: muted orangish brown
+    18: muted gray-purple
+    19: muted yellow-green
+    """
+
+    def construct(self):
+        self.camera.background_color = BLACK
+
+        # map name
+        colormap = "cet_glasbey_light"
+        # colormap = "cet_blues"
+
+        # color map
+        local_cmap = mpl.colormaps.get_cmap(colormap)
+
+        # get sample from continuous map using float, returns float tuple of color
+        # continuous_tuple_color = local_cmap(1.0)
+
+        # get sample from categorical  map using index, returns float tuple of color
+        categorical_tuple_color = local_cmap(1)
+
+        # convert to hex color used by manim
+        # continuous_hex_color = mpl.colors.rgb2hex(continuous_tuple_color)
+        categorical_hex_color = mpl.colors.rgb2hex(categorical_tuple_color)
+
+        total_colors = len(local_cmap.colors)
+        print(total_colors, "colors")
+
+        """
+        Favorite colors
+        0: red
+        1: deep green
+        2: purple
+        4: light green
+        5: light orange
+        6: pink
+        7: muted wood brown
+        9: muted light purple
+        10: muted stone
+        11: muted light brown
+        12: muted bluish stone
+        14: light light yellow
+        15: muted orangish brown
+        18: muted gray-purple
+        19: muted yellow-green
+        """
+
+        # muted colors
+        color_indices1 = [7, 9, 10, 11, 12, 15, 18, 19]
+
+        # bright colors
+        color_indices2 = [0, 1, 2, 4, 5, 6, 14]
+
+        colored_arrows1 = []
+        # for k in range(total_colors):
+        for k in color_indices1:
+            temp_color = mpl.colors.rgb2hex(local_cmap(k))
+            temp_arrow = Dot(radius=0.2, color=temp_color)
+
+            label = Integer(number=k, edge_to_fix=[0, 0, 0]).scale(0.4)
+
+            # noinspection PyTypeChecker
+            label.set_color(BLACK)
+
+            # create VGroup to associate this label and cell
+            vgroup = VDict(dict(temp_arrow=temp_arrow, label=label))
+
+            # temp_arrow = Arrow(start=config.left_side, end=config.left_side + RIGHT,
+            #                    buff=0.03, stroke_color=temp_color, stroke_width=5, fill_opacity=1,
+            #                    fill_color=temp_color)
+            # colored_arrows.append(temp_arrow)
+            colored_arrows1.append(vgroup)
+
+        colored_arrows1 = VGroup(*colored_arrows1)
+
+        colored_arrows1.arrange_in_grid(buff=(0.16, 0.16)).center()  # move_to(config.left_side).shift(RIGHT)
+        self.add(colored_arrows1)
+
+        colored_arrows2 = []
+        for k in color_indices2:
+            temp_color = mpl.colors.rgb2hex(local_cmap(k))
+            temp_arrow = Dot(radius=0.2, color=temp_color)
+
+            label = Integer(number=k, edge_to_fix=[0, 0, 0]).scale(0.4)
+
+            # noinspection PyTypeChecker
+            label.set_color(BLACK)
+
+            # create VGroup to associate this label and cell
+            vgroup = VDict(dict(temp_arrow=temp_arrow, label=label))
+
+            colored_arrows2.append(vgroup)
+
+        colored_arrows2 = VGroup(*colored_arrows2)
+
+        colored_arrows2.arrange_in_grid(buff=(0.16, 0.16)).center()  # move_to(config.left_side).shift(RIGHT)
+        self.add(colored_arrows2)
+
+        color_comp = VGroup(colored_arrows1, colored_arrows2)
+        color_comp.arrange(RIGHT, buff=1.0).center()
+        self.add(color_comp)
+
 
 
 class WindowedNetworkScene(Scene):
@@ -434,31 +568,75 @@ class WindowedNetworkScene(Scene):
     rng = np.random.default_rng(0)
 
     # Name of a seaborn palette (deep, muted, bright, pastel, dark, colorblind)
-    colors = sns.color_palette("colorblind").as_hex()
+    # colors = sns.color_palette("colorblind").as_hex()
+    # colors = sns.color_palette("colorblind") #, as_cmap=True)
 
     # colorcet category palette
     # colors = cc.b_glasbey_category10
 
+    """
+    Favorite colors
+    0: red
+    1: deep green
+    2: purple
+    4: light green
+    5: light orange
+    6: pink
+    7: muted wood brown
+    9: muted light purple
+    10: muted stone
+    11: muted light brown
+    12: muted bluish stone
+    14: light light yellow
+    15: muted orangish brown
+    18: muted gray-purple
+    19: muted yellow-green
+    """
+
+    muted_color_indices = [7, 9, 10, 11, 12, 15, 18, 19]
+
+    # muted colors
+
     def construct(self):
 
         self.camera.background_color = BLACK
-        colors = self.colors
 
         # add single neuron
         neuron = NeuronWithWindow().shift(UP)
         self.add(neuron)
 
-        arrow_color = mpl.colors.rgb2hex(mpl.colormaps.get_cmap("cet_blues")(0.25))
-        tip_color = mpl.colors.rgb2hex(mpl.colormaps.get_cmap("cet_blues")(1.0))
-        # arrow_color = mpl.colors.rgb2hex(sns.color_palette("tab10")[6])
+        colormap = "cet_glasbey_light"
+        cmap = mpl.colormaps.get_cmap(colormap)
+
+        print([mpl.colors.rgb2hex(cmap(k)) for k in self.muted_color_indices])
+
+        # RIGHT SIDE
+        color0 = mpl.colors.rgb2hex(cmap(self.muted_color_indices[1]))
+        color1 = mpl.colors.rgb2hex(cmap(self.muted_color_indices[2]))
         sum_arrow = Arrow(start=neuron.counter_box.get_edge_center(RIGHT),
                           end=neuron.counter_box.get_edge_center(RIGHT) + 5 * RIGHT,
-                          buff=0.05, stroke_color=arrow_color, stroke_width=12, fill_opacity=1, fill_color=tip_color)
+                          buff=0.05, stroke_color=color0, stroke_width=12, fill_opacity=1, fill_color=color0)
         winner_arrow = Arrow(start=neuron.activation_box.get_edge_center(RIGHT) + 5 * RIGHT,
                              end=neuron.activation_box.get_edge_center(RIGHT),
-                             buff=0.05, stroke_color=arrow_color, stroke_width=12, fill_opacity=1, fill_color=tip_color)
+                             buff=0.05, stroke_color=color1, stroke_width=12, fill_opacity=1, fill_color=color1)
+        sum_arrow.set_sheen(0.4,DR)
+        winner_arrow.set_sheen(0.4,DR)
         self.add(sum_arrow)
         self.add(winner_arrow)
+
+        # LEFT SIDE
+        color0 = mpl.colors.rgb2hex(cmap(self.muted_color_indices[3]))
+        color1 = mpl.colors.rgb2hex(cmap(self.muted_color_indices[4]))
+        sum_arrow2 = Arrow(start=neuron.counter_box.get_edge_center(LEFT),
+                          end=neuron.counter_box.get_edge_center(LEFT) + 5 * LEFT,
+                          buff=0.05, stroke_color=color0, stroke_width=12, fill_opacity=1, fill_color=color0)
+        winner_arrow2 = Arrow(start=neuron.activation_box.get_edge_center(LEFT) + 5 * LEFT,
+                             end=neuron.activation_box.get_edge_center(LEFT),
+                             buff=0.05, stroke_color=color1, stroke_width=12, fill_opacity=1, fill_color=color1)
+        sum_arrow2.set_sheen(0.4,DR)
+        winner_arrow2.set_sheen(0.4,DR)
+        self.add(sum_arrow2)
+        self.add(winner_arrow2)
 
         # output layer
         num_outputs = 17
@@ -467,8 +645,8 @@ class WindowedNetworkScene(Scene):
         diff_vec = neuron.get_x() - output_code.bins[int(num_outputs / 2)].get_x()
         output_code.shift(RIGHT * diff_vec)
         output_code.add_background()
-        #output_code.background_rectangle.set_sheen(-0.3, DR)
-        #output_code.set_sheen(-0.3, DR)
+        output_code.background_rectangle.set_sheen(-0.3, UL)
+        # output_code.set_sheen(-0.3, DR)
         self.add(output_code)
 
         # input layer
@@ -480,6 +658,7 @@ class WindowedNetworkScene(Scene):
 
         input_code.shift(RIGHT * diff_vec)
         input_code.add_background()
+        input_code.background_rectangle.set_sheen(-0.3, UL)
 
         self.add(input_code)
 
@@ -495,10 +674,12 @@ class WindowedNetworkScene(Scene):
             if is_connected:
                 if i % 2 == 0:
                     # synapse = Synapse(neuron.counter, input_code.bins[i], cross_color="#3b7cb2")
-                    synapse = Synapse(neuron.counter_box, input_code.bins[i], cross_color=GREEN, do_gate=True)
+                    synapse = Synapse(neuron.counter_box, input_code.bins[i], gate_color=input_code.one_color,
+                                      do_gate=True)
                 else:
                     # synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=WHITE)
-                    synapse = Synapse(neuron.counter_box, input_code.bins[i], cross_color=RED, do_gate=True)
+                    synapse = Synapse(neuron.counter_box, input_code.bins[i], gate_color=input_code.zero_color,
+                                      do_gate=True)
                 synapses.append(synapse)
                 self.add(synapse)
 
@@ -519,7 +700,3 @@ class WindowedNetworkScene(Scene):
         # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
         # print(new_code)
         # self.play(code.set_value(new_code), run_time=1)
-
-
-
-
