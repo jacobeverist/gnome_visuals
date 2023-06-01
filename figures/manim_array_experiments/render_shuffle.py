@@ -41,12 +41,13 @@ class GnomeCode(VGroup):
     def __update_array(self):
         """updater member function called by inline-defined 'updater_func(mob)' in '__add_updater(self)' """
 
-        for bin in self.bins:
-            cell = bin["cell"]
-            label = bin["label"]
+        for b in self.bins:
+            cell = b["cell"]
+            label = b["label"]
 
             # value trackers for bit value of element
             val = label.tracker.get_value()
+            print("update:", val, label.number, cell)
 
             # change cell background color
             cell_rgb = [(1.0 - val) for _ in range(3)]
@@ -62,6 +63,8 @@ class GnomeCode(VGroup):
 
     def __add_updater(self) -> None:
         """Attaches the value tracker updater function to array animation"""
+
+        # updater_func2 = lambda mob: self.__update_array()
 
         def updater_func(mob: Mobject) -> None:
             self.__update_array()
@@ -115,14 +118,24 @@ class GnomeCode(VGroup):
         self.__add_updater()
 
     def set_value(self, new_code):
+        """
+
+        :param new_code:
+        :return:
+        """
         return AnimationGroup(*[self.trackers[k].animate.set_value(new_code[k]) for k in range(self.num_bins)])
 
     def permutate(self):
+        """
 
+        :return:
+        """
         # permutate indices
         permutated_indices = list(range(self.num_bins))
         np.random.shuffle(permutated_indices)
-        permutated_bins = [self.bins[i].copy() for i in permutated_indices]
+        # permutated_bins = [self.bins[i].copy() for i in permutated_indices]
+        #permutated_bins = [self.bins[i] for i in permutated_indices]
+        permutated_locations = [self.bins[i].get_center() for i in permutated_indices]
 
         # matching submobjects transformation
         """
@@ -170,14 +183,17 @@ class GnomeCode(VGroup):
 
         ## move bins to their new index positions, but preserve index labels
         for i in range(self.num_bins):
-            bin = permutated_bins[i]
-            bin.generate_target()
-            bin.target.move_to(self.bins[i].get_center())
+            b = self.bins[i]
+            # b = permutated_bins[i]
+            b.generate_target()
+            # b.target.move_to(self.bins[i].get_center())
+            b.target.move_to(permutated_locations[i])
 
-        self.bins = permutated_bins
-        self.submobjects = permutated_bins
+        # self.bins = permutated_bins
+        # self.submobjects = permutated_bins
 
-        return AnimationGroup(*[MoveToTarget(bin) for bin in self.submobjects])
+        # return AnimationGroup(*[MoveToTarget(b) for b in self.submobjects])
+        return AnimationGroup(*[MoveToTarget(b) for b in self.bins])
 
 
 class GnomeShuffle(MovingCameraScene):
@@ -200,7 +216,8 @@ class GnomeShuffle(MovingCameraScene):
         number.add_updater(lambda number: number.to_corner())
 
         # initialize gnome code array animation mobject and add to scene
-        code = GnomeCode(n=1024, w=128)
+        #code = GnomeCode(n=1024, w=128)
+        code = GnomeCode(n=128, w=16)
         self.add(code)
 
         # group bins into array, arranged from left to right, and center it to screen
@@ -233,21 +250,41 @@ class GnomeShuffle(MovingCameraScene):
 
         sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
         new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        print(new_code)
         self.play(code.set_value(new_code))
 
         # permutate the array
-        self.play(code.permutate(), run_time=1)
+        #self.play(code.permutate(), run_time=1)
 
         # rearrange grid layout
         # self.play(code.animate.arrange_in_grid(cols=num_cols+1, buff=0.1).center(), run_time=1)
         # self.play(code.animate.arrange_in_grid(rows=num_cols-1, buff=0.1).center(), run_time=1)
 
-        self.wait(2)
+        # self.wait(2)
 
-        for j in range(10):
+        for j in range(1):
             # generate new code with w random activated bits
             sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
             new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+            print(new_code)
+            # set encoding
+            self.play(code.set_value(new_code), run_time=0.4)
+            self.wait(0.5)
+
+        # permutate the array
+        self.play(code.permutate())
+
+        # permutate the array
+        self.play(code.permutate())
+
+        # permutate the array
+        self.play(code.permutate())
+
+        for j in range(1):
+            # generate new code with w random activated bits
+            sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
+            new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+            print(new_code)
             # set encoding
             self.play(code.set_value(new_code), run_time=0.4)
             self.wait(0.5)
