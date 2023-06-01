@@ -123,6 +123,30 @@ def run_experiment():
 
     # multi_encoder.add_encoder(PeriodicScalarEncoder(n=10, period=0.5))
 
+    # prime modulo encoder
+    experiment = "prime_modulo_encoder"
+    # multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
+    multi_encoder = MultiEncoder(xmin=-5.0, xmax=16.0)
+    for n in [2, 3, 5, 7, 11]:
+        # period = n / 11.0
+        period = n
+        offset = 0
+        w_param = 1
+
+        multi_encoder.add_encoder(
+                PeriodicScalarEncoder(n=n, w=w_param, period=period, lower_bound=offset,
+                                      upper_bound=n + offset))
+                # PeriodicScalarEncoder(n=n, w=w_param, period=period, lower_bound=offset,
+                #                       upper_bound=1.0 + offset))
+
+    plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=False, w_param=w_param, x_pad=0.0)
+    feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
+    plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
+    heatmap_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space",
+                            w_param=w_param)
+
+    return
+
     # Random Periodic Cell Encoder Experiment
     # experiment = "random_offset_PeriodicCellEncoder"
     # multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)

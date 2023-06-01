@@ -1,22 +1,22 @@
+from fractions import Fraction
 import re
 import string
 import textwrap
-from fractions import Fraction
 
 # import holoviews as hv
 # from colorcet.plotting import swatch, swatches
 import colorcet as cc
+from line_profiler_pycharm import profile
 import matplotlib as mpl
+from matplotlib import ticker
 import matplotlib.axes
+from matplotlib.cm import get_cmap
+from matplotlib.collections import PatchCollection
 import matplotlib.patches as patches
+from matplotlib.transforms import Affine2D
 import numpy as np
 import numpy.ma as ma
 import seaborn as sns
-from line_profiler_pycharm import profile
-from matplotlib import ticker
-from matplotlib.cm import get_cmap
-from matplotlib.collections import PatchCollection
-from matplotlib.transforms import Affine2D
 
 from .utils import *
 
@@ -291,7 +291,8 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
 
 def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1,
                             draw_regions=False, draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True,
-                            draw_folded_bins=False, label_bins=False, grid_label_size=8, grid_labels=None):
+                            draw_folded_bins=False, label_bins=False, label_grids=True, grid_label_size=8,
+                            grid_labels=None):
     # constants
     bin_alpha = 1
     cong_alpha = 0.3
@@ -722,16 +723,24 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
     # tick labels are vertically centered to encoder region with an integer label for the i'th encoder
     ax.yaxis.set_major_locator(ticker.FixedLocator(encoder_boundaries))
     ax.yaxis.set_major_formatter(ticker.NullFormatter())
-    ax.yaxis.set_minor_locator(ticker.FixedLocator(encoder_centers))
-    ax.yaxis.set_minor_formatter(ticker.FixedFormatter(grid_labels))
-    # ax.yaxis.set_tick_params(which="minor", labelrotation=-45, labelsize=8)
-    ax.yaxis.set_tick_params(which="minor", labelsize=grid_label_size)
 
-    for tick in ax.yaxis.get_minor_ticks():
-        tick.tick1line.set_markersize(0)
-        tick.tick2line.set_markersize(0)
-    for label in ax.get_yticklabels(minor=True):
-        label.set_verticalalignment('center')
+    if label_grids:
+        ax.yaxis.set_minor_locator(ticker.FixedLocator(encoder_centers))
+        ax.yaxis.set_minor_formatter(ticker.FixedFormatter(grid_labels))
+        # ax.yaxis.set_tick_params(which="minor", labelrotation=-45, labelsize=8)
+        ax.yaxis.set_tick_params(which="minor", labelsize=grid_label_size)
+
+        for tick in ax.yaxis.get_minor_ticks():
+            tick.tick1line.set_markersize(0)
+            tick.tick2line.set_markersize(0)
+        for label in ax.get_yticklabels(minor=True):
+            label.set_verticalalignment('center')
+    else:
+        ax.yaxis.set_minor_locator(ticker.FixedLocator(encoder_centers))
+        ax.yaxis.set_minor_formatter(ticker.NullFormatter())
+
+
+
 
     # tick.label.set_verticalalignment('bottom')
     # ax.yaxis.label.set_verticalalignment
@@ -881,7 +890,7 @@ def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
     max_score = np.max(scores2)
 
     # scale y-axis to maximum of weight
-    #ax.set_ylim(-0.1, max_score + 2)
+    # ax.set_ylim(-0.1, max_score + 2)
     ax.yaxis.set_major_locator(ticker.IndexLocator(2, 1))
     ax.set_ylabel("Similarity of\nExample Values")
 
@@ -911,8 +920,6 @@ def draw_similarity(ax, encoder, ref_points, colors, draw_regions=False,
                       zorder=-1)
 
     if draw_legend:
-
-
         # show legend for each example value
 
         # legend labels and handles
@@ -1348,7 +1355,7 @@ def draw_projected_self_similarity(ax, encoder, triangle=False, annot=True, cbar
     diagonal_scores = count_similarity(X_gnomes1, X_gnomes1)
     max_count = np.max(diagonal_scores)
 
-    #print(diagonal_scores.shape)
+    # print(diagonal_scores.shape)
 
     # Generate a mask for the upper triangle
     if triangle:

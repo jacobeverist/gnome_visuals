@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from abc import ABC, ABCMeta, abstractmethod
 
 import numpy as np
 from intervals import FloatInterval as I
@@ -13,7 +14,7 @@ __all__ = ["_EncoderBase", "_IntervalEncoder", "_PlaceCellEncoder", "_PeriodicEn
 
 
 # abstract superclass of all encoders
-class _EncoderBase:
+class _EncoderBase(metaclass=ABCMeta):
     """
     Variants:
     - bounded or unbounded input domain
@@ -77,13 +78,7 @@ class _EncoderBase:
 
         return X
 
-    def config(self):
-        """
-        Specialized configuration code for each variant
-
-        :return:
-        """
-
+    @abstractmethod
     def encode(self, X):
         """
         transform one or many values from the input domain into the output encoding
@@ -512,6 +507,14 @@ class _IntervalEncoder(_EncoderBase):
         self.l = l
 
         self.config()
+
+    @abstractmethod
+    def config(self):
+        """
+        Specialized configuration code for each variant
+
+        :return:
+        """
 
     @profile
     def encode(self, X):
@@ -1086,6 +1089,14 @@ class _PlaceCellEncoder(_EncoderBase):
         self.region_deltas = []
 
         self.config()
+
+    @abstractmethod
+    def config(self):
+        """
+        Specialized configuration code for each variant
+
+        :return:
+        """
 
     def encode(self, X):
         """

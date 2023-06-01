@@ -515,7 +515,8 @@ def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fold
 
     # print(xmin, xmax)
     # reference points for comparison
-    ref_points = np.array([[0.21], [0.75]])
+    #ref_points = np.array([[0.21], [0.75]])
+    ref_points = np.array([[2.1], [7.5]])
 
     n_points = len(ref_points)
 
@@ -580,9 +581,9 @@ def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fold
     ax0.tick_params(**tick_args0)
 
     # draw encoder bins
-    draw_multi_encoder_bins(ax0, encoder, encoder_colors, fontsize=fontsize, xmin=xmin, xmax=xmax, draw_h_grid=False,
+    draw_multi_encoder_bins(ax0, encoder, encoder_colors, fontsize=fontsize, xmin=xmin, xmax=xmax, draw_h_grid=True,
                             bin_linewidth=0.5, clip_on=False, draw_regions=False, draw_region_by_encoder=False,
-                            draw_h_border=False, draw_folded_bins=draw_folded_bins, label_bins=True)
+                            draw_h_border=False, draw_folded_bins=draw_folded_bins, label_bins=False, label_grids=False)
 
     # # Similarity Subplot
     ax1.tick_params(**tick_args1)
@@ -592,7 +593,7 @@ def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fold
 
     # draw weight, crossings, and boundary features
     # draw_features(ax1, encoder, similarity_colors, markersize, draw_regions=True, fill_weight=False, draw_legend=False)
-    draw_features(ax1, encoder, similarity_colors, markersize, draw_regions=False, fill_weight=False, draw_legend=False)
+    # draw_features(ax1, encoder, similarity_colors, markersize, draw_regions=False, fill_weight=False, draw_legend=False)
 
     #     ax.set_ylim(-0.1, max_bin_weight + 2)
 
