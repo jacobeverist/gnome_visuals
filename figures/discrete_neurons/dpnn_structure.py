@@ -593,9 +593,9 @@ class WindowedNetworkScene(Scene):
     19: muted yellow-green
     """
 
+    # muted colors
     muted_color_indices = [7, 9, 10, 11, 12, 15, 18, 19]
 
-    # muted colors
 
     def construct(self):
 
@@ -606,13 +606,13 @@ class WindowedNetworkScene(Scene):
         self.add(neuron)
 
         colormap = "cet_glasbey_light"
-        cmap = mpl.colormaps.get_cmap(colormap)
+        local_cmap = mpl.colormaps.get_cmap(colormap)
 
-        print([mpl.colors.rgb2hex(cmap(k)) for k in self.muted_color_indices])
+        print([mpl.colors.rgb2hex(local_cmap(k)) for k in self.muted_color_indices])
 
         # RIGHT SIDE
-        color0 = mpl.colors.rgb2hex(cmap(self.muted_color_indices[1]))
-        color1 = mpl.colors.rgb2hex(cmap(self.muted_color_indices[2]))
+        color0 = mpl.colors.rgb2hex(local_cmap(self.muted_color_indices[1]))
+        color1 = mpl.colors.rgb2hex(local_cmap(self.muted_color_indices[2]))
         sum_arrow = Arrow(start=neuron.counter_box.get_edge_center(RIGHT),
                           end=neuron.counter_box.get_edge_center(RIGHT) + 5 * RIGHT,
                           buff=0.05, stroke_color=color0, stroke_width=12, fill_opacity=1, fill_color=color0)
@@ -625,8 +625,8 @@ class WindowedNetworkScene(Scene):
         self.add(winner_arrow)
 
         # LEFT SIDE
-        color0 = mpl.colors.rgb2hex(cmap(self.muted_color_indices[3]))
-        color1 = mpl.colors.rgb2hex(cmap(self.muted_color_indices[4]))
+        color0 = mpl.colors.rgb2hex(local_cmap(self.muted_color_indices[3]))
+        color1 = mpl.colors.rgb2hex(local_cmap(self.muted_color_indices[4]))
         sum_arrow2 = Arrow(start=neuron.counter_box.get_edge_center(LEFT),
                           end=neuron.counter_box.get_edge_center(LEFT) + 5 * LEFT,
                           buff=0.05, stroke_color=color0, stroke_width=12, fill_opacity=1, fill_color=color0)
