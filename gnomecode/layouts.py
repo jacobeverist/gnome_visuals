@@ -4,6 +4,7 @@ import re
 import textwrap
 from collections import defaultdict
 
+import colorcet as cc
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
@@ -14,6 +15,10 @@ from .axesplots import *
 
 __all__ = ['plot_diff_heatmap', 'plot_code_heatmap', 'plot_realspace_heatmap', 'plot_interval_multi_encoder',
            'save_fig', 'plot_compact_multi_encoder', 'plot_periodic_cell_multi_encoder']
+
+# ensures colorcet doesn't get autoformatted away by smart IDE
+testgray = cc.gray
+
 
 
 @profile

@@ -1,14 +1,15 @@
 from collections.abc import Iterable
 
-import numpy as np
 from intervals import FloatInterval as I
 from line_profiler_pycharm import profile
+import numpy as np
 
 # Scikit-Learn's numpy array input validation and reformatting that we've found useful in the past
 # #from sklearn.utils.validation import check_X_y, check_array
 
 __all__ = ["_EncoderBase", "_IntervalEncoder", "_PlaceCellEncoder", "_PeriodicEncoder"] \
-          + ["MultiEncoder", ] + ["RandomizedPlaceCellEncoder", ] + ["FixedWeightEncoder", "TaperingWeightEncoder"] \
+          + ["MultiEncoder", ] + ["RandomizedPlaceCellEncoder", "PlaceCellEncoder"] + ["FixedWeightEncoder",
+                                                                                       "TaperingWeightEncoder"] \
           + ["PeriodicCellEncoder", "PeriodicScalarEncoder"]
 
 
@@ -493,6 +494,18 @@ class _IntervalEncoder(_EncoderBase):
         # sizes of bins
         self.bin_sizes = []
 
+        # regions as intervals
+        self.regions = []
+
+        # region centroids
+        self.region_centers = []
+
+        # region sizes
+        self.region_sizes = []
+
+        # region indices
+        self.region_indices = []
+
         # region boundaries
         self.region_boundaries = []
 
@@ -509,6 +522,7 @@ class _IntervalEncoder(_EncoderBase):
         self.region_deltas = []
 
         self.n = n
+
         self.l = l
 
         self.config()
@@ -1074,14 +1088,17 @@ class _PlaceCellEncoder(_EncoderBase):
             self.l = self.L * 0.1
 
         # number of bins
-        if not isinstance(n, int) or n < 1:
-            raise Exception("Number of bins 'n' must be positive integer.")
+        if not isinstance(n, int) or n < 0:
+            raise Exception("Number of bins 'n' must be non-negative integer.")
         self.n = n
 
         self.bins = []
+        self.regions = []
+        self.region_sizes = []
         self.region_boundaries = []
         self.region_centers = []
         self.region_codes = []
+        self.region_indices = []
         self.region_weights = []
         self.region_deltas = []
 
@@ -1133,6 +1150,10 @@ class RandomizedPlaceCellEncoder(_PlaceCellEncoder):
             raise Exception("Encoder as configured doesn't allocate any bins")
 
         # record region boundary points
+        # def get_boundaries(x):
+        #     return np.maximum(x - self.l / 2.0, self.lower_bound), np.minimum(x + self.l / 2.0, self.upper_bound)
+
+        # record region boundary points
         get_boundaries = lambda x: (
                 np.maximum(x - self.l / 2.0, self.lower_bound), np.minimum(x + self.l / 2.0, self.upper_bound))
         region_boundaries = get_boundaries(bin_centers)
@@ -1171,6 +1192,274 @@ class RandomizedPlaceCellEncoder(_PlaceCellEncoder):
                 ([self.region_weights[0]], deltas, [self.region_weights[-1]]))
 
 
+class PlaceCellEncoder(_PlaceCellEncoder):
+
+    # def __init__(self, regions, **kwargs):
+    #    """
+    #    :param regions: list of intervals or 2-tuples that indicate bins/RFs of place cells
+    #    """
+    #     if isinstance(regions, list):
+    #         pass
+    #     else:
+    #         if isinstance(regions, (I, tuple)):
+    #             pass
+
+    # make empty config
+    def __init__(self, **kwargs):
+        super().__init__(n=0, **kwargs)
+
+    def config(self):
+        """
+        Empty config, do nothing to start
+
+        :return:
+        """
+        pass
+
+    def add_cell(self, lower, upper):
+        """
+        add a place cell
+
+        :param lower:
+        :param upper:
+        :return:
+        """
+        # add as bin and recompute
+        self.bins.append(I.closed_open(lower, upper))
+
+        self.reconfigure()
+
+    def reconfigure(self):
+        """
+        reconfigure with new cell
+
+        :return:
+        """
+
+        bin_centers = np.array([b.lower + (b.upper-b.lower)/2.0 for b in self.bins])
+
+        # print("bins:", self.bins)
+        # print("bin_centers:", bin_centers)
+
+        # self.region_boundaries, self.region_deltas = self.compute_boundaries()
+
+        # record region boundary points
+        # def get_boundaries(x):
+        #     return np.maximum(x - self.l / 2.0, self.lower_bound), np.minimum(x + self.l / 2.0, self.upper_bound)
+
+        # get_boundaries = lambda x: (
+        #         np.maximum(x - self.l / 2.0, self.lower_bound), np.minimum(x + self.l / 2.0, self.upper_bound))
+
+        # get_boundaries = lambda x: (
+        #         np.maximum(x.lower, self.lower_bound), np.minimum(x.upper, self.upper_bound))
+        # region_boundaries = get_boundaries(self.bins)
+
+        # np.maximum(x.lower, self.lower_bound), np.minimum(x.upper, self.upper_bound))
+
+        region_boundaries = [(max(b.lower, self.lower_bound), min(b.upper, self.upper_bound)) for b in self.bins]
+
+        # print("1", region_boundaries)
+        region_boundaries = np.concatenate(region_boundaries)
+        # print("2", region_boundaries)
+        region_boundaries = np.concatenate(([self.lower_bound], region_boundaries, [self.upper_bound]))
+        # print("3", region_boundaries)
+        region_boundaries = np.sort(region_boundaries)
+        # print("4", region_boundaries)
+        self.region_boundaries = region_boundaries
+        # print("5", self.region_boundaries)
+
+        # remove duplicates
+        self.region_boundaries = self.compute_boundaries()
+
+
+
+        # record region center points
+        self.region_centers = self.region_boundaries[:-1] + np.diff(self.region_boundaries) / 2
+
+        # unique regions intersected by combinations of bins
+        self.regions = [I.closed_open(self.region_boundaries[i], self.region_boundaries[i + 1]) for i in
+                        range(0, len(self.region_boundaries) - 1)]
+
+        self.region_sizes = np.diff(self.region_boundaries) / 2
+
+        self.region_codes = self.encode(self.region_centers)
+
+
+        self.region_weights = np.count_nonzero(self.region_codes, axis=1)
+
+        self.region_indices = [tuple(np.nonzero(region)[0]) for region in self.region_codes]
+
+        # self.region_deltas = np.concatenate(
+        #        ([self.region_weights[0]], np.abs(np.diff(self.region_weights)), [self.region_weights[-1]]))
+
+        deltas = []
+        for k in range(1, len(self.region_codes)):
+            w0 = self.region_codes[k - 1]
+            w1 = self.region_codes[k]
+            hdist = np.count_nonzero(w1 != w0)
+            deltas.append(hdist)
+
+        # number of boundary crossings at each boundary point
+        self.region_deltas = np.concatenate(
+                ([self.region_weights[0]], deltas, [self.region_weights[-1]]))
+
+
+
+        #print(self.encode(0.05))
+
+        # print(self.bins)
+        # print("boundaries:", self.region_boundaries)
+        # print("centers:", self.region_centers)
+        # print("weights:", self.region_weights)
+        # print("codes:", self.region_codes)
+
+
+    def compute_boundaries(self):
+
+
+
+        # merge boundaries from each of the sub-encoders
+        # delta_count = {}
+        boundaries = self.region_boundaries
+        # region_deltas = self.region_deltas
+
+        # for i in range(len(boundaries)):
+        #     key = boundaries[i]
+        #     cnt = region_deltas[i]
+        #     try:
+        #         delta_count[key] += cnt
+        #     except:
+        #         delta_count[key] = cnt
+
+        sorted_boundaries = np.sort(boundaries)
+
+        # sorted_boundaries = sorted(boundaries)
+        # sorted_boundaries = sorted(list(delta_count.keys()))
+        # sorted_deltas = [delta_count[k] for k in sorted_boundaries]
+
+        # find pairs of boundary points that are near enough to each other to be considered identical
+        # remove these as duplicates and merge delta counts
+        unique_boundaries = []
+        # unique_delta_count = {}
+        boundary_groups = []
+
+        # find groups of near boundaries
+        j = 0
+        while j < len(sorted_boundaries):
+            boundary_group = [j]
+            last_k = j + 1
+            for k in range(j + 1, len(sorted_boundaries)):
+                bound_diff = abs(sorted_boundaries[j] - sorted_boundaries[k])
+                last_k = k
+
+                if bound_diff < 0.001:
+                    boundary_group.append(k)
+                else:
+                    break
+            boundary_groups.append(boundary_group)
+            j = last_k
+
+        # merge groups into single bounaries
+        for boundary_group in boundary_groups:
+
+            # singleton
+            if len(boundary_group) == 1:
+                index = boundary_group[0]
+                key = sorted_boundaries[index]
+                unique_boundaries.append(key)
+                # unique_delta_count[key] = sorted_deltas[index]
+
+            # multiple boundaries to be merged
+            else:
+                # find val with smallest number of digits
+                min_index = -1
+                min_count = 1e100
+                for index in boundary_group:
+                    float_val = sorted_boundaries[index]
+                    char_count = len(str(float_val))
+                    if char_count < min_count:
+                        min_count = char_count
+                        min_index = index
+
+                min_key = sorted_boundaries[min_index]
+
+                unique_boundaries.append(min_key)
+                # unique_delta_count[min_key] = 0
+                # for index in boundary_group:
+                #     unique_delta_count[min_key] += sorted_deltas[index]
+
+        # unique_deltas = [unique_delta_count[k] for k in unique_boundaries]
+
+        return unique_boundaries
+
+        # return unique_boundaries, unique_deltas
+        #
+
+        #         region_boundaries = np.array(bin_lower_multiples)
+        #
+        #         # record region boundary points
+        #         region_boundaries = np.concatenate(region_boundaries)
+        #         region_boundaries = np.concatenate(([xmin], region_boundaries, [xmax]))
+        #         region_boundaries = np.sort(region_boundaries)
+        #
+        #         sorted_boundaries = region_boundaries
+        #
+        #         # find pairs of boundary points that are near enough to each other to be considered identical
+        #         # remove these as duplicates and merge delta counts
+        #         unique_boundaries = []
+        #         boundary_groups = []
+        #
+        #         # find groups of near boundaries
+        #         j = 0
+        #         while j < len(sorted_boundaries):
+        #             boundary_group = [j]
+        #             last_k = j + 1
+        #             for k in range(j + 1, len(sorted_boundaries)):
+        #                 bound_diff = abs(sorted_boundaries[j] - sorted_boundaries[k])
+        #
+        #                 if bound_diff < 0.001:
+        #                     boundary_group.append(k)
+        #                 else:
+        #                     break
+        #
+        #                 # last_k set here to handle both break termination and end-of-array termination
+        #                 last_k = k + 1
+        #
+        #             boundary_groups.append(boundary_group)
+        #             j = last_k
+        #
+        #         # merge groups into single boundaries
+        #         for boundary_group in boundary_groups:
+        #             # print("group:", boundary_group)
+        #
+        #             # singleton
+        #             if len(boundary_group) == 1:
+        #                 index = boundary_group[0]
+        #                 min_key = sorted_boundaries[index]
+        #                 unique_boundaries.append(min_key)
+        #
+        #             # multiple boundaries to be merged
+        #             else:
+        #                 # find val with smallest number of digits
+        #                 min_index = -1
+        #                 min_count = 1e100
+        #                 for index in boundary_group:
+        #                     float_val = sorted_boundaries[index]
+        #                     char_count = len(str(float_val))
+        #                     if char_count < min_count:
+        #                         min_count = char_count
+        #                         min_index = index
+        #                 min_key = sorted_boundaries[min_index]
+        #
+        #                 # create smallest digit boundary value
+        #                 unique_boundaries.append(min_key)
+        #
+        #         unique_boundaries = np.array(unique_boundaries)
+        #
+        #         return bin_congruence, unique_boundaries
+
+
+
 class FixedWeightEncoder(_IntervalEncoder):
 
     def config(self):
@@ -1205,7 +1494,7 @@ class FixedWeightEncoder(_IntervalEncoder):
 
         # compute step size for subsequent bins
         num_partitions = self.n - (self.w - 1)
-        self.step_size = self.L / num_partitions
+        step_size = self.L / num_partitions
 
         # internal bin-boundary transition points
         equidist_points = np.linspace(self.lower_bound, self.upper_bound, endpoint=True, num=num_partitions + 1)
@@ -1231,7 +1520,7 @@ class FixedWeightEncoder(_IntervalEncoder):
         self.regions = [I.closed_open(self.region_boundaries[i], self.region_boundaries[i + 1]) for i in
                         range(0, len(self.region_boundaries) - 1)]
 
-        self.region_sizes = [self.step_size, ] * len(self.region_centers)
+        self.region_sizes = [step_size, ] * len(self.region_centers)
         self.region_codes = self.encode(self.region_centers)
         self.region_weights = np.count_nonzero(self.region_codes, axis=1)
         self.region_indices = [tuple(np.nonzero(region)[0]) for region in self.region_codes]
@@ -1274,7 +1563,7 @@ class TaperingWeightEncoder(_IntervalEncoder):
 
         # compute step size for subsequent bins
         num_partitions = self.n + self.w - 1
-        self.step_size = self.L / num_partitions
+        step_size = self.L / num_partitions
 
         # internal bin-boundary transition points
         equidist_points = np.linspace(self.lower_bound, self.upper_bound, endpoint=True, num=num_partitions + 1)
@@ -1295,7 +1584,7 @@ class TaperingWeightEncoder(_IntervalEncoder):
         self.regions = [I.closed_open(self.region_boundaries[i], self.region_boundaries[i + 1]) for i in
                         range(0, len(self.region_boundaries) - 1)]
 
-        self.region_sizes = [self.step_size, ] * len(self.region_centers)
+        self.region_sizes = [step_size, ] * len(self.region_centers)
         self.region_codes = self.encode(self.region_centers)
         self.region_weights = np.count_nonzero(self.region_codes, axis=1)
         self.region_indices = [tuple(np.nonzero(region)[0]) for region in self.region_codes]
