@@ -1,5 +1,6 @@
 # Colors
 import colorcet as cc
+from colour import Color
 from manim import *
 from manim.utils.color import Colors
 import matplotlib as mpl  # mpl.colormaps.get_cmap
@@ -7,6 +8,7 @@ import seaborn as sns
 
 testcc = cc.gray
 cmap = mpl.colormaps.get_cmap
+LinearSegmentedColormap = mpl.colors.LinearSegmentedColormap
 
 
 class Synapse(VGroup):
@@ -480,8 +482,8 @@ class GnomeCode(VGroup):
         self.bins = []
         self.rng = np.random.default_rng(0)
 
-        self.show_index = False
-        self.show_value = True
+        self.show_index = True
+        self.show_value = False
 
         # mpl
         # "cet_CET_L1" (black-white)
@@ -512,6 +514,9 @@ class GnomeCode(VGroup):
         self.one_color = mpl.colors.rgb2hex(self.cmap(1.0))
         self.zero_color = mpl.colors.rgb2hex(self.cmap(0.0))
 
+        self.colors = sns.color_palette("cet_glasbey_dark", as_cmap=True).colors
+
+
         # (0.94334, 0.94353, 0.94348, 1.0)
         #
         # "#3b7cb2"
@@ -522,12 +527,26 @@ class GnomeCode(VGroup):
 
         self.__init_array()
 
+        zero_elements = [0, ] * int(self.num_bins)
+        self.set_value(zero_elements, anim=False)
+
     def __update_array(self):
         """updater member function called by inline-defined 'updater_func(mob)' in '__add_updater(self)' """
 
-        for b in self.bins:
+        # name, colors, N=256, gamma=1.0
+        #         self.one_color = mpl.colors.rgb2hex(self.cmap(1.0))
+        #         self.zero_color = mpl.colors.rgb2hex(self.cmap(0.0))
+
+
+        # for b in self.bins:
+        for bin_index in range(len(self.bins)):
+            b = self.bins[bin_index]
             cell = b["cell"]
             label = b["label"]
+
+            # this_one_color = Color(rgb=self.colors[bin_index])
+            this_one_color = self.colors[bin_index]
+            cell_cmap = LinearSegmentedColormap.from_list("cell_X", [self.zero_color, this_one_color])
 
             # value trackers for bit value of element
             val = label.tracker.get_value()
@@ -535,12 +554,13 @@ class GnomeCode(VGroup):
             # change cell background color
             # cell_rgb = [(1.0 - val) for _ in range(3)]
             # cell_color = rgb_to_color(cell_rgb)
-            cell_color = mpl.colors.rgb2hex(self.cmap(val))
+            #cell_color = mpl.colors.rgb2hex(self.cmap(val))
+            cell_color = mpl.colors.rgb2hex(cell_cmap(val))
 
             # change text value and color by "becoming" one of two different saved text mobjects
             # text_rgb = [val for _ in range(3)]
             # text_color = rgb_to_color(text_rgb)
-            text_color = mpl.colors.rgb2hex(self.cmap(1.0 - val))
+            # text_color = mpl.colors.rgb2hex(self.cmap(1.0 - val))
             text_color = BLACK
 
             # update colors based on value
@@ -557,7 +577,9 @@ class GnomeCode(VGroup):
             else:
                 label.set_opacity(0)
 
-            self.fit_text()
+            self.fit_text(cell, label)
+
+            # self.fit_text()
 
     def __add_updater(self) -> None:
         """Attaches the value tracker updater function to array animation"""
@@ -571,9 +593,16 @@ class GnomeCode(VGroup):
     def __init_array(self) -> None:
         """ gnome code animation of mobjects """
 
-        cell_color = mpl.colors.rgb2hex(self.cmap(1.0))
+
+
+        # cell_color = mpl.colors.rgb2hex(self.cmap(1.0))
+        cell_color = self.one_color
         # text_color = mpl.colors.rgb2hex(self.cmap(0.0))
         text_color = BLACK
+
+        # name, colors, N=256, gamma=1.0
+        cell_cmap = LinearSegmentedColormap.from_list("cell_X", [WHITE, cell_color])
+
 
         # array of values from 0 to 1 for each textbox
         self.trackers = [ValueTracker(0).set(index=k) for k in range(self.num_bins)]
@@ -616,19 +645,42 @@ class GnomeCode(VGroup):
             # book-keeping attributes to control each cell's state
             label = label.set(index=k, tracker=self.trackers[k])
 
+            self.fit_text(cell, label)
+
             # create VGroup to associate this label and cell
             vgroup = VDict(dict(cell=cell, label=label))
+
+            # self.cell_color
 
             # add to book-keeping list of bins
             self.bins.append(vgroup)
             self.add(vgroup)
 
-        self.fit_text()
+        # self.fit_text()
 
         # add updater function to mobjects
         self.__add_updater()
 
-    def fit_text(self):
+    def fit_text(self, box, text):
+        box_height = box.get_height()
+        box_width = box.get_width()
+
+        label_height = text.get_height()
+        label_width = text.get_width()
+
+        # box and label ratio
+        box_ratio = box_width / box_height
+        label_ratio = label_width / label_height
+
+        if box_ratio > label_ratio:
+            # height dominates
+            text.set_height(box_height - 2 * box_height * self.cell_text_buff)
+        else:
+            # width dominates
+            text.set_width(box_width - 2 * box_height * self.cell_text_buff)
+
+    """
+    def fit_text_old(self):
 
         # fit all digit labels in their cells and make sure all have same font size
         max_height = -1e100
@@ -661,6 +713,7 @@ class GnomeCode(VGroup):
             label = b["label"]
             label.set_font_size(scaled_font_size)
             # label.move_to(b["cell"].get_center())
+    """
 
     def set_value(self, new_code, anim=True):
         if anim:
@@ -689,7 +742,7 @@ class GnomeCode(VGroup):
 
         return AnimationGroup(*[MoveToTarget(b) for b in self.submobjects])
 
-    def add_background(self):
+    def add_background(self, buff=2.5*SMALL_BUFF):
         #    SMALL_BUFF: float = 0.1
         #    buff=SMALL_BUFF
         #    width=mobject.width + 2 * buff,
@@ -701,12 +754,12 @@ class GnomeCode(VGroup):
         #         height: float = 2.0,
         #         width: float = 4.0,
 
-        buff = 2.5 * SMALL_BUFF
+        # buff = 2.5 * SMALL_BUFF
 
-        self.background_rectangle = RoundedRectangle(corner_radius=self.cell_side_length,
+        self.background_rectangle = RoundedRectangle(corner_radius=0.85*self.cell_side_length,
                                                 color=Colors.gray_c.value,
                                                 height=self.height + 2 * buff,
-                                                width=self.width + 2 * buff,
+                                                width=self.width + 4 * buff,
                                                 fill_opacity=1,
                                                 stroke_opacity=1,
                                                 stroke_width=3,
