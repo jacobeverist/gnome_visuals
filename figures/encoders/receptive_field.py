@@ -170,6 +170,8 @@ class ReceptiveFields(Scene):
         # create number plane with y-axis shifted to border
         self.create_number_plane()
 
+        # return
+
         # demonstrate plotting graph
         self.plot_graph()
 
@@ -198,6 +200,7 @@ class ReceptiveFields(Scene):
         y_frame_pad = 0.5
         x_length = self.camera.frame_width - 2 * x_frame_pad
         y_length = self.camera.frame_height - 2 * y_frame_pad
+        x_length = 0.9 * x_length
         y_length = y_length / 2.0
 
         self.number_plane = NumberPlane(
@@ -230,8 +233,18 @@ class ReceptiveFields(Scene):
         # add zero to y-axis since it is normally removed
         self.number_plane.y_axis.add_labels({0: 0.0})
 
+        #       edge: Sequence[float] = UR,
+        #         direction: Sequence[float] = UP * 0.5 + RIGHT,
+
+        x_label = self.number_plane.get_x_axis_label(Tex("Stimulus Value").scale(0.65), edge=DOWN, direction=DOWN, buff=0.3)
+        # y_label = self.number_plane.get_y_axis_label("Activation", edge=LEFT, direction=LEFT, buff=0.3).scale(0.65).rotate(90 * DEGREES)
+        y_label = self.number_plane.get_y_axis_label(Tex("Activation").scale(0.65).rotate(90*DEGREES),
+                                                     edge=LEFT, direction=LEFT, buff=0.3)
+
+
         # add to scene
-        self.add(self.number_plane)
+        self.add(self.number_plane, x_label, y_label)
+        # self.add(self.number_plane, y_label)
 
     def plot_graph(self):
         """
@@ -280,22 +293,48 @@ class ReceptiveFields(Scene):
             """
             return lambda t: amp if -a <= t - xshift - mu <= a else 0.0
 
+        curves1 = []
+        curves2 = []
+        areas1 = []
+        areas2 = []
+
         # for count, mu_k in enumerate(np.arange(xmin, xmax + 0.1, 7)):
         for count, mu_k in enumerate(np.arange(xmin, xmax + 0.1, 15)):
+        # for count, mu_k in enumerate(np.arange(xmin, xmax + 0.1, 5)):
             # scalar encoder analogue
-            gauss_a = 3.0
+            gauss_a = 4.0
+            # gauss_a = 10.0
             gauss_graph = self.number_plane.plot(gen_gauss_func(mu_k, gauss_a, 1.0), color=Color(rgb=self.colors[count]),
-                                                 use_smoothing=False,
+                                                 use_smoothing=False, stroke_opacity=1.0, #fill_opacity=0.5,
+                                                 discontinuities=[xmin + xshift, xmax + xshift + 0.1],
                                                  x_range=[xmin + xshift, xmax + xshift + 0.1, 0.1])
-            self.add(gauss_graph)
+            gauss_area = self.number_plane.get_area(gauss_graph, x_range=(xmin + xshift, xmax + xshift + 0.1),
+                                                 color=Color(rgb=self.colors[count]), opacity=0.5)
+            curves1.append(gauss_graph)
+            areas1.append(gauss_area)
+            # self.add(gauss_graph)
 
             # discrete encoder square functions
             # square_a = 4.0
             square_a = gauss_a*1.2
             square_graph = self.number_plane.plot(gen_square_func(mu_k, square_a, 1.0), color=Color(rgb=self.colors[count]),
-                                                  use_smoothing=False,
+                                                  use_smoothing=False, stroke_opacity=1.0, #fill_opacity=0.5,
+                                                  discontinuities=[xmin + xshift, xmax + xshift + 0.1],
                                                   x_range=[xmin + xshift, xmax + xshift + 0.1, 0.1])
-            self.add(square_graph)
+
+            square_area = self.number_plane.get_area(square_graph, x_range=(xmin + xshift, xmax + xshift + 0.1),
+                                      color=Color(rgb=self.colors[count]), opacity=0.5)
+
+            curves2.append(square_graph)
+            areas2.append(square_area)
+            # self.add(square_graph)
+
+        self.play(*[Create(c) for c in curves1], run_time=2.0)
+        self.play(*[FadeIn(a) for a in areas1], run_time=2.0)
+        self.play(Wait(1.0))
+        self.play(FadeIn(*curves2), run_time=2.0)
+        self.play(FadeOut(*curves1), FadeOut(*areas1), FadeIn(*areas2), run_time=2.0)
+        self.play(Wait(1.0))
 
         # random place cell receptive fields
         # for count in range(20):
