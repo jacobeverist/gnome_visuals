@@ -236,11 +236,11 @@ class ReceptiveFields(Scene):
         #       edge: Sequence[float] = UR,
         #         direction: Sequence[float] = UP * 0.5 + RIGHT,
 
-        x_label = self.number_plane.get_x_axis_label(Tex("Stimulus Value").scale(0.65), edge=DOWN, direction=DOWN, buff=0.3)
+        x_label = self.number_plane.get_x_axis_label(Tex("Stimulus Value").scale(0.65), edge=DOWN, direction=DOWN,
+                                                     buff=0.3)
         # y_label = self.number_plane.get_y_axis_label("Activation", edge=LEFT, direction=LEFT, buff=0.3).scale(0.65).rotate(90 * DEGREES)
-        y_label = self.number_plane.get_y_axis_label(Tex("Activation").scale(0.65).rotate(90*DEGREES),
+        y_label = self.number_plane.get_y_axis_label(Tex("Activation").scale(0.65).rotate(90 * DEGREES),
                                                      edge=LEFT, direction=LEFT, buff=0.3)
-
 
         # add to scene
         self.add(self.number_plane, x_label, y_label)
@@ -300,40 +300,57 @@ class ReceptiveFields(Scene):
 
         # for count, mu_k in enumerate(np.arange(xmin, xmax + 0.1, 7)):
         for count, mu_k in enumerate(np.arange(xmin, xmax + 0.1, 15)):
-        # for count, mu_k in enumerate(np.arange(xmin, xmax + 0.1, 5)):
+            # for count, mu_k in enumerate(np.arange(xmin, xmax + 0.1, 5)):
             # scalar encoder analogue
             gauss_a = 4.0
             # gauss_a = 10.0
-            gauss_graph = self.number_plane.plot(gen_gauss_func(mu_k, gauss_a, 1.0), color=Color(rgb=self.colors[count]),
-                                                 use_smoothing=False, stroke_opacity=1.0, #fill_opacity=0.5,
+            gauss_graph = self.number_plane.plot(gen_gauss_func(mu_k, gauss_a, 1.0),
+                                                 color=Color(rgb=self.colors[count]),
+                                                 use_smoothing=False, stroke_opacity=1.0,  # fill_opacity=0.5,
                                                  discontinuities=[xmin + xshift, xmax + xshift + 0.1],
                                                  x_range=[xmin + xshift, xmax + xshift + 0.1, 0.1])
             gauss_area = self.number_plane.get_area(gauss_graph, x_range=(xmin + xshift, xmax + xshift + 0.1),
-                                                 color=Color(rgb=self.colors[count]), opacity=0.5)
+                                                    color=Color(rgb=self.colors[count]), opacity=0.5)
             curves1.append(gauss_graph)
             areas1.append(gauss_area)
             # self.add(gauss_graph)
 
             # discrete encoder square functions
             # square_a = 4.0
-            square_a = gauss_a*1.2
-            square_graph = self.number_plane.plot(gen_square_func(mu_k, square_a, 1.0), color=Color(rgb=self.colors[count]),
-                                                  use_smoothing=False, stroke_opacity=1.0, #fill_opacity=0.5,
+            square_a = gauss_a * 1.2
+            square_graph = self.number_plane.plot(gen_square_func(mu_k, square_a, 1.0),
+                                                  color=Color(rgb=self.colors[count]),
+                                                  use_smoothing=False, stroke_opacity=1.0,  # fill_opacity=0.5,
                                                   discontinuities=[xmin + xshift, xmax + xshift + 0.1],
                                                   x_range=[xmin + xshift, xmax + xshift + 0.1, 0.1])
 
             square_area = self.number_plane.get_area(square_graph, x_range=(xmin + xshift, xmax + xshift + 0.1),
-                                      color=Color(rgb=self.colors[count]), opacity=0.5)
+                                                     color=Color(rgb=self.colors[count]), opacity=0.5)
 
             curves2.append(square_graph)
             areas2.append(square_area)
             # self.add(square_graph)
 
         self.play(*[Create(c) for c in curves1], run_time=2.0)
-        self.play(*[FadeIn(a) for a in areas1], run_time=2.0)
+        # self.play(*[FadeIn(a) for a in areas1], run_time=2.0)
         self.play(Wait(1.0))
-        self.play(FadeIn(*curves2), run_time=2.0)
-        self.play(FadeOut(*curves1), FadeOut(*areas1), FadeIn(*areas2), run_time=2.0)
+        # self.play(*[curves1[i].animate.become(curves2[i]) for i in range(len(curves1))], run_time=2.0)
+
+        # Lagging transformation from gaussian curves to square functions
+        self.play(
+                AnimationGroup(
+                        *[Transform(
+                                curves1[i],
+                                curves2[i],
+                                # path_func=utils.paths.clockwise_path(),
+                                path_func=utils.paths.path_along_arc(TAU * 0.05),
+                                run_time=2.0,
+                        ) for i in range(len(curves1))],
+                        lag_ratio=0.1,
+                )
+        )
+        # self.play(FadeIn(*curves2), run_time=2.0)
+        # self.play(FadeOut(*curves1), FadeOut(*areas1), FadeIn(*areas2), run_time=2.0)
         self.play(Wait(1.0))
 
         # random place cell receptive fields
