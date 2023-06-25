@@ -2,8 +2,8 @@ from PIL import Image
 import os
 
 
-source_dir = "docs/periodic_scalar_encoder_examples/v2"
-target_dir = "docs/periodic_scalar_encoder_examples/v3"
+source_dir = "figures/examples/periodic_scalar_encoder_examples/v2"
+target_dir = "figures/examples/periodic_scalar_encoder_examples/v3"
 
 
 source_list = os.listdir(source_dir)

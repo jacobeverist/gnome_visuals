@@ -1,10 +1,14 @@
+
+# appending a path
+import sys
+sys.path.append("../../")
+
 # Math Animation
 # Colors
 import colorcet as cc
 import holoviews as hv
 import matplotlib as mpl  # mpl.colormaps.get_cmap
 
-hv.extension
 
 # seaborn perceptually uniform color maps:
 # "rocket", "mako", "flare", "crest", "magma", "viridis"
@@ -13,6 +17,7 @@ import seaborn as sns
 from manim import *
 from manim.utils.color import Colors
 
+holoview_extension = hv.extension
 testgray = cc.gray
 cmap = mpl.colormaps.get_cmap
 

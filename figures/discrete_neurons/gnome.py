@@ -455,12 +455,10 @@ class GnomeCode(VGroup):
             "cell_stroke_width": DEFAULT_STROKE_WIDTH,
             "cell_fill_color": WHITE,
             "cell_fill_opacity": 1,
-            "cell_text_buff": 0.2
+            "cell_text_buff": 0.1
     }
 
     def __init__(self, shape="square", n=32, **kwargs):
-
-        print(self.CONFIG)
 
         # update local CONFIG
         for k, v in {k: v for k, v in kwargs.items() if k in self.CONFIG}.items():
@@ -505,11 +503,11 @@ class GnomeCode(VGroup):
         self.cmap = mpl.colormaps.get_cmap(self.colormap)
         # self.cmap = sns.color_palette("coolwarm", as_cmap=True)
 
-        print("blues:", self.cmap(0.0), self.cmap(1.0))
-        print("blues:", self.cmap(0), self.cmap(255))
-        print(self.cmap.N)
+        # print("blues:", self.cmap(0.0), self.cmap(1.0))
+        # print("blues:", self.cmap(0), self.cmap(255))
+        # print(self.cmap.N)
         cell_color = mpl.colors.rgb2hex(self.cmap(1.0))
-        print(cell_color)
+        # print(cell_color)
 
         self.one_color = mpl.colors.rgb2hex(self.cmap(1.0))
         self.zero_color = mpl.colors.rgb2hex(self.cmap(0.0))
@@ -536,6 +534,7 @@ class GnomeCode(VGroup):
         # name, colors, N=256, gamma=1.0
         #         self.one_color = mpl.colors.rgb2hex(self.cmap(1.0))
         #         self.zero_color = mpl.colors.rgb2hex(self.cmap(0.0))
+
 
 
         # for b in self.bins:
@@ -579,7 +578,19 @@ class GnomeCode(VGroup):
 
             self.fit_text(cell, label)
 
-            # self.fit_text()
+        min_font_size = 1e100
+        for bin_index in range(len(self.bins)):
+            b = self.bins[bin_index]
+            label = b["label"]
+            curr_font_size = label.font_size
+            if curr_font_size < min_font_size:
+                min_font_size = curr_font_size
+
+        for bin_index in range(len(self.bins)):
+            b = self.bins[bin_index]
+            label = b["label"]
+            label.font_size = min_font_size
+
 
     def __add_updater(self) -> None:
         """Attaches the value tracker updater function to array animation"""
@@ -679,41 +690,14 @@ class GnomeCode(VGroup):
             # width dominates
             text.set_width(box_width - 2 * box_height * self.cell_text_buff)
 
-    """
-    def fit_text_old(self):
+        # text.set_height(box_height - 2 * box_height * self.cell_text_buff)
+        # text.set_width(box_width - 2 * box_height * self.cell_text_buff)
 
-        # fit all digit labels in their cells and make sure all have same font size
-        max_height = -1e100
-        max_h_label = None
-        max_width = -1e100
-        max_w_label = None
-        for b in self.bins:
-            label = b["label"]
-            label_height = label.get_height()
-            label_width = label.get_width()
+        # print(text.number, box_ratio, label_ratio, box_height, box_width, label_height, label_width)
 
-            if label_width > max_width:
-                max_width = label_width
-                max_w_label = label
+        # print(text.get_height(), text.get_width(), text.font_size)
 
-            if label_height > max_height:
-                max_height = label_height
-                max_h_label = label
-
-        if max_height > max_width:
-            # set height
-            max_h_label.set_height(self.cell_side_length - 2 * self.cell_side_length * self.cell_text_buff)
-            scaled_font_size = max_h_label.get_font_size()
-        else:
-            # set width
-            max_w_label.set_width(self.cell_side_length - 2 * self.cell_side_length * self.cell_text_buff)
-            scaled_font_size = max_w_label.get_font_size()
-
-        for b in self.bins:
-            label = b["label"]
-            label.set_font_size(scaled_font_size)
-            # label.move_to(b["cell"].get_center())
-    """
+        # print(text.number, "box_ratio > label_ratio =", box_ratio > label_ratio, ", box_height, box_width =", box_height, box_width)
 
     def set_value(self, new_code, anim=True):
         if anim:

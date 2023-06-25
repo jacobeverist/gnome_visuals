@@ -4,6 +4,7 @@ from manim.mobject.geometry.tips import *
 import numpy as np
 
 # appending a path
+import sys
 sys.path.append("../../")
 
 import colorcet as cc

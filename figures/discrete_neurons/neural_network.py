@@ -1,6 +1,8 @@
 import itertools as it
 
 from manim import *
+import sys
+sys.path.append("../../")
 
 # printing boolean arrays neatly
 np.set_printoptions(

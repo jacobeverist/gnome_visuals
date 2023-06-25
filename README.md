@@ -9,13 +9,13 @@ We use `manim` for animations.  Test scripts can be found in `manim_visuals/`.
 The simplest script can be run by:
 
 ```shell
-manim figures/manim_array_experiments/render_square.py
+manim figures/manim_experiments/render_square.py
 ```
 
 The most complex script can be run by:
 
 ```shell
-manim figures/manim_array_experiments/render_shuffle.py
+manim figures/manim_experiments/render_shuffle.py
 ```
 
 The resulting video file and intermediate assets are put into the `media/` folder.

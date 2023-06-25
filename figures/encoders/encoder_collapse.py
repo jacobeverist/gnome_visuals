@@ -1,4 +1,7 @@
 from math import *
+# appending a path
+# appending a path
+import sys
 
 import colorcet as cc
 from colour import Color
@@ -7,7 +10,6 @@ from manim import config as global_config
 import matplotlib as mpl  # mpl.colormaps.get_cmap
 import seaborn as sns
 
-# appending a path
 sys.path.append("../../")
 sys.path.append("../discrete_neurons/")
 
@@ -44,15 +46,13 @@ class NumberSlider(VGroup):
         # text.set_height(box_height - 2 * box_height * 0.2)
 
         background_rectangle = Rectangle(fill_color=WHITE, fill_opacity=1.0,
-                                                height=num_height + 2 * SMALL_BUFF,
-                                                width=num_width + 2 * SMALL_BUFF,
-                                                stroke_opacity=1,
-                                                stroke_width=3,
-                                                stroke_color=BLACK)
-                                                # buff=2.5 * SMALL_BUFF,
-                                                # sheen_factor=0.3)
-
-
+                                         height=num_height + 2 * SMALL_BUFF,
+                                         width=num_width + 2 * SMALL_BUFF,
+                                         stroke_opacity=1,
+                                         stroke_width=3,
+                                         stroke_color=BLACK)
+        # buff=2.5 * SMALL_BUFF,
+        # sheen_factor=0.3)
 
         # decimal_number.add_background_rectangle()
         # decimal_number.add_background_rectangle(color=WHITE, opacity=1.0, stroke_color=BLACK, stroke_width=2)
@@ -69,7 +69,6 @@ class NumberSlider(VGroup):
         )
         number_line.numbers.set_color(BLACK)
 
-
         self.nl = number_line
 
         arrow = Arrow(5.0 * UP, DOWN / 2, stroke_color=BLACK, stroke_width=2, tip_length=0.2, buff=0).next_to(
@@ -85,11 +84,11 @@ class NumberSlider(VGroup):
         )
 
         # background_rectangle.move_to(decimal_number) #.set_opacity(0.5)
-        background_rectangle.next_to(arrow, UP, buff=0.0*SMALL_BUFF) #.set_opacity(0.5)
+        background_rectangle.next_to(arrow, UP, buff=0.0 * SMALL_BUFF)  # .set_opacity(0.5)
         # decimal_number.add_to_back(background_rectangle)
         background_rectangle.add_updater(
-                lambda obj: obj.next_to(arrow, UP, buff=0.0*SMALL_BUFF)
-                #move_to(decimal_number.get_center())
+                lambda obj: obj.next_to(arrow, UP, buff=0.0 * SMALL_BUFF)
+                # move_to(decimal_number.get_center())
         )
 
         # lambda obj: obj.set_value(
@@ -130,6 +129,7 @@ class EncoderCollapse(Scene):
     # unit time
     # ut = 0.3
     ut = 1.5
+
     # ut = 0.5
     # ut = 0.8
 
@@ -510,6 +510,43 @@ class EncoderCollapse(Scene):
 
     def construct(self):
 
+        # create floor visual
+        self.add(self.floor_line)
+
+        # create number slider
+        # self.add(self.slider)
+
+        # create encoder
+        subject_encoder = MultiEncoder()
+        for k in [7, 11, 13]:
+            subject_encoder.add_encoder(TaperingWeightEncoder(n=k, w=3))
+
+        # create and show brick objects for encoder bin
+        for b in subject_encoder.bins:
+            self.add_brick(b.lower, b.upper)
+
+        # pause 1s
+        self.play(Wait(1))
+
+        # creating brick falling, splitting, and settling animations
+        all_anims = []
+        for cell_i in range(self.curr_id):
+            diff_anims = self.split_brick(cell_i)
+            if len(diff_anims) > 0:
+                all_anims += diff_anims
+
+        # play animations
+        if len(all_anims) > 0:
+            self.play(*all_anims)
+
+        # pause 1s
+        self.play(Wait(1))
+
+
+class AnimateEncoding(EncoderCollapse):
+
+    def construct(self):
+
         self.camera.background_color = GRAY
 
         # create floor visual
@@ -518,20 +555,10 @@ class EncoderCollapse(Scene):
 
         # create number slider
         self.add_foreground_mobject(self.slider)
-        # self.slider.tracker.set_value(-0.001)
-        # self.tracker.set_value(-0.001)
 
-        # self.add(self.slider)
-
-        # return
-
-        # create encoder
-        # subject_encoder = FixedWeightEncoder(n=11, w=3)
         # create encoder
         subject_encoder = MultiEncoder()
-        # for k in [7, 11, 13]:
-        # for k in [6, 8, 10]:
-        for k in [6,]:
+        for k in [7, 11, 13]:
             subject_encoder.add_encoder(TaperingWeightEncoder(n=k, w=3))
 
         num_outputs = len(subject_encoder.bins)
@@ -554,7 +581,6 @@ class EncoderCollapse(Scene):
 
         self.play(Wait(1.0))
 
-
         for cell_i in range(self.curr_id):
             brick_vg = self.whole_blocks[cell_i]
             box = brick_vg[0]
@@ -568,7 +594,6 @@ class EncoderCollapse(Scene):
                     if (obj.sec_lower <= self.tracker.get_value() < obj.sec_upper)
                     else obj.set_fill(zero_color, opacity=1)
             )
-
 
         self.play(self.tracker.animate.set_value(1.001), run_time=5.0,
                   rate_func=rate_functions.linear)
@@ -661,6 +686,7 @@ class EncoderCollapse(Scene):
                 #         if (b.lower <= self.tracker.get_value() < b.upper)
                 #         else obj.set_fill(zero_color, opacity=1).set_sheen(0.7, DR).set_stroke_width(self.stroke_width)
                 # )
+
                 # cell_cmap = LinearSegmentedColormap.from_list("cell_X", [WHITE, color.get_rgb()])
                 # highlight if value is within bin boundaries
                 # box.add_updater(
