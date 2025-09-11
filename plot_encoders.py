@@ -2,9 +2,9 @@ import random
 
 from PIL import Image
 
-# from gnomecode.encoders import *
+from gnomecode.encoders import *
 
-from encoders import *
+# from encoders import *
 from gnomevisual import *
 
 

@@ -17,7 +17,7 @@ from matplotlib import ticker
 from matplotlib.cm import get_cmap
 from matplotlib.collections import PatchCollection
 from matplotlib.transforms import Affine2D
-import brainblocks
+# import brainblocks
 
 from .utils import *
 
