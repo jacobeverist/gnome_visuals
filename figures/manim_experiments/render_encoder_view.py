@@ -8,7 +8,7 @@ import seaborn as sns
 # appending a path
 sys.path.append("../../")
 
-from gnomecode import *
+from gnomevisual import *
 
 # ensures colorcet doesn't get autoformatted away by smart IDE
 testgray = cc.gray

@@ -1,7 +1,14 @@
 import random
 
-from gnomecode import *
-from stitch_images import stitch_images
+from PIL import Image
+
+# from gnomecode.encoders import *
+
+from encoders import *
+from gnomevisual import *
+
+
+# from stitch_images import stitch_images
 
 # TODO:
 """
@@ -19,7 +26,7 @@ from stitch_images import stitch_images
 # 10)+ plot_encoders.py should be figure-level and axes-level styling code, and axesplots.py should be axes-level plotting
 
 
-## Current implemented encoders in gnomecode.encoders
+## Current implemented encoders in gnomevisual.encoders
 # "MultiEncoder",
 # "PeriodicCellEncoder",
 # "RandomizedPlaceCellEncoder",
@@ -58,87 +65,101 @@ from stitch_images import stitch_images
 """
 
 
+def quad_merge(im1, im2, im3, im4):
+    """
+
+    Args:
+        im1:
+        im2:
+        im3:
+        im4:
+
+    Returns:
+
+    """
+    w1 = max(im1.size[0], im3.size[0])
+    w2 = max(im2.size[0], im4.size[0])
+    w = w1 + w2
+
+    h1 = max(im1.size[1], im2.size[1])
+    h2 = max(im3.size[1], im4.size[1])
+    h = h1 + h2
+
+    # w = max(im1.size[0], im3.size[0]) + max(im2.size[0], im4.size[0])
+    # h = max(im1.size[1], im2.size[1]) + max(im3.size[1], im4.size[1])
+
+    # h = im1.size[1] + im3.size[1]
+    im = Image.new("RGBA", (w, h))
+
+    im.paste(im1)
+    im.paste(im2, (w1, 0))
+    im.paste(im3, (0, h1))
+    im.paste(im4, (w1, h1))
+
+    return im
+
+
+def stitch_images(filenames, output_str, input_dir="", output_dir="out/"):
+    """
+
+    Args:
+        filenames:
+        output_str:
+        input_dir:
+        output_dir:
+
+    Returns:
+
+    """
+    for i in range(int(len(filenames) / 4)):
+        im1 = Image.open(input_dir + filenames[i * 4 + 0])
+        im2 = Image.open(input_dir + filenames[i * 4 + 1])
+        im3 = Image.open(input_dir + filenames[i * 4 + 2])
+        im4 = Image.open(input_dir + filenames[i * 4 + 3])
+
+        result_img = quad_merge(im1, im2, im3, im4)
+
+        # shrink it to 1/4
+        (width, height) = (result_img.width // 4, result_img.height // 4)
+        im_final = result_img.resize((width, height))
+        print("saving", output_dir + output_str % (i + 1))
+        im_final.save(output_dir + output_str % (i + 1))
+
+
+def plot_compact_and_heatmap(multi_encoder, file_dir, experiment, w_param,
+                             draw_folded_bins=True,
+                             annot=False,
+                             compact_suffix="Features",
+                             heatmap_suffix="Similarity_Matrix_Projected_to_Real_Space"
+                             ):
+
+
+    # ref_points=[0.21]
+    ref_points=[0.21, 0.45]
+    # ref_points=[0.21, 0.45, 0.75, 0.9]
+    # ref_points=[]
+    plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=draw_folded_bins, w_param=w_param,
+                               ref_points=ref_points)
+    feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + compact_suffix, w_param=w_param)
+
+    plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=annot)
+    heatmap_file = save_fig(file_dir, multi_encoder, experiment + "_" + heatmap_suffix, w_param=w_param)
+
+    return feature_file, heatmap_file
+
+
 def run_experiment():
+    """
+
+    Returns:
+
+    """
     # Constants
     file_dir = "out/"
-    # experiment = "PeriodicCellEncoder"
-    # experiment = "PeriodicScalarEncoder"
-    # experiment = "FixedWeightEncoder"
-    # experiment = "TaperingWeightEncoder"
-    # experiment = "PlaceCellEncoder"
-
-    # Initalize Encoder
-    # multi_encoder = MultiEncoder(x_pad=1.0)
-    # multi_encoder = MultiEncoder(upper_bound=2.0, lower_bound=-1.0)
-    # multi_encoder = PeriodicScalarEncoder(n=8, period=0.5, xmin=0, xmax=2)
-
-    # for i in [2, 3, 5, 7]:
-    #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=i, period=0.5, xmin=0, xmax=2))
-    # multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=1))
-    # for i in [5, 7, 11, 13]:
-    #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=2))
-
-    # multi_encoder.add_encoder(PeriodicScalarEncoder(n=3, w=1, period=0.5, xmin=0, xmax=2))
-    # multi_encoder.add_encoder(PeriodicScalarEncoder(n=5, w=2, period=0.5, xmin=0, xmax=2))
-    # multi_encoder.add_encoder(PeriodicScalarEncoder(n=7, w=3, period=0.5, xmin=0, xmax=2))
-    # multi_encoder.add_encoder(FixedWeightEncoder(n=5, w=2, lower_bound=0, upper_bound=1))
-    # multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=3, upper_bound=1))
-
-    # multi_encoder.add_encoder(PeriodicScalarEncoder(n=1000, w=3, period=0.5, xmin=0, xmax=1))
-    # for i in range(0, 100):
-    #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=8, w=3, period=0.5, xmin=0, xmax=1))
-
-    # for i in range(7, 9):
-    #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=i, w=3, period=0.5, xmin=0, xmax=1))
-    # multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=3, upper_bound=1))
-
-    # for i in [7, 11, 13, 17]:
-    #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=3, upper_bound=1))
-
-    # for i in range(4):
-    #    multi_encoder.add_encoder(PeriodicScalarEncoder(n=2**i, period=0.5, xmin=0, xmax=1))
-
-    # for i in [7, 11, 13, 19]:
-    #    multi_encoder.add_encoder(TaperingWeightEncoder(n=i, w=3))
-
-    # multi_encoder.add_encoder(FixedWeightEncoder(n=16, w=w_param))
-    # multi_encoder.add_encoder(FixedWeightEncoder(n=8, w=w_param))
-
-    # for i in [4, 8, 12, 16]:
-    #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=w_param))
-
-    # for i in [5, 7, 11, 13]:
-    #    multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=w_param))
-    # multi_encoder.add_encoder(RandomizedPlaceCellEncoder(n=100, seed=0))
-
     test_place = PlaceCellEncoder()
-    # print(test_place.bins)
-    # print(test_place.region_boundaries)
-    # print(test_place.region_centers)
-    # print(test_place.region_weights)
-    # print(test_place.region_codes)
-    print()
     test_place.add_cell(0.1, 0.2)
-    # print(test_place.bins)
-    # print(test_place.region_boundaries)
-    # print(test_place.region_centers)
-    # print(test_place.region_weights)
-    # print(test_place.region_codes)
-    print()
     test_place.add_cell(0.15, 0.25)
-    # print(test_place.bins)
-    # print(test_place.region_boundaries)
-    # print(test_place.region_centers)
-    # print(test_place.region_weights)
-    # print(test_place.region_codes)
-    print()
     test_place.add_cell(0.05, 0.3)
-    # print(test_place.bins)
-    # print(test_place.region_boundaries)
-    # print(test_place.region_centers)
-    # print(test_place.region_weights)
-    # print(test_place.region_codes)
-    print()
 
     multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
     multi_encoder.add_encoder(test_place)
@@ -148,33 +169,7 @@ def run_experiment():
     print(multi_encoder.region_weights)
     print(multi_encoder.region_codes)
 
-    return
-
-
-    # multi_encoder.add_encoder(PeriodicCellEncoder(n=100, seed=0))
-    # multi_encoder.add_encoder(PeriodicCellEncoder(n=20, seed=0))
-    # multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, lower_bound=-1, upper_bound=2))
-    # multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0, xmin=-1, xmax=2))
-    # multi_encoder.add_encoder(PeriodicScalarEncoder(n=10, period=0.5, xmin=-1, xmax=2))
-    # multi_encoder.add_encoder(PeriodicCellEncoder(n=10, seed=0))
-    # multi_encoder.add_encoder(FixedWeightEncoder(n=11, w=3))
-    # multi_encoder.add_encoder(FixedWeightEncoder(n=9, w=2, lower_bound=0.5, upper_bound=1.5))
-    # multi_encoder.add_encoder(PeriodicCellEncoder(n=20, min_period=0.1, max_period=0.4, seed=0))
-
-    # multi_encoder.add_encoder(PeriodicScalarEncoder(n=10, period=0.5))
-
-    # Random Periodic Cell Encoder Experiment
-    # experiment = "random_offset_PeriodicCellEncoder"
-    # multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
-    # for k in range(10):
-    #     multi_encoder.add_encoder(PeriodicCellEncoder(period=(k+1.0)/10.0, do_rand=True, seed=k))
-    #
-    # plot_periodic_cell_multi_encoder(multi_encoder, desc_str=experiment)
-    # save_fig(file_dir, multi_encoder, experiment + "_" + "Features")
-    # plot_realspace_heatmap(multi_encoder, desc_str=experiment, annot=False)
-    # save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space")
-
-    offsets = [random.uniform(-0.2, 0.2)]
+    # offsets = [random.uniform(-0.2, 0.2)]
 
     feature_filenames = []
     heatmap_filenames = []
@@ -192,12 +187,7 @@ def run_experiment():
                     PeriodicScalarEncoder(n=n, w=w_param, period=n / 16.0, lower_bound=offset,
                                           upper_bound=1.0 + offset))
 
-        plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
-        feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
-        plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
-        heatmap_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space",
-                                w_param=w_param)
-
+        feature_file, heatmap_file = plot_compact_and_heatmap(multi_encoder, file_dir, experiment, w_param)
         feature_filenames.append(feature_file)
         heatmap_filenames.append(heatmap_file)
 
@@ -210,12 +200,7 @@ def run_experiment():
             multi_encoder.add_encoder(
                     PeriodicScalarEncoder(n=n, w=w_param, period=1.0, lower_bound=offset, upper_bound=1.0 + offset))
 
-        plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
-        feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
-        plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
-        heatmap_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space",
-                                w_param=w_param)
-
+        feature_file, heatmap_file = plot_compact_and_heatmap(multi_encoder, file_dir, experiment, w_param)
         feature_filenames.append(feature_file)
         heatmap_filenames.append(heatmap_file)
 
@@ -229,12 +214,7 @@ def run_experiment():
                     PeriodicScalarEncoder(n=n, w=w_param, period=n / 13.0, lower_bound=offset,
                                           upper_bound=1.0 + offset))
 
-        plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
-        feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
-        plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
-        heatmap_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space",
-                                w_param=w_param)
-
+        feature_file, heatmap_file = plot_compact_and_heatmap(multi_encoder, file_dir, experiment, w_param)
         feature_filenames.append(feature_file)
         heatmap_filenames.append(heatmap_file)
 
@@ -247,12 +227,7 @@ def run_experiment():
             multi_encoder.add_encoder(
                     PeriodicScalarEncoder(n=n, w=w_param, period=1.0, lower_bound=offset, upper_bound=1.0 + offset))
 
-        plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
-        feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
-        plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
-        heatmap_file = save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space",
-                                w_param=w_param)
-
+        feature_file, heatmap_file = plot_compact_and_heatmap(multi_encoder, file_dir, experiment, w_param)
         feature_filenames.append(feature_file)
         heatmap_filenames.append(heatmap_file)
 
@@ -261,35 +236,54 @@ def run_experiment():
 
     print(feature_filenames)
     print(heatmap_filenames)
+
     stitch_images(heatmap_filenames, heatmap_str)
     stitch_images(feature_filenames, feature_str)
 
-    # multi_encoder.set_view(multi_encoder.lower_bound - 0.5, multi_encoder.upper_bound + 0.5)
-    # multi_encoder.set_view(0.0, multi_encoder.upper_bound + 2.0)
-    # multi_encoder.set_view(0.0, multi_encoder.upper_bound + 2.0)
+
+def plot_layouts():
+    # Constants
+    file_dir = "out/"
+    w_param = 3
+    experiment = "layouts_2n_equal_period_zerocenter_PeriodicScalarEncoder"
+    multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
+    period = 1.0
+    n = 8
+    offset = -w_param * period / (2 * n)
+    multi_encoder.add_encoder(
+            PeriodicScalarEncoder(n=n, w=w_param, period=1.0, lower_bound=offset, upper_bound=1.0 + offset))
 
     # PLOT EXAMPLES
-
     # Plot Feature
-    # plot_interval_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
-    # save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
+    plot_interval_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
+    save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
 
     # Plot Compact
-    # plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
-    # save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
+    plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param,
+                               # ref_points=[0.21, 0.75])
+                               )
+
+    save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
 
     # Plot Similarity Matrix by Code
-    # plot_code_heatmap(multi_encoder, desc_str=experiment, annot=False)
-    # save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_by_Region_Code", w_param=w_param)
+    plot_code_heatmap(multi_encoder, desc_str=experiment, annot=False)
+    save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_by_Region_Code", w_param=w_param)
 
     # Plot Similarity Matrix by Real Space
-    # plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
-    # save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space", w_param=w_param)
+    plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
+    save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space", w_param=w_param)
 
     # Plot Difference Matrix by Code
-    # plot_diff_heatmap(multi_encoder, desc_str=experiment, annot=False)
-    # save_fig(file_dir, multi_encoder, experiment + "_" + "Difference_Matrix_by_Region_Code", w_param=w_param)
+    plot_diff_heatmap(multi_encoder, desc_str=experiment, annot=False)
+    save_fig(file_dir, multi_encoder, experiment + "_" + "Difference_Matrix_by_Region_Code", w_param=w_param)
 
 
 if __name__ == "__main__":
     run_experiment()
+    # plot_layouts()
+
+    # import numpy as np
+    #
+    # ref_points = np.array([[0.21], [0.75]])
+    #
+    # print(ref_points.shape)

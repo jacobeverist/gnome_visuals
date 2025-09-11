@@ -294,18 +294,20 @@ class DiscreteOperationsScene(Scene):
         neuron = NeuronWithOperations().shift(UP)
         self.add(neuron)
 
-        sum_arrow = Arrow(start=neuron.counter.get_edge_center(RIGHT),
-                          end=neuron.counter.get_edge_center(RIGHT) + 5 * RIGHT,
+        sum_arrow = Arrow(start=neuron.counter_box.get_edge_center(RIGHT),
+                          end=neuron.counter_box.get_edge_center(RIGHT) + 5 * RIGHT,
                           buff=0.05)
-        winner_arrow = Arrow(start=neuron.activation.get_edge_center(RIGHT) + 5 * RIGHT,
-                             end=neuron.activation.get_edge_center(RIGHT),
+        winner_arrow = Arrow(start=neuron.activation_box.get_edge_center(RIGHT) + 5 * RIGHT,
+                             end=neuron.activation_box.get_edge_center(RIGHT),
                              buff=0.05)
         self.add(sum_arrow)
         self.add(winner_arrow)
 
         # output layer
         num_outputs = 17
-        output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=DARK_BROWN)
+        output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=BLACK)
+        # output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=BLACK)
+        # output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=DARK_BROWN)
         output_code.arrange(RIGHT, buff=0.01).move_to(config.top).shift(0.8 * DOWN)
         diff_vec = neuron.get_x() - output_code.bins[int(num_outputs / 2)].get_x()
         output_code.shift(RIGHT * diff_vec)
@@ -313,7 +315,7 @@ class DiscreteOperationsScene(Scene):
         self.add(output_code)
 
         # input layer
-        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"], cell_stroke_color=DARK_BROWN)
+        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"], cell_stroke_color=BLACK)
         input_code.arrange(RIGHT, buff=0.01).move_to(config.bottom).shift(0.8 * UP)
         input_code.shift(RIGHT * diff_vec)
         input_code.add_background()
@@ -321,7 +323,7 @@ class DiscreteOperationsScene(Scene):
 
         # connect neuron to output layer with axon
         # self.add(Synapse(neuron, output_code.bins[int(num_outputs / 2)], do_cross=False))
-        self.add(Synapse(neuron.activation, output_code.bins[int(num_outputs / 2)], do_gate=False))
+        self.add(Synapse(neuron.activation_box, output_code.bins[int(num_outputs / 2)], do_gate=False))
 
         # connect input layer to neuron with synapses
         sparse_elements = [0, ] * int(input_code.num_bins / 2) + [1, ] * (
@@ -329,7 +331,7 @@ class DiscreteOperationsScene(Scene):
         connections = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
         for i, is_connected in enumerate(connections):
             if is_connected:
-                self.add(Synapse(neuron.counter, input_code.bins[i]))
+                self.add(Synapse(neuron.counter_box, input_code.bins[i]))
 
         # set the current input and output codes
         w = int(input_code.num_bins / 2)
@@ -346,6 +348,71 @@ class DiscreteOperationsScene(Scene):
         # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
         # print(new_code)
         # self.play(code.set_value(new_code), run_time=1)
+
+class GnomeSpace(Scene):
+    CONFIG = {
+            "edge_color": WHITE,
+            "edge_stroke_width": 3,
+            "num_inputs": 17,
+    }
+    rng = np.random.default_rng(0)
+
+    # Name of a seaborn palette (deep, muted, bright, pastel, dark, colorblind)
+    colors = sns.color_palette("colorblind").as_hex()
+
+    # colorcet category palette
+    # colors = cc.b_glasbey_category10
+
+    def construct(self):
+
+        self.camera.background_color = BLACK
+        colors = self.colors
+
+        # output layer
+        # num_outputs = 17
+        # output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=BLACK)
+        # output_code.arrange(RIGHT, buff=0.01).move_to(config.top).shift(0.8 * DOWN)
+        # diff_vec = neuron.get_x() - output_code.bins[int(num_outputs / 2)].get_x()
+        # output_code.shift(RIGHT * diff_vec)
+        # output_code.add_background()
+        # self.add(output_code)
+
+        # input layer
+        # input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"], cell_stroke_color=BLACK)
+        input_code = GnomeCode(shape='square', n=64, cell_stroke_color=BLACK)
+        input_code.arrange_in_grid(rows=4, buff=(0.01, 0.01)).center()
+        # input_code.arrange(RIGHT, buff=0.01)#.move_to(config.center)#.shift(0.8 * UP)
+        # input_code.shift(RIGHT * diff_vec)
+        input_code.add_background(buff=1.5*0.1)
+        self.add(input_code)
+
+        # connect neuron to output layer with axon
+        # self.add(Synapse(neuron.activation_box, output_code.bins[int(num_outputs / 2)], do_gate=False))
+
+        # connect input layer to neuron with synapses
+        # sparse_elements = [0, ] * int(input_code.num_bins / 2) + [1, ] * (
+        #         input_code.num_bins - int(input_code.num_bins / 2))
+        # connections = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
+        # for i, is_connected in enumerate(connections):
+        #     if is_connected:
+        #         self.add(Synapse(neuron.counter_box, input_code.bins[i]))
+
+        # set the current input and output codes
+        w = int(input_code.num_bins / 2)
+        sparse_elements = [0, ] * (input_code.num_bins - w) + [1, ] * w
+        new_data = self.rng.choice(sparse_elements, input_code.num_bins, replace=False, shuffle=True)
+        print(new_data)
+        input_code.set_value(new_data, anim=False)
+
+        # out_data = np.zeros(17)
+        # out_data[int(input_code.num_bins / 2)] = 1
+        # print(out_data)
+        # output_code.set_value(out_data, anim=False)
+        #
+        # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        # print(new_code)
+        # self.play(code.set_value(new_code), run_time=1)
+
 
 
 class SynapticBusScene(Scene):
@@ -374,11 +441,11 @@ class SynapticBusScene(Scene):
         arrow_color = mpl.colors.rgb2hex(mpl.colormaps.get_cmap("cet_blues")(0.25))
         tip_color = mpl.colors.rgb2hex(mpl.colormaps.get_cmap("cet_blues")(1.0))
         # arrow_color = mpl.colors.rgb2hex(sns.color_palette("tab10")[6])
-        sum_arrow = Arrow(start=neuron.counter.get_edge_center(RIGHT),
-                          end=neuron.counter.get_edge_center(RIGHT) + 5 * RIGHT,
+        sum_arrow = Arrow(start=neuron.counter_box.get_edge_center(RIGHT),
+                          end=neuron.counter_box.get_edge_center(RIGHT) + 5 * RIGHT,
                           buff=0.05, stroke_color=arrow_color, stroke_width=12, fill_opacity=1, fill_color=tip_color)
-        winner_arrow = Arrow(start=neuron.activation.get_edge_center(RIGHT) + 5 * RIGHT,
-                             end=neuron.activation.get_edge_center(RIGHT),
+        winner_arrow = Arrow(start=neuron.activation_box.get_edge_center(RIGHT) + 5 * RIGHT,
+                             end=neuron.activation_box.get_edge_center(RIGHT),
                              buff=0.05, stroke_color=arrow_color, stroke_width=12, fill_opacity=1, fill_color=tip_color)
         self.add(sum_arrow)
         self.add(winner_arrow)
@@ -400,7 +467,7 @@ class SynapticBusScene(Scene):
         self.add(input_code)
 
         # connect neuron to output layer with axon
-        self.add(Synapse(neuron.activation, output_code.bins[int(num_outputs / 2)], do_gate=False))
+        self.add(Synapse(neuron.activation_box, output_code.bins[int(num_outputs / 2)], do_gate=False))
 
         # connect input layer to neuron with synapses
         sparse_elements = [0, ] * int(input_code.num_bins / 2) + [1, ] * (
@@ -410,11 +477,11 @@ class SynapticBusScene(Scene):
         for i, is_connected in enumerate(connections):
             if is_connected:
                 if i % 2 == 0:
-                    # synapse = Synapse(neuron.counter, input_code.bins[i], cross_color="#3b7cb2")
-                    synapse = Synapse(neuron.counter, input_code.bins[i], gate_color=GREEN)
+                    # synapse = Synapse(neuron.counter_box, input_code.bins[i], cross_color="#3b7cb2")
+                    synapse = Synapse(neuron.counter_box, input_code.bins[i], gate_color=GREEN)
                 else:
-                    # synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=WHITE)
-                    synapse = Synapse(neuron.counter, input_code.bins[i], gate_color=RED)
+                    # synapse = Synapse(neuron.counter_box, input_code.bins[i], cross_color=WHITE)
+                    synapse = Synapse(neuron.counter_box, input_code.bins[i], gate_color=RED)
                 synapses.append(synapse)
                 self.add(synapse)
 
@@ -668,7 +735,7 @@ class WindowedNetworkScene(Scene):
         self.add(input_code)
 
         # connect neuron to output layer with axon
-        self.add(Synapse(neuron.activation, output_code.bins[int(num_outputs / 2)], do_gate=False))
+        self.add(Synapse(neuron.activation_box, output_code.bins[int(num_outputs / 2)], do_gate=False))
 
         # connect input layer to neuron with synapses
         sparse_elements = [0, ] * int(input_code.num_bins / 2) + [1, ] * (

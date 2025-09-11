@@ -47,7 +47,7 @@ class GnomeCode(VGroup):
 
             # value trackers for bit value of element
             val = label.tracker.get_value()
-            print("update:", val, label.number, cell)
+            # print("update:", val, label.number, cell)
 
             # change cell background color
             cell_rgb = [(1.0 - val) for _ in range(3)]
@@ -123,7 +123,14 @@ class GnomeCode(VGroup):
         :param new_code:
         :return:
         """
-        return AnimationGroup(*[self.trackers[k].animate.set_value(new_code[k]) for k in range(self.num_bins)])
+        # return AnimationGroup(*[self.trackers[k].animate.set_value(new_code[k]) for k in range(self.num_bins)])
+
+        return AnimationGroup(*[self.trackers[k].animate(rate_func=rate_functions.there_and_back).set_value(new_code[k]) for k in
+                  range(self.num_bins)])
+        # return AnimationGroup(*[self.trackers[k].animate(rate_func=rate_functions.linear).set_value(new_code[k]) for k in
+        #                         range(self.num_bins)])
+        # return AnimationGroup(*[self.trackers[k].animate(rate_func=rate_functions.ease_in_expo).set_value(new_code[k]) for k in
+        #                         range(self.num_bins)])
 
     def permutate(self):
         """
@@ -205,7 +212,7 @@ class GnomeShuffle(MovingCameraScene):
         # print(self.renderer)
         # return
 
-        self.rng = np.random.default_rng(0)
+        self.rng = np.random.default_rng(1)
 
         # frame configuration
         self.camera.background_color = GREY_C
@@ -249,9 +256,14 @@ class GnomeShuffle(MovingCameraScene):
         # self.camera.frame.set(height=code.height * 1.5)
 
         sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
-        new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
-        print(new_code)
-        self.play(code.set_value(new_code))
+        for j in range(10):
+            # generate new code with w random activated bits
+            new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+            print(new_code)
+            self.play(code.set_value(new_code), run_time=0.2)
+            # self.wait(0.5)
+
+
 
         # permutate the array
         #self.play(code.permutate(), run_time=1)
@@ -262,32 +274,32 @@ class GnomeShuffle(MovingCameraScene):
 
         # self.wait(2)
 
-        for j in range(1):
+        # for j in range(1):
             # generate new code with w random activated bits
-            sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
-            new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
-            print(new_code)
+            # sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
+            # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+            # print(new_code)
             # set encoding
-            self.play(code.set_value(new_code), run_time=0.4)
-            self.wait(0.5)
+            # self.play(code.set_value(new_code), run_time=0.4)
+            # self.wait(0.5)
 
         # permutate the array
-        self.play(code.permutate())
+        # self.play(code.permutate())
 
         # permutate the array
-        self.play(code.permutate())
+        # self.play(code.permutate())
 
         # permutate the array
-        self.play(code.permutate())
+        # self.play(code.permutate())
 
-        for j in range(1):
+        # for j in range(1):
             # generate new code with w random activated bits
-            sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
-            new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
-            print(new_code)
+            # sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
+            # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+            # print(new_code)
             # set encoding
-            self.play(code.set_value(new_code), run_time=0.4)
-            self.wait(0.5)
+            # self.play(code.set_value(new_code), run_time=0.4)
+            # self.wait(0.5)
 
         # code2 = GnomeCode()
         # code2.arrange_in_grid(cols=num_cols+2, buff=0.1).center()

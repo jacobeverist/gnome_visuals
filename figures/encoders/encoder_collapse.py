@@ -14,7 +14,7 @@ sys.path.append("../../")
 sys.path.append("../discrete_neurons/")
 
 # algorithm classes
-from gnomecode import *
+from gnomevisual import *
 
 # manim classes
 from gnome import GnomeCode

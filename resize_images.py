@@ -20,3 +20,5 @@ for filename in source_list:
             im_resized = im.resize((width, height))
 
             im_resized.save(target_dir + "/" + filename)
+
+

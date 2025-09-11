@@ -1,6 +1,5 @@
 # Colors
 import colorcet as cc
-from colour import Color
 from manim import *
 from manim.utils.color import Colors
 import matplotlib as mpl  # mpl.colormaps.get_cmap
@@ -514,7 +513,6 @@ class GnomeCode(VGroup):
 
         self.colors = sns.color_palette("cet_glasbey_dark", as_cmap=True).colors
 
-
         # (0.94334, 0.94353, 0.94348, 1.0)
         #
         # "#3b7cb2"
@@ -535,8 +533,6 @@ class GnomeCode(VGroup):
         #         self.one_color = mpl.colors.rgb2hex(self.cmap(1.0))
         #         self.zero_color = mpl.colors.rgb2hex(self.cmap(0.0))
 
-
-
         # for b in self.bins:
         for bin_index in range(len(self.bins)):
             b = self.bins[bin_index]
@@ -544,8 +540,9 @@ class GnomeCode(VGroup):
             label = b["label"]
 
             # this_one_color = Color(rgb=self.colors[bin_index])
-            this_one_color = self.colors[bin_index]
-            cell_cmap = LinearSegmentedColormap.from_list("cell_X", [self.zero_color, this_one_color])
+            # this_one_color = self.colors[bin_index]
+            # cell_cmap = LinearSegmentedColormap.from_list("cell_X", [self.zero_color, this_one_color])
+            cell_cmap = LinearSegmentedColormap.from_list("cell_X", [self.zero_color, self.one_color])
 
             # value trackers for bit value of element
             val = label.tracker.get_value()
@@ -553,7 +550,7 @@ class GnomeCode(VGroup):
             # change cell background color
             # cell_rgb = [(1.0 - val) for _ in range(3)]
             # cell_color = rgb_to_color(cell_rgb)
-            #cell_color = mpl.colors.rgb2hex(self.cmap(val))
+            # cell_color = mpl.colors.rgb2hex(self.cmap(val))
             cell_color = mpl.colors.rgb2hex(cell_cmap(val))
 
             # change text value and color by "becoming" one of two different saved text mobjects
@@ -591,7 +588,6 @@ class GnomeCode(VGroup):
             label = b["label"]
             label.font_size = min_font_size
 
-
     def __add_updater(self) -> None:
         """Attaches the value tracker updater function to array animation"""
 
@@ -604,8 +600,6 @@ class GnomeCode(VGroup):
     def __init_array(self) -> None:
         """ gnome code animation of mobjects """
 
-
-
         # cell_color = mpl.colors.rgb2hex(self.cmap(1.0))
         cell_color = self.one_color
         # text_color = mpl.colors.rgb2hex(self.cmap(0.0))
@@ -613,7 +607,6 @@ class GnomeCode(VGroup):
 
         # name, colors, N=256, gamma=1.0
         cell_cmap = LinearSegmentedColormap.from_list("cell_X", [WHITE, cell_color])
-
 
         # array of values from 0 to 1 for each textbox
         self.trackers = [ValueTracker(0).set(index=k) for k in range(self.num_bins)]
@@ -701,7 +694,9 @@ class GnomeCode(VGroup):
 
     def set_value(self, new_code, anim=True):
         if anim:
-            return AnimationGroup(*[self.trackers[k].animate.set_value(new_code[k]) for k in range(self.num_bins)])
+            return AnimationGroup(
+                *[self.trackers[k].animate(rate_func=rate_functions.ease_in_expo).set_value(new_code[k]) for k in
+                  range(self.num_bins)])
         else:
             for k in range(self.num_bins):
                 self.trackers[k].set_value(new_code[k])
@@ -726,7 +721,7 @@ class GnomeCode(VGroup):
 
         return AnimationGroup(*[MoveToTarget(b) for b in self.submobjects])
 
-    def add_background(self, buff=2.5*SMALL_BUFF):
+    def add_background(self, buff=2.5 * SMALL_BUFF):
         #    SMALL_BUFF: float = 0.1
         #    buff=SMALL_BUFF
         #    width=mobject.width + 2 * buff,
@@ -740,22 +735,22 @@ class GnomeCode(VGroup):
 
         # buff = 2.5 * SMALL_BUFF
 
-        self.background_rectangle = RoundedRectangle(corner_radius=0.85*self.cell_side_length,
-                                                color=Colors.gray_c.value,
-                                                height=self.height + 2 * buff,
-                                                width=self.width + 4 * buff,
-                                                fill_opacity=1,
-                                                stroke_opacity=1,
-                                                stroke_width=3,
-                                                stroke_color=Colors.white.value,
-                                                )
-                                                # buff=2.5 * SMALL_BUFF,
-                                                # sheen_factor=0.3)
+        self.background_rectangle = RoundedRectangle(corner_radius=0.85 * self.cell_side_length,
+                                                     color=Colors.gray_c.value,
+                                                     height=self.height + 2 * buff,
+                                                     width=self.width + 4 * buff,
+                                                     fill_opacity=1,
+                                                     stroke_opacity=1,
+                                                     stroke_width=3,
+                                                     stroke_color=Colors.white.value,
+                                                     )
+        # buff=2.5 * SMALL_BUFF,
+        # sheen_factor=0.3)
 
         self.background_rectangle.move_to(self)
         self.add_to_back(self.background_rectangle)
 
-        #self.add_background_rectangle()
+        # self.add_background_rectangle()
         """
         self.add_background_rectangle(opacity=1,
                                       color=Colors.gray_c.value,

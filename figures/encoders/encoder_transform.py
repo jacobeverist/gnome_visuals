@@ -7,14 +7,19 @@ import colorcet as cc
 from colour import Color
 from manim import *
 from manim import config as global_config
+
 import matplotlib as mpl  # mpl.colormaps.get_cmap
 import seaborn as sns
+
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.azure import AzureService
+
 
 sys.path.append("../../")
 sys.path.append("../discrete_neurons/")
 
 # algorithm classes
-from gnomecode import *
+from gnomevisual import *
 
 # manim classes
 from gnome import GnomeCode
@@ -90,7 +95,10 @@ class NumberSlider(VGroup):
         super().__init__(background_rectangle, decimal_number, number_line, arrow)
 
 
-class EncoderCollapse(Scene):
+
+
+
+class EncoderCollapse(Scene, VoiceoverScene):
     stroke_width = 1
     stroke_color = BLACK
 
@@ -468,6 +476,19 @@ class EncoderCollapse(Scene):
 class AnimateEncoding(EncoderCollapse):
 
     def construct(self):
+        # Initialize speech synthesis using Azure's TTS API
+        self.set_speech_service(
+            AzureService(
+                # voice="en-US-JacobNeural",
+                voice="en-US-GuyNeural", style="newscast",
+                # voice="en-US-JasonNeural", style="friendly",
+                # voice="en-US-DavisNeural", style="friendly",
+                # voice="en-US-TonyNeural", style="friendly",
+                # style="newscast-casual",  # global_speed=1.15
+                # style="friendly",  # global_speed=1.15
+                prosody={"rate": 1.25}
+            )
+        )
 
         self.camera.background_color = GRAY
 

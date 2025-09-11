@@ -10,6 +10,8 @@ import numpy as np
 import seaborn as sns
 from line_profiler_pycharm import profile
 from matplotlib import ticker
+from icecream import ic
+
 
 from .axesplots import *
 
@@ -23,6 +25,18 @@ testgray = cc.gray
 
 @profile
 def save_fig(path, encoder, plot_name, do_close=True, w_param=None):
+    """
+
+    Args:
+        path:
+        encoder:
+        plot_name:
+        do_close:
+        w_param:
+
+    Returns:
+
+    """
     # if w_param:
     #     file_path = path + "%03u_%04u_" % (
     #             encoder.n, w_param) + plot_name + "_" + experiment_name + ".png"
@@ -54,6 +68,19 @@ def save_fig(path, encoder, plot_name, do_close=True, w_param=None):
 @profile
 def plot_diff_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, draw_manual_grid=True,
                       draw_minor_tick_grid=False):
+    """
+
+    Args:
+        encoder:
+        desc_str:
+        triangle:
+        annot:
+        draw_manual_grid:
+        draw_minor_tick_grid:
+
+    Returns:
+
+    """
     y_spacing = 0.05
     inset_fraction = 0.25
 
@@ -131,6 +158,19 @@ def plot_diff_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, d
 @profile
 def plot_code_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, draw_manual_grid=True,
                       draw_minor_tick_grid=False):
+    """
+
+    Args:
+        encoder:
+        desc_str:
+        triangle:
+        annot:
+        draw_manual_grid:
+        draw_minor_tick_grid:
+
+    Returns:
+
+    """
     y_spacing = 0.05
     inset_fraction = 0.25
 
@@ -206,6 +246,21 @@ def plot_code_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, d
 @profile
 def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, draw_manual_grid=True,
                            draw_minor_tick_grid=False, w_param=None, do_inset_axes=False):
+    """
+
+    Args:
+        encoder:
+        desc_str:
+        triangle:
+        annot:
+        draw_manual_grid:
+        draw_minor_tick_grid:
+        w_param:
+        do_inset_axes:
+
+    Returns:
+
+    """
     n_bits = encoder.n
 
     y_spacing = 0.03
@@ -342,6 +397,18 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
 
 @profile
 def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_folded_bins=False, w_param=None):
+    """
+
+    Args:
+        encoder:
+        desc_str:
+        x_pad:
+        draw_folded_bins:
+        w_param:
+
+    Returns:
+
+    """
     n_bits = encoder.n
     n_grids = 1
 
@@ -437,7 +504,8 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fol
     ax1.tick_params(**tick_args)
 
     # share ax0 and ax2 x-axis
-    ax1.get_shared_x_axes().join(ax1, ax0)
+    # ax1.get_shared_x_axes().join(ax1, ax0)
+    ax1.sharex(ax0)
 
     # draw similarity plot
     draw_similarity(ax1, encoder, ref_points, feature_colors, draw_regions=False,
@@ -447,7 +515,8 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fol
     ax2.tick_params(**tick_args)
 
     # share ax0 and ax1 x-axis
-    ax2.get_shared_x_axes().join(ax2, ax0)
+    # ax2.get_shared_x_axes().join(ax2, ax0)
+    ax2.sharex(ax0)
 
     # draw weight, crossings, and boundary features
     draw_features(ax2, encoder, similarity_colors, markersize, draw_regions=True)
@@ -489,7 +558,20 @@ def plot_interval_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fol
 
 
 @profile
-def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_folded_bins=False, w_param=None):
+def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, ref_points = None, draw_folded_bins=False, w_param=None):
+    """
+
+    Args:
+        ref_points:
+        encoder:
+        desc_str:
+        x_pad:
+        draw_folded_bins:
+        w_param:
+
+    Returns:
+
+    """
     n_bits = encoder.n
     try:
         sub_encoders = encoder.encoders
@@ -520,7 +602,15 @@ def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fold
 
     # print(xmin, xmax)
     # reference points for comparison
-    ref_points = np.array([[0.21], [0.75]])
+    # ref_points = np.array([[0.21], [0.75]])
+
+    if not ref_points:
+        ref_points = []
+
+    num_points = len(ref_points)
+    ref_points = np.array(ref_points)
+    ref_points.reshape((num_points, 1))
+
 
     n_points = len(ref_points)
 
@@ -542,8 +632,12 @@ def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fold
     # similarity_colors = colors[n_grids:n_grids+n_points]
     # feature_colors = colors[n_grids+n_points:n_grids+n_points+2]
 
-    similarity_colors = colors[-2 - n_points:-2]
-    feature_colors = colors[-2:]
+    # similarity_colors = colors[-2 - n_points:-2]
+    similarity_colors = colors[n_grids:-max(n_points,2)]
+    feature_colors = colors[-n_points:]
+
+    # ic(similarity_colors)
+    # ic(feature_colors)
 
     # seaborn style
     sns.set_theme(style="white")
@@ -593,17 +687,20 @@ def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fold
     ax1.tick_params(**tick_args1)
 
     # share ax0 and ax2 x-axis
-    ax1.get_shared_x_axes().join(ax1, ax0)
+    # ax1.get_shared_x_axes().join(ax1, ax0)
+    ax0.sharex(ax1)
 
     # draw weight, crossings, and boundary features
     # draw_features(ax1, encoder, similarity_colors, markersize, draw_regions=True, fill_weight=False, draw_legend=False)
+    # if n_points > 0:
     draw_features(ax1, encoder, similarity_colors, markersize, draw_regions=False, fill_weight=False, draw_legend=False)
 
     #     ax.set_ylim(-0.1, max_bin_weight + 2)
 
     # draw similarity plot
-    draw_similarity(ax1, encoder, ref_points, feature_colors, draw_regions=False,
-                    draw_h_grid=True, draw_v_values=True, draw_legend=False)
+    if n_points > 0:
+        draw_similarity(ax1, encoder, ref_points, feature_colors, draw_regions=False,
+                        draw_h_grid=True, draw_v_values=True, draw_legend=False)
 
     # DRAW LEGEND WHILE REMOVING DUPLICATE LABELS
 
@@ -683,6 +780,18 @@ def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_fold
 
 @profile
 def plot_periodic_cell_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, draw_folded_bins=False, w_param=None):
+    """
+
+    Args:
+        encoder:
+        desc_str:
+        x_pad:
+        draw_folded_bins:
+        w_param:
+
+    Returns:
+
+    """
     n_bits = encoder.n
     try:
         sub_encoders = encoder.encoders
@@ -713,9 +822,11 @@ def plot_periodic_cell_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, dra
     colors = sns.color_palette("cet_glasbey_dark", as_cmap=True).colors
 
     encoder_colors = colors[0:n_grids]
-
-    similarity_colors = colors[-2 - n_points:-2]
+    similarity_colors = colors[n_grids:-max(n_points,2)]
     feature_colors = colors[-2:]
+
+    # similarity_colors = colors[-2 - n_points:-2]
+    # feature_colors = colors[-2:]
 
     # seaborn style
     sns.set_theme(style="white")
@@ -768,7 +879,8 @@ def plot_periodic_cell_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, dra
     ax1.tick_params(**tick_args1)
 
     # share ax0 and ax2 x-axis
-    ax1.get_shared_x_axes().join(ax1, ax0)
+    # ax1.get_shared_x_axes().join(ax1, ax0)
+    ax0.sharex(ax1)
 
     # draw weight, crossings, and boundary features
     draw_features(ax1, encoder, similarity_colors, markersize, draw_regions=False, fill_weight=False, draw_legend=False)

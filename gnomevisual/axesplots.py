@@ -17,6 +17,7 @@ from matplotlib import ticker
 from matplotlib.cm import get_cmap
 from matplotlib.collections import PatchCollection
 from matplotlib.transforms import Affine2D
+import brainblocks
 
 from .utils import *
 
@@ -48,7 +49,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
     :param x_pad:
     :param y_pad:
     :param ax: mpl.axes.Axes
-    :param encoder: gnomecode.encoders.EncoderBase
+    :param encoder: gnomevisual.encoders.EncoderBase
     :param xmin: float | None
     :param xmax: float | None
     :param clip_on: bool
@@ -1170,10 +1171,12 @@ def draw_features(ax, encoder, colors, markersize=4, hamming_y=0.5, fill_weight=
                       zorder=-1)
 
     # draw gnome weights
-    handle3 = ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=1, zorder=1, label="Weight")
+    # handle3 = ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=1, zorder=1, label="Weight")
+    handle3 = ax.step(boundaries, bin_weights_y, where='post', color=colors[0], alpha=1, zorder=1, label="Weight")
 
     if fill_weight:
-        ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.4, zorder=1)
+        # ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.4, zorder=1)
+        ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[0], alpha=0.4, zorder=1)
     # ax.step(boundaries, bin_weights_y, where='post', color=colors[1], alpha=0.6, zorder=1, label="Weight")
     # ax.fill_between(boundaries, -1, bin_weights_y, step='post', color=colors[1], alpha=0.3, zorder=1)
 

@@ -16,11 +16,29 @@ __all__ = ["_EncoderBase", "_IntervalEncoder", "_PlaceCellEncoder", "_PeriodicEn
 # abstract superclass of all encoders
 class _EncoderBase:
     """
+    Base class for encoding numerical data.
+
+    This class defines the framework for encoding input data values within a bounded
+    interval. It includes functionality for handling out-of-bound values according to
+    various predefined methods. The class is designed to be extensible for specialized
+    encodings through subclassing.
+
+    Attributes:
+        oob_method (str): Specifies how out-of-bound values are handled. Supported values are
+            "clamp", "exception", "modulo", and "silent".
+        lower_bound (float): Minimum value of the input domain.
+        upper_bound (float): Maximum value of the input domain.
+        input_width (float): Width of the input domain, calculated as the difference
+            between `upper_bound` and `lower_bound`.
+        rng (np.random.RandomState): Random number generator used for obtaining random
+            values, initialized with the provided seed or a default random state.
+
     Variants:
     - bounded or unbounded input domain
     - single or repeated input domain regions (receptive field)
     - input region defined by Bravais lattice: 1) point unit ball or 2) primitive unit cell
     - encoding of input domain is 1) partition, 2) covering, 3) packing, or 4) sampling (overlaps + gaps)
+
 
     """
 
@@ -95,7 +113,36 @@ class _EncoderBase:
 
 
 class MultiEncoder(_EncoderBase):
+    """A class representing a Multi-Encoder to combine multiple encoder configurations.
 
+    MultiEncoder supports managing and configuring multiple sub-encoders within a unified framework.
+    It accounts for view bounds, input bounds, and generates regions for encoding purposes. Users can
+    define boundaries, centers, and weights of regions for a variety of applications involving
+    multidimensional encoding. This class facilitates the computation of concatenated encodings
+    and supports dynamic reconfiguration of sub-encoders.
+
+    Attributes:
+        encoders (list): List of sub-encoders used within MultiEncoder.
+        w (int): Width configuration parameter used in region processing.
+        l (float): Length configuration parameter defining certain encoder constraints.
+        n (int): Total count of bins across all sub-encoders.
+        xmin (float|None): Minimum view boundary for encoding values.
+        xmax (float|None): Maximum view boundary for encoding values.
+        x_pad (float|None): Additional padding applied to view boundaries.
+        lower_bound (float|None): Minimum allowable input range derived from sub-encoders.
+        upper_bound (float|None): Maximum allowable input range derived from sub-encoders.
+        L (floaT|None): Total span between the lower and upper bounds of input values.
+        region_boundaries (list): Boundaries defining unique regions in encoding.
+        region_centers (list): Centers of each encoding region.
+        region_codes (list): Encoded values corresponding to region centers.
+        region_weights (list): Relative weights of regions based on encoding.
+        region_deltas (list): Differences between sequential region boundaries.
+        bins (list): All bins consolidated from sub-encoders.
+        regions (list): Unique regions intersected by bins from sub-encoders.
+        region_sizes (list): Sizes of regions based on differences in boundaries.
+        region_indices (list): Indices of active regions based on encoding results.
+        is_init (bool): Indicates if the MultiEncoder has been properly initialized.
+    """
     def __init__(self, xmin=None, xmax=None, x_pad=None, **kwargs):
 
         # superclass constructor
@@ -382,6 +429,36 @@ class MultiEncoder(_EncoderBase):
 
 class _IntervalEncoder(_EncoderBase):
     """
+    Encodes numeric values into overlapping binary representations using interval
+    boundaries and specified encoding configurations.
+
+    This class is used to transform numeric inputs into a binary encoded output
+    based on specified intervals (bins). Either the number of bins ('n') or the
+    size of each bin ('l') must be specified, but not both. Interval boundaries
+    and encoding rules can be customized as required.
+
+    Attributes:
+        n (int): Number of bins used in the encoding process. Applicable if 'l'
+            is not provided.
+        l (float): Size of each bin in the encoding process. Applicable if 'n'
+            is not provided.
+        L (float): Total size of the interval domain.
+        w (int): Number of overlapping bins per encoded point.
+        lower_bound (float): The lower bound of the interval domain.
+        upper_bound (float or None): The upper bound of the interval domain.
+        input_width (float): The total width of the input interval.
+        bins (list): List of bins representing the defined intervals.
+        bin_sizes (list): Sizes of individual bins.
+        regions (list): Interval-based regions.
+        region_centers (list): Centroid values for each region.
+        region_sizes (list): Size of each region.
+        region_indices (list): Indices of regions.
+        region_boundaries (list): Boundaries of each region.
+        region_codes (list): Encoded binary representation for each region.
+        region_weights (list): Binary weights associated with each encoded region.
+        region_deltas (list): Number of boundary crossings at each region's boundary.
+
+
     use appropriate encoder parameter equation and fill in any missing parameter
     - Encoder Type Options
         - fixed_weight, tapering_weight, upper_bound, lower_bound
@@ -432,6 +509,7 @@ class _IntervalEncoder(_EncoderBase):
     + fixed weight vs. tapering weight encoder
         + fixed weight: some regions are out-of-bounds to ensure constant weight
         + tapering weight: all regions are within region bounds
+
 
     """
 
@@ -549,7 +627,39 @@ class _IntervalEncoder(_EncoderBase):
 
 
 class _PeriodicEncoder(_EncoderBase):
-    """
+    """Base periodic encoder.
+
+    This class provides a mechanism for encoding continuous periodic features into a numerical
+    representation suitable for machine learning models. Encodings divide the range of values into bins
+    and regions based on periodic cycles, allowing operations that benefit from understanding periodic
+    properties. The implementation accommodates flexible intervals, customizable boundaries, and various
+    bins and periods for processing data. It ensures that congruent bins are properly handled, and boundaries
+    are managed efficiently. Initializes and manages internal structures relevant for encoding while providing
+    functionalities to compute and retrieve regions for the encoded input.
+
+    Attributes:
+        xmin (float): Lower bound of the input range.
+        xmax (float): Upper bound of the input range.
+        lower_bound (float): Lower bound of the interval for encoding.
+        upper_bound (float): Upper bound of the interval for encoding.
+        input_width (float): Width of the interval for encoding.
+        n (int): Number of bins used in the encoding.
+        periods (list): List of periods defining the repeating intervals for encoding.
+        origins (list): List of origins for the starting point of each period.
+        bins (list): List of bins used in the encoder.
+        bin_sizes (list): List containing sizes of each bin.
+        straddles (list): Specifies whether each bin straddles the boundaries of their fundamental region.
+        fund_regions (list): Fundamental regions associated with each bin and period configuration.
+        bin_congruence (list): Collection of congruent bins including multiples outside the fundamental regions.
+        region_boundaries (list): Boundaries that partition the space into unique regions for encoding.
+        region_centers (list): Centroids or middle points of computed regions.
+        regions (list): Intervals representing unique regions derived from bins, boundaries, and congruences.
+        region_sizes (list): Sizes of the unique regions in the encoding schema.
+        region_codes (list): Encoded values associated with each unique region.
+        region_weights (list): Weight of region codes computed from active encoded values.
+        region_indices (list): Sparse indices of encoding elements for each region.
+        region_deltas (list): Number of boundary crossings at each region boundary.
+
     collection of periodic, grid-like bins within a specified input interval
     - Encoder Type Options
         - grid cell
@@ -569,6 +679,7 @@ class _PeriodicEncoder(_EncoderBase):
     # TODO: n samples between min and max of values using some random distribution
     # TODO: linear uniform distribution of n values between min and max
     # TODO: vary periods but constant bin size, or vice versa
+
 
     """
 
@@ -870,6 +981,36 @@ class _PeriodicEncoder(_EncoderBase):
 
 class PeriodicCellEncoder(_PeriodicEncoder):
     """
+    Encodes input data into periodic bins based on given parameters.
+
+    The PeriodicCellEncoder class provides functionality for creating and
+    managing periodic bins within a specified interval. It allows for the
+    division of the input space into discrete bins (fundamental regions)
+    using configurable parameters such as bin size, number of bins, periods,
+    and origins. It also supports random or fixed placement of bins.
+
+    Attributes:
+        l_frac (float): Fraction of the period used for bin size calculation.
+        min_l (float): Minimum allowed bin size within the input interval.
+        max_l (float): Maximum allowed bin size within the input interval.
+        n (int): Number of bins to divide the input interval into.
+        max_period (float): Maximum period of the bins within the input interval.
+        min_period (float): Minimum period of the bins within the input interval.
+        period (float or None): Period of the bins if explicitly specified,
+            otherwise calculated dynamically based on other inputs.
+        origin (float): Origin point for bin placement within the input interval.
+        origins (list[float]): List of origins for bin placements, either shared
+            or randomly distributed based on configuration.
+        periods (numpy.ndarray): Array of periods assigned to each bin.
+        fund_regions (list): List of fundamental regions for each bin defined
+            within the input interval.
+        bin_sizes (numpy.ndarray): Array of sizes for each bin, calculated as a
+            fraction of the period.
+        straddles (numpy.ndarray): Boolean array indicating whether each bin
+            straddles the boundaries of its fundamental region.
+        bins (list): Finalized list of bins with their boundaries.
+
+
     collection of periodic, grid-like bins within a specified input interval
     - Encoder Type Options
         - grid cell
@@ -889,6 +1030,7 @@ class PeriodicCellEncoder(_PeriodicEncoder):
     # TODO: n samples between min and max of values using some random distribution
     # TODO: linear uniform distribution of n values between min and max
     # TODO: vary periods but constant bin size, or vice versa
+
 
     """
 
@@ -993,7 +1135,29 @@ class PeriodicCellEncoder(_PeriodicEncoder):
 
 
 class PeriodicScalarEncoder(_PeriodicEncoder):
+    """
+    Represents a periodic scalar encoder used for encoding cyclic data into a set of bins.
 
+    This encoder is designed to divide a cyclic period into multiple bins, enabling periodic input
+    values to be mapped to discrete ranges or regions. It supports configuration of the number of bins,
+    the weight per bin, and the length of the cyclic period. The class is aimed at handling periodic
+    data effectively in scenarios requiring cyclic representations, such as date/time encodings or
+    angles.
+
+    Attributes:
+        n (int): Number of bins into which the period is divided.
+        w (int): Weight associated with each bin. Must be a positive integer.
+        period (float): Length of the cyclic period. Must be a positive number and less than the input
+            range size.
+        origins (list): List containing the starting points of each bin in the input range.
+        periods (numpy.ndarray): Repeated values of the period for each bin.
+        fund_regions (list): Closed-open intervals representing fundamental regions for each bin.
+        bin_sizes (numpy.ndarray): Sizes of individual bins, calculated based on the period and
+            number of bins.
+        straddles (numpy.ndarray): Boolean values indicating if a bin straddles the boundary of the
+            fundamental region.
+        bins (list): Closed-open intervals representing the bins in their respective fundamental regions.
+    """
     def __init__(self, n=8, w=1, period=0.5, **kwargs):
         """
         1 period, multiple bins
@@ -1055,6 +1219,42 @@ class _PlaceCellEncoder(_EncoderBase):
     arbitrary collection of single bins in a specified input domain
     - Encoder Type Options
         - place cell
+
+    Represents a place cell encoder that transforms input values from a specified
+    domain into an encoded representation using binning logic.
+
+    This class is used for interval-based encoding where the input domain is
+    divided into discrete bins. Each input value can be transformed into a binary
+    representation based on whether it belongs to specific bins. Configurable
+    parameters include the number of bins, bin size, interval bounds, and input
+    constraints.
+
+    Attributes:
+        lower_bound (float): The lower bound of the interval for encoding. All
+            input values are expected to be within the range [lower_bound,
+            upper_bound].
+        upper_bound (float): The upper bound of the interval for encoding. All
+            input values are expected to be within the range [lower_bound,
+            upper_bound].
+        L (float): The size of the interval, calculated as upper_bound -
+            lower_bound.
+        l (float): The size of each bin for encoding. If not specified during
+            initialization, it defaults to 10% of the interval size.
+        n (int): The number of bins used for encoding. Represents the number of
+            binary outputs.
+        bins (list): A list representing the discrete bins defined over the input
+            interval.
+        regions (list): A list representing predefined regions within the
+            encoding interval.
+        region_sizes (list): A list of sizes corresponding to each region.
+        region_boundaries (list): A list of boundary values for each region.
+        region_centers (list): A list of center points for each region.
+        region_codes (list): A list of binary codes corresponding to each region.
+        region_indices (list): A list of indices mapping regions to specific bins.
+        region_weights (list): A list of weights assigned to each region for
+            encoding purposes.
+        region_deltas (list): A list of differences or variances associated with
+            each region.
 
     """
 
@@ -1129,7 +1329,34 @@ class _PlaceCellEncoder(_EncoderBase):
 
 
 class RandomizedPlaceCellEncoder(_PlaceCellEncoder):
+    """
+    Encodes spatial positions into a set of overlapping regions to facilitate discretization.
 
+    The RandomizedPlaceCellEncoder class extends a base encoder and provides functionality for
+    encoding spatial positions into randomly generated regions based on certain bounding intervals.
+    This process is utilized for mapping continuous spatial data into discrete regions, which can
+    be useful in applications such as machine learning and reinforcement learning.
+
+    Attributes:
+        bins (list[I.closed_open]): List of randomly generated bins representing continuous
+            intervals within the specified bounds.
+        region_boundaries (ndarray): Array of boundary points for the regions, sorted in
+            ascending order.
+        region_centers (ndarray): Array of center points for each region, calculated as the
+            midpoints between region boundaries.
+        regions (list[I.closed_open]): List of unique regions, represented as intervals
+            intersected by combinations of the bins.
+        region_sizes (ndarray): Array of half-differences between adjacent region boundary
+            points, representing the size of each region.
+        region_codes (ndarray): Encoded representation of all region centers, where codes
+            represent active bins for a given center point.
+        region_weights (ndarray): Count of active bins for each region center, indicating
+            the frequency of region activation.
+        region_indices (list[tuple]): List of tuples, where each tuple contains the indices of
+            bins actively intersecting the corresponding region.
+        region_deltas (ndarray): Number of boundary crossings for each region. Calculated based on
+            changes observed in active bins between adjacent regions.
+    """
     def config(self):
         """
         - create n random bins in specified interval
@@ -1193,7 +1420,25 @@ class RandomizedPlaceCellEncoder(_PlaceCellEncoder):
 
 
 class PlaceCellEncoder(_PlaceCellEncoder):
+    """
+    Represents a Place Cell Encoder for encoding spatial information based on structured place cell regions.
 
+    This class allows the creation and modification of place cell regions, which are bounded spatial intervals
+    representing receptive fields. It provides methods for adding new cells, reconfiguring the regions, and
+    computing boundaries and related properties. Designed for computational models involving place cells and
+    spatial navigation.
+
+    Attributes:
+        bins (list): A list of intervals defining the bins or receptive fields of place cells.
+        region_boundaries (numpy.ndarray): Array of region boundary points derived from defined bins.
+        region_centers (numpy.ndarray): Array of center points of the regions between boundaries.
+        regions (list): List of intervals representing unique regions defined by combinations of bins.
+        region_sizes (numpy.ndarray): Array of sizes for each region, computed using region boundaries.
+        region_codes (numpy.ndarray): Encoded representation of the region center points.
+        region_weights (numpy.ndarray): Weights or occurrences of non-zero elements per region.
+        region_indices (list): Indices of non-zero elements for regions within the region code matrix.
+        region_deltas (numpy.ndarray): Number of boundary crossings at each boundary point.
+    """
     # def __init__(self, regions, **kwargs):
     #    """
     #    :param regions: list of intervals or 2-tuples that indicate bins/RFs of place cells
@@ -1461,7 +1706,33 @@ class PlaceCellEncoder(_PlaceCellEncoder):
 
 
 class FixedWeightEncoder(_IntervalEncoder):
+    """
+    FixedWeightEncoder class is designed for encoding with fixed weights while maintaining certain
+    invariants in the intervals. It ensures that the bins created adhere to constraints such as
+    overlapping bins or imbricating code, while calculating derived parameters like step size and
+    region boundaries/centers.
 
+    The class automatically computes undetermined attributes (`n` or `l`) based on predefined
+    equations, ensuring a consistent and robust encoding structure. Additionally, it prepares bin
+    configurations, region boundaries, centers, weights, and other crucial encoding details.
+
+    Attributes:
+        n (int): The number of bins used in the encoder. Must follow the condition `n >= 2w`.
+        l (float): Length of intervals, calculated or provided depending on the configuration.
+        w (int): Weight of the encoder, representing the number of overlapping bins or intervals.
+        L (float): Total length or range of the encoding space.
+        lower_bound (float): The starting point of the encoding range.
+        upper_bound (float): The ending point of the encoding range.
+        region_boundaries (list[float]): Boundary points dividing the encoding range into partitions.
+        region_centers (list[float]): Center points of each region within defined boundaries.
+        bins (list): List of bin intervals defining the encoding configuration.
+        regions (list): List of unique regions intersected by combinations of bins.
+        region_sizes (list[float]): List containing sizes of each region.
+        region_codes (list): Encoded representations for region centers.
+        region_weights (list[int]): The count of non-zero codes for each region.
+        region_indices (list[tuple[int]]): Indices of regions as tuples from non-zero codes.
+        region_deltas (list[int]): Deltas representing changes at boundaries and transitions of regions.
+    """
     def config(self):
         """
         - compute 'n' or 'l' depending on which is unspecified
@@ -1530,7 +1801,38 @@ class FixedWeightEncoder(_IntervalEncoder):
 
 
 class TaperingWeightEncoder(_IntervalEncoder):
+    """
+    Encodes intervals into bins and calculates related weights, regions, and steps
+    based on tapering and boundary conditions.
 
+    This class adjusts the creation of bins based on the tapering weight, which could
+    vary given the input parameters. The bins are equidistant within the parameters'
+    scope, ensuring the calculated regions and their boundaries follow the defined
+    tapering formula. The configuration ensures algebraic consistency and checks
+    invariants such as the condition `n >= 2w`.
+
+    Attributes:
+        n (Optional[int]): The number of bins to be created, calculated if unspecified.
+        l (Optional[float]): The length of each bin, computed if unspecified.
+        w (int): Weight parameter affecting bin allocation and length calculation.
+        L (float): Total length of the interval to be divided into bins.
+        lower_bound (float): Starting point of the interval.
+        upper_bound (float): Ending point of the interval.
+        region_boundaries (np.ndarray): Points defining the boundaries of the
+            regions derived from the bins.
+        region_centers (np.ndarray): Center points of the regions determined from
+            the boundaries.
+        bins (List[interval]): List of bins represented as closed-open intervals.
+        regions (List[interval]): List of regions as unique intervals intersected
+            by combinations of the bins.
+        region_sizes (List[float]): Sizes of the regions created from boundary
+            calculations.
+        region_codes (np.ndarray): Encoded center points for the regions.
+        region_weights (np.ndarray): Count of non-zero weights in the encoded regions.
+        region_indices (List[Tuple[int]]): Indices of non-zero weights for each region.
+        region_deltas (np.ndarray): Array of delta values (e.g., ones) associated
+            with the regions.
+    """
     def config(self):
         """
         - compute 'n' or 'l' depending on which is unspecified
