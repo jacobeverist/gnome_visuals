@@ -579,7 +579,7 @@ def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, ref_point
     except:
         n_grids = 1
 
-    markersize = 4
+    markersize = 2
     fontsize = 8
 
     # TODO: plot distribution of periods, bin sizes, offsets, duty cycles, of a multi-encoder
@@ -693,7 +693,7 @@ def plot_compact_multi_encoder(encoder, desc_str="Encoder", x_pad=0.1, ref_point
     # draw weight, crossings, and boundary features
     # draw_features(ax1, encoder, similarity_colors, markersize, draw_regions=True, fill_weight=False, draw_legend=False)
     # if n_points > 0:
-    draw_features(ax1, encoder, similarity_colors, markersize, draw_regions=False, fill_weight=False, draw_legend=False)
+    draw_features(ax1, encoder, similarity_colors, markersize, hamming_y=0.5, draw_regions=False, fill_weight=False, draw_legend=False)
 
     #     ax.set_ylim(-0.1, max_bin_weight + 2)
 

@@ -4,6 +4,9 @@ from colour import Color
 from manim import *
 from manim import config as global_config
 import seaborn as sns
+import sys
+from gnomecode.encoders import *
+
 
 # appending a path
 sys.path.append("../../")

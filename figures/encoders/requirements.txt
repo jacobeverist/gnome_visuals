@@ -7,8 +7,11 @@ colorcet>=3.0.1
 
 colour>=0.1.5
 manim>=0.17.3
+manim_voiceover
 pygments
 matplotlib>=3.3.4
 seaborn>=0.12.2
+
+holoviews
 
 

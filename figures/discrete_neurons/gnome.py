@@ -1,7 +1,9 @@
 # Colors
 import colorcet as cc
 from manim import *
-from manim.utils.color import Colors
+# from manim.utils.color import Colors
+from manim.utils.color import manim_colors
+
 import matplotlib as mpl  # mpl.colormaps.get_cmap
 import seaborn as sns
 
@@ -12,14 +14,14 @@ LinearSegmentedColormap = mpl.colors.LinearSegmentedColormap
 
 class Synapse(VGroup):
     CONFIG = {
-            "edge_color": WHITE,
+            "edge_color": manim_colors.WHITE,
             "edge_stroke_width": 4,
             "num_inputs": 17,
     }
     rng = np.random.default_rng(0)
     colors = sns.color_palette("colorblind").as_hex()
 
-    def __init__(self, neuron, mob, ori="vert", do_gate=True, gate_shape="valve", gate_color=RED, **kwargs):
+    def __init__(self, neuron, mob, ori="vert", do_gate=True, gate_shape="valve", gate_color=manim_colors.RED, **kwargs):
         """
 
         :param neuron:
@@ -139,7 +141,7 @@ class Synapse(VGroup):
 class NaiveNeuron(Circle):
     CONFIG = {
             "neuron_radius": 0.5,
-            "neuron_stroke_color": WHITE,
+            "neuron_stroke_color": manim_colors.WHITE,
             "neuron_stroke_width": 3,
             "neuron_fill_color": BLUE,
     }
@@ -169,7 +171,7 @@ class NaiveNeuron(Circle):
 class NeuronWithOperations(VGroup):
     CONFIG = {
             "neuron_radius": 1.0,
-            "neuron_stroke_color": WHITE,
+            "neuron_stroke_color": manim_colors.WHITE,
             "neuron_stroke_width": 3,
             "neuron_fill_color": GRAY_C,
     }
@@ -215,7 +217,7 @@ class NeuronWithOperations(VGroup):
         # counter operation
         self.counter_box = Rectangle(fill_color=colors[2],
                                      fill_opacity=1,
-                                     stroke_color=BLACK,
+                                     stroke_color=manim_colors.BLACK,
                                      height=box_len,
                                      width=box_len * 1.2)
         self.counter_box.shift(DOWN * (self.neuron_radius / 2.0 - buff / 2.0 - 1.5 * buff))
@@ -224,7 +226,7 @@ class NeuronWithOperations(VGroup):
         # activation operation
         self.activation_box = Rectangle(fill_color=colors[1],
                                         fill_opacity=1,
-                                        stroke_color=BLACK,
+                                        stroke_color=manim_colors.BLACK,
                                         height=box_len,
                                         width=box_len * 1.2)
         self.activation_box.next_to(self.counter_box, UP, buff=buff)
@@ -235,18 +237,18 @@ class NeuronWithOperations(VGroup):
         width_scale = 0.7
 
         # individual lines to create unit step function (3 lines)
-        # line1 = Line(ORIGIN, RIGHT * scale, buff=0, color=BLACK, stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
+        # line1 = Line(ORIGIN, RIGHT * scale, buff=0, color=manim_colors.BLACK, stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
 
-        # line2 = Line(line1.get_end(), line1.get_end() + 1.2 * UP * scale, buff=0, color=BLACK,
+        # line2 = Line(line1.get_end(), line1.get_end() + 1.2 * UP * scale, buff=0, color=manim_colors.BLACK,
         #             stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
 
-        # line3 = Line(line2.get_end(), line2.get_end() + RIGHT * scale, buff=0, color=BLACK,
+        # line3 = Line(line2.get_end(), line2.get_end() + RIGHT * scale, buff=0, color=manim_colors.BLACK,
         #             stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
 
         # Raw VMObject to draw unit step function
         vertices = [ORIGIN, RIGHT * scale * width_scale, RIGHT * scale * width_scale + 1.2 * UP * scale,
                     2 * RIGHT * scale * width_scale + 1.2 * UP * scale]
-        poly_path = VMobject(color=BLACK, stroke_width=1.8 * DEFAULT_STROKE_WIDTH)
+        poly_path = VMobject(color=manim_colors.BLACK, stroke_width=1.8 * DEFAULT_STROKE_WIDTH)
         first_vertex, *vertices = vertices
         first_vertex = np.array(first_vertex)
         poly_path.start_new_path(first_vertex)
@@ -257,7 +259,7 @@ class NeuronWithOperations(VGroup):
         self.activation_label.move_to(self.activation_box.get_center())
 
         # counter as sigma summation symbol
-        self.counter_label = MathTex("\sum", color=BLACK, stroke_width=0.8 * DEFAULT_STROKE_WIDTH).move_to(
+        self.counter_label = MathTex("\sum", color=manim_colors.BLACK, stroke_width=0.8 * DEFAULT_STROKE_WIDTH).move_to(
                 self.counter_box.get_center()).scale(0.8)
 
         # noinspection PyTypeChecker
@@ -275,7 +277,7 @@ class NeuronWithWindow(VGroup):
     CONFIG = {
             "neuron_radius": 1.0,
             "neuron_stroke_color": '#79525f',
-            # "neuron_stroke_color": WHITE,
+            # "neuron_stroke_color": manim_colors.WHITE,
             "neuron_stroke_width": 3,
             "neuron_fill_color": '#79525f',
             # "neuron_fill_color": GRAY_C,
@@ -350,10 +352,10 @@ class NeuronWithWindow(VGroup):
 
         # counter operation
         # self.counter_box = Rectangle(fill_color=colors[2],
-        self.counter_box = Rectangle(fill_color=WHITE,
+        self.counter_box = Rectangle(fill_color=manim_colors.WHITE,
                                      fill_opacity=1,
                                      stroke_width=1,
-                                     stroke_color=BLACK,
+                                     stroke_color=manim_colors.BLACK,
                                      height=box_len,
                                      width=box_len * 1.2)
         self.counter_box.move_to(self.counter.get_center())
@@ -362,10 +364,10 @@ class NeuronWithWindow(VGroup):
 
         # activation operation
         # self.activation_box = Rectangle(fill_color=colors[1],
-        self.activation_box = Rectangle(fill_color=WHITE,
+        self.activation_box = Rectangle(fill_color=manim_colors.WHITE,
                                         fill_opacity=1,
                                         stroke_width=1,
-                                        stroke_color=BLACK,
+                                        stroke_color=manim_colors.BLACK,
                                         height=box_len,
                                         width=box_len * 1.2)
         self.activation_box.move_to(self.activation.get_center())
@@ -377,18 +379,18 @@ class NeuronWithWindow(VGroup):
         width_scale = 0.68
 
         # individual lines to create unit step function (3 lines)
-        # line1 = Line(ORIGIN, RIGHT * scale, buff=0, color=BLACK, stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
+        # line1 = Line(ORIGIN, RIGHT * scale, buff=0, color=manim_colors.BLACK, stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
 
-        # line2 = Line(line1.get_end(), line1.get_end() + 1.2 * UP * scale, buff=0, color=BLACK,
+        # line2 = Line(line1.get_end(), line1.get_end() + 1.2 * UP * scale, buff=0, color=manim_colors.BLACK,
         #             stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
 
-        # line3 = Line(line2.get_end(), line2.get_end() + RIGHT * scale, buff=0, color=BLACK,
+        # line3 = Line(line2.get_end(), line2.get_end() + RIGHT * scale, buff=0, color=manim_colors.BLACK,
         #             stroke_width=1.5 * DEFAULT_STROKE_WIDTH)
 
         # Raw VMObject to draw unit step function
         vertices = [ORIGIN, RIGHT * scale * width_scale, RIGHT * scale * width_scale + 1.2 * UP * scale,
                     2 * RIGHT * scale * width_scale + 1.2 * UP * scale]
-        poly_path = VMobject(color=BLACK, stroke_width=1.8 * DEFAULT_STROKE_WIDTH)
+        poly_path = VMobject(color=manim_colors.BLACK, stroke_width=1.8 * DEFAULT_STROKE_WIDTH)
         first_vertex, *vertices = vertices
         first_vertex = np.array(first_vertex)
         poly_path.start_new_path(first_vertex)
@@ -401,7 +403,7 @@ class NeuronWithWindow(VGroup):
         counter_label_scale = 0.7
 
         # counter as sigma summation symbol
-        self.counter_label = MathTex("\sum", color=BLACK, stroke_width=0.8 * DEFAULT_STROKE_WIDTH).move_to(
+        self.counter_label = MathTex("\sum", color=manim_colors.BLACK, stroke_width=0.8 * DEFAULT_STROKE_WIDTH).move_to(
                 self.counter_box.get_center()).scale(counter_label_scale)
 
         # noinspection PyTypeChecker
@@ -418,9 +420,9 @@ class NeuronWithWindow(VGroup):
 class Cell(Square):
     CONFIG = {
             "cell_side_length": 0.5,
-            "cell_stroke_color": BLACK,
+            "cell_stroke_color": manim_colors.BLACK,
             "cell_stroke_opacity": 1,
-            "cell_fill_color": WHITE,
+            "cell_fill_color": manim_colors.WHITE,
             "cell_fill_opacity": 1,
     }
 
@@ -449,10 +451,10 @@ class Cell(Square):
 class GnomeCode(VGroup):
     CONFIG = {
             "cell_side_length": 0.5,
-            "cell_stroke_color": BLACK,
+            "cell_stroke_color": manim_colors.BLACK,
             "cell_stroke_opacity": 1,
             "cell_stroke_width": DEFAULT_STROKE_WIDTH,
-            "cell_fill_color": WHITE,
+            "cell_fill_color": manim_colors.WHITE,
             "cell_fill_opacity": 1,
             "cell_text_buff": 0.1
     }
@@ -557,7 +559,7 @@ class GnomeCode(VGroup):
             # text_rgb = [val for _ in range(3)]
             # text_color = rgb_to_color(text_rgb)
             # text_color = mpl.colors.rgb2hex(self.cmap(1.0 - val))
-            text_color = BLACK
+            text_color = manim_colors.BLACK
 
             # update colors based on value
             cell.set_fill(color=cell_color, opacity=1)
@@ -603,10 +605,10 @@ class GnomeCode(VGroup):
         # cell_color = mpl.colors.rgb2hex(self.cmap(1.0))
         cell_color = self.one_color
         # text_color = mpl.colors.rgb2hex(self.cmap(0.0))
-        text_color = BLACK
+        text_color = manim_colors.BLACK
 
         # name, colors, N=256, gamma=1.0
-        cell_cmap = LinearSegmentedColormap.from_list("cell_X", [WHITE, cell_color])
+        cell_cmap = LinearSegmentedColormap.from_list("cell_X", [manim_colors.WHITE.to_hex(), cell_color])
 
         # array of values from 0 to 1 for each textbox
         self.trackers = [ValueTracker(0).set(index=k) for k in range(self.num_bins)]
@@ -729,20 +731,20 @@ class GnomeCode(VGroup):
         #    self.buff = buff
         #    self.move_to(mobject)
 
-        #         color: Color = WHITE,
+        #         color: Color = manim_colors.WHITE,
         #         height: float = 2.0,
         #         width: float = 4.0,
 
         # buff = 2.5 * SMALL_BUFF
 
         self.background_rectangle = RoundedRectangle(corner_radius=0.85 * self.cell_side_length,
-                                                     color=Colors.gray_c.value,
+                                                     color=manim_colors.GRAY_C,# gray_c.value,
                                                      height=self.height + 2 * buff,
                                                      width=self.width + 4 * buff,
                                                      fill_opacity=1,
                                                      stroke_opacity=1,
                                                      stroke_width=3,
-                                                     stroke_color=Colors.white.value,
+                                                     stroke_color=manim_colors.WHITE, #Colors.white.value,
                                                      )
         # buff=2.5 * SMALL_BUFF,
         # sheen_factor=0.3)

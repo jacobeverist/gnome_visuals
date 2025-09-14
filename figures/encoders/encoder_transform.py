@@ -13,6 +13,7 @@ import seaborn as sns
 
 from manim_voiceover import VoiceoverScene
 from manim_voiceover.services.azure import AzureService
+from gnomecode.encoders import *
 
 
 sys.path.append("../../")

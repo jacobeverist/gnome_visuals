@@ -9,6 +9,8 @@ from manim import *
 from manim import config as global_config
 import matplotlib as mpl  # mpl.colormaps.get_cmap
 import seaborn as sns
+from gnomecode.encoders import *
+
 
 sys.path.append("../../")
 sys.path.append("../discrete_neurons/")

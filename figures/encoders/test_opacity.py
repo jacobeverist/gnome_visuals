@@ -1,5 +1,6 @@
 from colour import Color
 from manim import *
+import sys
 
 # appending a path
 sys.path.append("../../")

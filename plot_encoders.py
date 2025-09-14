@@ -7,6 +7,8 @@ from gnomecode.encoders import *
 # from encoders import *
 from gnomevisual import *
 
+from icecream import ic
+import numpy as np
 
 # from stitch_images import stitch_images
 
@@ -132,10 +134,11 @@ def plot_compact_and_heatmap(multi_encoder, file_dir, experiment, w_param,
                              compact_suffix="Features",
                              heatmap_suffix="Similarity_Matrix_Projected_to_Real_Space"
                              ):
-
-
+    ref_points=[-0.5,]
+    # ref_points=[0.499,]
+    # ref_points=[0.5,]
     # ref_points=[0.21]
-    ref_points=[0.21, 0.45]
+    # ref_points = [0.21, 0.45]
     # ref_points=[0.21, 0.45, 0.75, 0.9]
     # ref_points=[]
     plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=draw_folded_bins, w_param=w_param,
@@ -148,7 +151,7 @@ def plot_compact_and_heatmap(multi_encoder, file_dir, experiment, w_param,
     return feature_file, heatmap_file
 
 
-def run_experiment():
+def run_experiment1():
     """
 
     Returns:
@@ -241,6 +244,120 @@ def run_experiment():
     stitch_images(feature_filenames, feature_str)
 
 
+def run_experiment2():
+    """
+
+    Returns:
+
+    """
+    # Constants
+    file_dir = "out/"
+
+    feature_filenames = []
+    heatmap_filenames = []
+
+    # for l_param in [0.01, 0.02, 0.03]:
+    # for test_num in [1, 2, 3]:
+    for test_num in [3]:
+
+        l_param = test_num * 0.05
+
+        # 2^n, equal bin size
+        experiment = "2n_equal_binsize_zerocenter_PeriodicCellEncoder"
+        multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
+        # period = 1.0
+        offset = -l_param  # * period / (2 * n)
+        # origin = 0.5*offset
+        # origin = 2.0*offset
+        origin = 0.5 - l_param / 2.0
+        ic(offset, origin)
+
+        # encoder = PeriodicCellEncoder(n=10, period=1.0)
+        # encoder = PeriodicCellEncoder(n=10, period=1.0, l_frac=0.1)
+        # encoder = PeriodicCellEncoder(n=10, period=1.0, l=0.1)
+
+        periodic_encoder = PeriodicCellEncoder(n=8, l=l_param, period=1.0, do_rand=True)
+        multi_encoder.add_encoder(periodic_encoder)
+
+        periodic_encoder = PeriodicCellEncoder(n=8, l_frac=0.5, do_rand=True)
+        multi_encoder.add_encoder(periodic_encoder)
+
+        periodic_encoder = PeriodicCellEncoder(n=8, l_frac=0.5)  # , do_rand=True)
+        multi_encoder.add_encoder(periodic_encoder)
+
+        assemble_encoder = MultiPeriodicEncoder(xmin=-1.0, xmax=2.0)
+        rng = assemble_encoder.rng
+        origins = rng.uniform(0.0, 1.0, 8)
+        periods = rng.uniform(0.1, 0.5, 8)
+
+        for k in range(4):
+            bin_length = rng.uniform(0.05, periods[k] / 2.0, 1)[0]
+            periodic_encoder = PeriodicCellEncoder(l=bin_length, origin=origins[k], period=periods[k])
+            ic(bin_length)
+            ic(periodic_encoder)
+            assemble_encoder.add_encoder(periodic_encoder)
+        periodic_encoder = PeriodicCellEncoder(n=4)
+        assemble_encoder.add_encoder(periodic_encoder)
+
+        multi_encoder.add_encoder(assemble_encoder)
+
+        feature_file, heatmap_file = plot_compact_and_heatmap(multi_encoder, file_dir, experiment, test_num,
+                                                              draw_folded_bins=False)
+        feature_filenames.append(feature_file)
+        heatmap_filenames.append(heatmap_file)
+
+    """
+        # 2^n, equal period
+        experiment = "2n_equal_period_zerocenter_PeriodicCellEncoder"
+        multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
+        for n in [4, 8, 12, 16]:
+            period = 1.0
+            offset = -l_param * period / (2 * n)
+            multi_encoder.add_encoder(
+                    PeriodicCellEncoder(n=n, l=l_param, period=1.0, lower_bound=offset, upper_bound=1.0 + offset))
+
+        feature_file, heatmap_file = plot_compact_and_heatmap(multi_encoder, file_dir, experiment, l_param)
+        feature_filenames.append(feature_file)
+        heatmap_filenames.append(heatmap_file)
+
+        # prime, equal binsize
+        experiment = "prime_equal_binsize_zerocenter_PeriodicCellEncoder"
+        multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
+        for n in [5, 7, 11, 13]:
+            period = n / 13.0
+            offset = -l_param * period / (2 * n)
+            multi_encoder.add_encoder(
+                    PeriodicCellEncoder(n=n, l=l_param, period=n / 13.0, lower_bound=offset,
+                                          upper_bound=1.0 + offset))
+
+        feature_file, heatmap_file = plot_compact_and_heatmap(multi_encoder, file_dir, experiment, l_param)
+        feature_filenames.append(feature_file)
+        heatmap_filenames.append(heatmap_file)
+
+        # prime, equal period
+        experiment = "prime_equal_period_zerocenter_PeriodicCellEncoder"
+        multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
+        for n in [5, 7, 11, 13]:
+            period = 1.0
+            offset = -l_param * period / (2 * n)
+            multi_encoder.add_encoder(
+                    PeriodicCellEncoder(n=n, l=l_param, period=1.0, lower_bound=offset, upper_bound=1.0 + offset))
+
+        feature_file, heatmap_file = plot_compact_and_heatmap(multi_encoder, file_dir, experiment, l_param)
+        feature_filenames.append(feature_file)
+        heatmap_filenames.append(heatmap_file)
+    """
+
+    feature_str = "Features_Compact_zero_PeriodicCell_w%d.png"
+    heatmap_str = "Heatmap_zero_PeriodicCell_w%d.png"
+
+    print(feature_filenames)
+    print(heatmap_filenames)
+
+    stitch_images(heatmap_filenames, heatmap_str)
+    stitch_images(feature_filenames, feature_str)
+
+
 def plot_layouts():
     # Constants
     file_dir = "out/"
@@ -279,7 +396,8 @@ def plot_layouts():
 
 
 if __name__ == "__main__":
-    run_experiment()
+    # run_experiment1()
+    run_experiment2()
     # plot_layouts()
 
     # import numpy as np

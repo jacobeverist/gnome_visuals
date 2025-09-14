@@ -12,6 +12,7 @@ from colour import Color
 import matplotlib as mpl  # mpl.colormaps.get_cmap
 import seaborn as sns
 
+
 # ensures colorcet doesn't get autoformatted away by smart IDE
 testgray = cc.gray
 LinearSegmentedColormap = mpl.colors.LinearSegmentedColormap

@@ -15,7 +15,8 @@ import matplotlib as mpl  # mpl.colormaps.get_cmap
 import seaborn as sns
 
 from manim import *
-from manim.utils.color import Colors
+# from manim.utils.color import Colors
+from manim.utils.color import manim_colors
 
 holoview_extension = hv.extension
 testgray = cc.gray
@@ -38,7 +39,7 @@ np.set_printoptions(
 
 class NaiveNeuronScene(Scene):
     CONFIG = {
-            "edge_color": WHITE,
+            "edge_color": manim_colors.WHITE,
             "edge_stroke_width": 2,
             "num_inputs": 16,
     }
@@ -70,7 +71,7 @@ class NaiveNeuronScene(Scene):
 
     def construct(self):
 
-        self.camera.background_color = BLACK
+        self.camera.background_color = manim_colors.BLACK
 
         # Name of a seaborn palette (deep, muted, bright, pastel, dark, colorblind)
         colors = sns.color_palette("colorblind").as_hex()
@@ -89,7 +90,7 @@ class NaiveNeuronScene(Scene):
         input_layer.arrange(RIGHT, buff=0.08).move_to(config.bottom).shift(UP)
         input_layer.add_background_rectangle(opacity=0.25,
                                              stroke_opacity=1, stroke_width=3, stroke_color=GREY_B,
-                                             buff=2.5 * SMALL_BUFF, color=Colors.gray_a.value,
+                                             buff=2.5 * SMALL_BUFF, color=manim_colors.GRAY_A, # gray_a.value,
                                              corner_radius=squares[0].cell_side_length)
         self.add(input_layer)
 
@@ -101,7 +102,7 @@ class NaiveNeuronScene(Scene):
 
 class GnomeInputNeuronScene(Scene):
     CONFIG = {
-            "edge_color": WHITE,
+            "edge_color": manim_colors.WHITE,
             "edge_stroke_width": 2,
             "num_inputs": 16,
     }
@@ -152,7 +153,7 @@ class GnomeInputNeuronScene(Scene):
 
     def construct(self):
 
-        self.camera.background_color = BLACK
+        self.camera.background_color = manim_colors.BLACK
 
         # Name of a seaborn palette (deep, muted, bright, pastel, dark, colorblind)
         colors = sns.color_palette("colorblind").as_hex()
@@ -205,7 +206,7 @@ class GnomeInputNeuronScene(Scene):
 
 class DiscreteSynapseScene(Scene):
     CONFIG = {
-            "edge_color": WHITE,
+            "edge_color": manim_colors.WHITE,
             "edge_stroke_width": 3,
             "num_inputs": 17,
     }
@@ -219,7 +220,7 @@ class DiscreteSynapseScene(Scene):
 
     def construct(self):
 
-        self.camera.background_color = BLACK
+        self.camera.background_color = manim_colors.BLACK
         colors = self.colors
 
         # add single neuron
@@ -273,7 +274,7 @@ class DiscreteSynapseScene(Scene):
 
 class DiscreteOperationsScene(Scene):
     CONFIG = {
-            "edge_color": WHITE,
+            "edge_color": manim_colors.WHITE,
             "edge_stroke_width": 3,
             "num_inputs": 17,
     }
@@ -287,7 +288,7 @@ class DiscreteOperationsScene(Scene):
 
     def construct(self):
 
-        self.camera.background_color = BLACK
+        self.camera.background_color = manim_colors.BLACK
         colors = self.colors
 
         # add single neuron
@@ -305,8 +306,8 @@ class DiscreteOperationsScene(Scene):
 
         # output layer
         num_outputs = 17
-        output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=BLACK)
-        # output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=BLACK)
+        output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=manim_colors.BLACK)
+        # output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=manim_colors.BLACK)
         # output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=DARK_BROWN)
         output_code.arrange(RIGHT, buff=0.01).move_to(config.top).shift(0.8 * DOWN)
         diff_vec = neuron.get_x() - output_code.bins[int(num_outputs / 2)].get_x()
@@ -315,7 +316,7 @@ class DiscreteOperationsScene(Scene):
         self.add(output_code)
 
         # input layer
-        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"], cell_stroke_color=BLACK)
+        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"], cell_stroke_color=manim_colors.BLACK)
         input_code.arrange(RIGHT, buff=0.01).move_to(config.bottom).shift(0.8 * UP)
         input_code.shift(RIGHT * diff_vec)
         input_code.add_background()
@@ -351,7 +352,7 @@ class DiscreteOperationsScene(Scene):
 
 class GnomeSpace(Scene):
     CONFIG = {
-            "edge_color": WHITE,
+            "edge_color": manim_colors.WHITE,
             "edge_stroke_width": 3,
             "num_inputs": 17,
     }
@@ -365,12 +366,12 @@ class GnomeSpace(Scene):
 
     def construct(self):
 
-        self.camera.background_color = BLACK
+        self.camera.background_color = manim_colors.BLACK
         colors = self.colors
 
         # output layer
         # num_outputs = 17
-        # output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=BLACK)
+        # output_code = GnomeCode(shape='square', n=num_outputs, cell_stroke_color=manim_colors.BLACK)
         # output_code.arrange(RIGHT, buff=0.01).move_to(config.top).shift(0.8 * DOWN)
         # diff_vec = neuron.get_x() - output_code.bins[int(num_outputs / 2)].get_x()
         # output_code.shift(RIGHT * diff_vec)
@@ -378,8 +379,8 @@ class GnomeSpace(Scene):
         # self.add(output_code)
 
         # input layer
-        # input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"], cell_stroke_color=BLACK)
-        input_code = GnomeCode(shape='square', n=64, cell_stroke_color=BLACK)
+        # input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"], cell_stroke_color=manim_colors.BLACK)
+        input_code = GnomeCode(shape='square', n=64, cell_stroke_color=manim_colors.BLACK)
         input_code.arrange_in_grid(rows=4, buff=(0.01, 0.01)).center()
         # input_code.arrange(RIGHT, buff=0.01)#.move_to(config.center)#.shift(0.8 * UP)
         # input_code.shift(RIGHT * diff_vec)
@@ -417,7 +418,7 @@ class GnomeSpace(Scene):
 
 class SynapticBusScene(Scene):
     CONFIG = {
-            "edge_color": WHITE,
+            "edge_color": manim_colors.WHITE,
             "edge_stroke_width": 3,
             "num_inputs": 17,
     }
@@ -431,7 +432,7 @@ class SynapticBusScene(Scene):
 
     def construct(self):
 
-        self.camera.background_color = BLACK
+        self.camera.background_color = manim_colors.BLACK
         colors = self.colors
 
         # add single neuron
@@ -460,7 +461,7 @@ class SynapticBusScene(Scene):
         self.add(output_code)
 
         # input layer
-        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"])  # , cell_stroke_color=BLACK)
+        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"])  # , cell_stroke_color=manim_colors.BLACK)
         input_code.arrange(RIGHT, buff=0.01).move_to(config.bottom).shift(0.8 * UP)
         input_code.shift(RIGHT * diff_vec)
         input_code.add_background()
@@ -480,8 +481,8 @@ class SynapticBusScene(Scene):
                     # synapse = Synapse(neuron.counter_box, input_code.bins[i], cross_color="#3b7cb2")
                     synapse = Synapse(neuron.counter_box, input_code.bins[i], gate_color=GREEN)
                 else:
-                    # synapse = Synapse(neuron.counter_box, input_code.bins[i], cross_color=WHITE)
-                    synapse = Synapse(neuron.counter_box, input_code.bins[i], gate_color=RED)
+                    # synapse = Synapse(neuron.counter_box, input_code.bins[i], cross_color=manim_colors.WHITE)
+                    synapse = Synapse(neuron.counter_box, input_code.bins[i], gate_color=manim_colors.RED)
                 synapses.append(synapse)
                 self.add(synapse)
 
@@ -533,7 +534,7 @@ class ColorScene(Scene):
     """
 
     def construct(self):
-        self.camera.background_color = BLACK
+        self.camera.background_color = manim_colors.BLACK
 
         # map name
         colormap = "cet_glasbey_light"
@@ -589,7 +590,7 @@ class ColorScene(Scene):
             label = Integer(number=k, edge_to_fix=[0, 0, 0]).scale(0.4)
 
             # noinspection PyTypeChecker
-            label.set_color(BLACK)
+            label.set_color(manim_colors.BLACK)
 
             # create VGroup to associate this label and cell
             vgroup = VDict(dict(temp_arrow=temp_arrow, label=label))
@@ -613,7 +614,7 @@ class ColorScene(Scene):
             label = Integer(number=k, edge_to_fix=[0, 0, 0]).scale(0.4)
 
             # noinspection PyTypeChecker
-            label.set_color(BLACK)
+            label.set_color(manim_colors.BLACK)
 
             # create VGroup to associate this label and cell
             vgroup = VDict(dict(temp_arrow=temp_arrow, label=label))
@@ -633,7 +634,7 @@ class ColorScene(Scene):
 
 class WindowedNetworkScene(Scene):
     CONFIG = {
-            "edge_color": WHITE,
+            "edge_color": manim_colors.WHITE,
             "edge_stroke_width": 3,
             "num_inputs": 17,
     }
@@ -671,7 +672,7 @@ class WindowedNetworkScene(Scene):
 
     def construct(self):
 
-        self.camera.background_color = BLACK
+        self.camera.background_color = manim_colors.BLACK
 
         # add single neuron
         neuron = NeuronWithWindow().shift(UP)
@@ -722,7 +723,7 @@ class WindowedNetworkScene(Scene):
         self.add(output_code)
 
         # input layer
-        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"])  # , cell_stroke_color=BLACK)
+        input_code = GnomeCode(shape='square', n=self.CONFIG["num_inputs"])  # , cell_stroke_color=manim_colors.BLACK)
         input_code.arrange(RIGHT, buff=0.01).move_to(config.bottom).shift(0.8 * UP)
 
         # grid arrangement of layer
@@ -749,7 +750,7 @@ class WindowedNetworkScene(Scene):
                     synapse = Synapse(neuron.counter_box, input_code.bins[i], gate_color=input_code.one_color,
                                       do_gate=True)
                 else:
-                    # synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=WHITE)
+                    # synapse = Synapse(neuron.counter, input_code.bins[i], cross_color=manim_colors.WHITE)
                     synapse = Synapse(neuron.counter_box, input_code.bins[i], gate_color=input_code.zero_color,
                                       do_gate=True)
                 synapses.append(synapse)

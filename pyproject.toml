@@ -30,6 +30,8 @@ dependencies = [
     "manim>=0.17.2",
     "icecream>=2.1.3",
     "gnomecode>=0.1.0",
+    "pillow==11.3.0",
+
 ]
 
 [project.optional-dependencies]
