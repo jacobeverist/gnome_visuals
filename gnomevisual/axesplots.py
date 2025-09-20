@@ -39,20 +39,18 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
                       box_height=1, num_samples=150, x_pad=0.002, y_pad=0.15, y_margin=0.5):
     """
 
+    :param ax: mpl.axes.Axes
+    :param encoder: gnomevisual.encoders.EncoderBase
     :param draw_uniform_samples:
     :param draw_region_bits:
     :param draw_boundaries:
     :param draw_bit_grid:
     :param permute_bits:
+    :param clip_on: bool
     :param box_height:
     :param num_samples:
     :param x_pad:
     :param y_pad:
-    :param ax: mpl.axes.Axes
-    :param encoder: gnomevisual.encoders.EncoderBase
-    :param xmin: float | None
-    :param xmax: float | None
-    :param clip_on: bool
     """
 
     # TODO: + optionally permutate bits to show non-local vs. sorted visualization

@@ -141,8 +141,10 @@ def plot_compact_and_heatmap(multi_encoder, file_dir, experiment, w_param,
     # ref_points = [0.21, 0.45]
     # ref_points=[0.21, 0.45, 0.75, 0.9]
     # ref_points=[]
-    plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=draw_folded_bins, w_param=w_param,
-                               ref_points=ref_points)
+    # plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=draw_folded_bins, w_param=w_param,
+    #                            ref_points=ref_points)
+
+    plot_periodic_cell_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=draw_folded_bins, w_param=w_param)
     feature_file = save_fig(file_dir, multi_encoder, experiment + "_" + compact_suffix, w_param=w_param)
 
     plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=annot)
@@ -285,21 +287,21 @@ def run_experiment2():
         periodic_encoder = PeriodicCellEncoder(n=8, l_frac=0.5)  # , do_rand=True)
         multi_encoder.add_encoder(periodic_encoder)
 
-        assemble_encoder = MultiPeriodicEncoder(xmin=-1.0, xmax=2.0)
-        rng = assemble_encoder.rng
-        origins = rng.uniform(0.0, 1.0, 8)
-        periods = rng.uniform(0.1, 0.5, 8)
-
-        for k in range(4):
-            bin_length = rng.uniform(0.05, periods[k] / 2.0, 1)[0]
-            periodic_encoder = PeriodicCellEncoder(l=bin_length, origin=origins[k], period=periods[k])
-            ic(bin_length)
-            ic(periodic_encoder)
-            assemble_encoder.add_encoder(periodic_encoder)
-        periodic_encoder = PeriodicCellEncoder(n=4)
-        assemble_encoder.add_encoder(periodic_encoder)
-
-        multi_encoder.add_encoder(assemble_encoder)
+        # assemble_encoder = MultiPeriodicEncoder(xmin=-1.0, xmax=2.0)
+        # rng = assemble_encoder.rng
+        # origins = rng.uniform(0.0, 1.0, 8)
+        # periods = rng.uniform(0.1, 0.5, 8)
+        #
+        # for k in range(4):
+        #     bin_length = rng.uniform(0.05, periods[k] / 2.0, 1)[0]
+        #     periodic_encoder = PeriodicCellEncoder(l=bin_length, origin=origins[k], period=periods[k])
+        #     ic(bin_length)
+        #     ic(periodic_encoder)
+        #     assemble_encoder.add_encoder(periodic_encoder)
+        # periodic_encoder = PeriodicCellEncoder(n=4)
+        # assemble_encoder.add_encoder(periodic_encoder)
+        #
+        # multi_encoder.add_encoder(assemble_encoder)
 
         feature_file, heatmap_file = plot_compact_and_heatmap(multi_encoder, file_dir, experiment, test_num,
                                                               draw_folded_bins=False)
@@ -373,21 +375,21 @@ def plot_layouts():
     # PLOT EXAMPLES
     # Plot Feature
     plot_interval_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
-    save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
+    save_fig(file_dir, multi_encoder, experiment + "_" + "Features1", w_param=w_param)
 
     # Plot Compact
     plot_compact_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param,
                                # ref_points=[0.21, 0.75])
                                )
 
-    save_fig(file_dir, multi_encoder, experiment + "_" + "Features", w_param=w_param)
+    save_fig(file_dir, multi_encoder, experiment + "_" + "Features2", w_param=w_param)
 
     # Plot Similarity Matrix by Code
     plot_code_heatmap(multi_encoder, desc_str=experiment, annot=False)
     save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_by_Region_Code", w_param=w_param)
 
     # Plot Similarity Matrix by Real Space
-    plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False)
+    plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=False, do_inset_axes=True)
     save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space", w_param=w_param)
 
     # Plot Difference Matrix by Code
@@ -397,8 +399,8 @@ def plot_layouts():
 
 if __name__ == "__main__":
     # run_experiment1()
-    run_experiment2()
-    # plot_layouts()
+    # run_experiment2()
+    plot_layouts()
 
     # import numpy as np
     #
