@@ -245,7 +245,7 @@ def plot_code_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, d
 
 @profile
 def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=True, draw_manual_grid=True,
-                           draw_minor_tick_grid=False, w_param=None, do_inset_axes=False):
+                           draw_minor_tick_grid=False, w_param=None, do_inset_axes=False, do_invert_yaxis=False):
     """
 
     Args:
@@ -312,7 +312,9 @@ def plot_realspace_heatmap(encoder, desc_str="Encoder", triangle=False, annot=Tr
         # no inset axes
         ax_features = None
 
-    ax_heatmap.invert_yaxis()
+    # FIXME: why did I invert the axis?  what was the stylist choice here
+    if do_invert_yaxis:
+        ax_heatmap.invert_yaxis()
 
     # set title of whole figure
     if w_param:

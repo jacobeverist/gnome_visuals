@@ -372,6 +372,9 @@ def plot_layouts():
     multi_encoder.add_encoder(
             PeriodicScalarEncoder(n=n, w=w_param, period=1.0, lower_bound=offset, upper_bound=1.0 + offset))
 
+    multi_encoder.add_encoder(
+            PeriodicScalarEncoder(n=n, w=w_param, period=1.0, lower_bound=offset, upper_bound=1.0 + offset))
+
     # PLOT EXAMPLES
     # Plot Feature
     plot_interval_multi_encoder(multi_encoder, desc_str=experiment, draw_folded_bins=True, w_param=w_param)
@@ -396,11 +399,37 @@ def plot_layouts():
     plot_diff_heatmap(multi_encoder, desc_str=experiment, annot=False)
     save_fig(file_dir, multi_encoder, experiment + "_" + "Difference_Matrix_by_Region_Code", w_param=w_param)
 
+def realspace_region_heatmap():
+    # Constants
+    file_dir = "out/"
+    w_param = 3
+    experiment = "layouts_2n_equal_period_zerocenter_PeriodicScalarEncoder"
+    # multi_encoder = MultiEncoder(xmin=-1.0, xmax=2.0)
+    multi_encoder = MultiEncoder(xmin=0.0, xmax=1.0)
+    period = 1.0
+    n = 8
+    offset = -w_param * period / (2 * n)
+    # multi_encoder.add_encoder(
+    #         FixedWeightEncoder(n=n, w=w_param, period=1.0, lower_bound=offset, upper_bound=1.0 + offset))
+    #
+    # multi_encoder.add_encoder(
+    #         FixedWeightEncoder(n=n, w=w_param, period=1.0, lower_bound=offset, upper_bound=1.0 + offset))
+
+
+    for i in [2, 3, 5, 7]:
+        multi_encoder.add_encoder(FixedWeightEncoder(n=i, w=1))
+
+    # Plot Similarity Matrix by Real Space
+    plot_realspace_heatmap(multi_encoder, desc_str=experiment, w_param=w_param, annot=True, do_inset_axes=False)
+    save_fig(file_dir, multi_encoder, experiment + "_" + "Similarity_Matrix_Projected_to_Real_Space", w_param=w_param)
+
+
 
 if __name__ == "__main__":
     # run_experiment1()
     # run_experiment2()
-    plot_layouts()
+    # plot_layouts()
+    realspace_region_heatmap()
 
     # import numpy as np
     #

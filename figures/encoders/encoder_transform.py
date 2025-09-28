@@ -11,8 +11,8 @@ from manim import config as global_config
 import matplotlib as mpl  # mpl.colormaps.get_cmap
 import seaborn as sns
 
-from manim_voiceover import VoiceoverScene
-from manim_voiceover.services.azure import AzureService
+# from manim_voiceover import VoiceoverScene
+# from manim_voiceover.services.azure import AzureService
 from gnomecode.encoders import *
 
 
@@ -99,7 +99,8 @@ class NumberSlider(VGroup):
 
 
 
-class EncoderCollapse(Scene, VoiceoverScene):
+# class EncoderCollapse(Scene, VoiceoverScene):
+class EncoderCollapse(Scene):
     stroke_width = 1
     stroke_color = BLACK
 
@@ -478,6 +479,7 @@ class AnimateEncoding(EncoderCollapse):
 
     def construct(self):
         # Initialize speech synthesis using Azure's TTS API
+        """
         self.set_speech_service(
             AzureService(
                 # voice="en-US-JacobNeural",
@@ -490,6 +492,7 @@ class AnimateEncoding(EncoderCollapse):
                 prosody={"rate": 1.25}
             )
         )
+        """
 
         self.camera.background_color = GRAY
 

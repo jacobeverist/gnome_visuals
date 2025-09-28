@@ -10,12 +10,12 @@ from manim import config as global_config
 import matplotlib as mpl  # mpl.colormaps.get_cmap
 import seaborn as sns
 from gnomecode.encoders import *
-
+from icecream import ic
 
 sys.path.append("../../")
 sys.path.append("../discrete_neurons/")
 
-# algorithm classes
+# visualization libraries
 from gnomevisual import *
 
 # manim classes
@@ -43,8 +43,8 @@ class NumberSlider(VGroup):
         decimal_number = DecimalNumber(self.tracker.get_value(), num_decimal_places=2)
         decimal_number.set_fill(BLACK)
 
-        num_height = decimal_number.get_height()
-        num_width = decimal_number.get_width()
+        num_height = decimal_number.height
+        num_width = decimal_number.width
         # text.set_height(box_height - 2 * box_height * 0.2)
 
         background_rectangle = Rectangle(fill_color=WHITE, fill_opacity=1.0,
@@ -158,7 +158,11 @@ class EncoderCollapse(Scene):
 
         self.nl = self.slider.nl
 
-        self.floor_line = Rectangle(color=Color(hex=LIGHT_BROWN),
+        # ic(LIGHT_BROWN)
+        # this_color = Color(hex=LIGHT_BROWN) #.get_rgb()
+        # ic(this_color)
+
+        self.floor_line = Rectangle(color=LIGHT_BROWN,
                                     width=global_config.frame_width,
                                     height=0.05,
                                     stroke_width=0,
@@ -212,11 +216,11 @@ class EncoderCollapse(Scene):
 
         text.set_color(BLACK)
 
-        box_height = box.get_height()
-        box_width = box.get_width()
+        box_height = box.height
+        box_width = box.width
 
-        label_height = text.get_height()
-        label_width = text.get_width()
+        label_height = text.height
+        label_width = text.width
 
         # box and label ratio
         box_ratio = box_width / box_height
