@@ -18,6 +18,7 @@ from matplotlib.cm import get_cmap
 from matplotlib.collections import PatchCollection
 from matplotlib.transforms import Affine2D
 # import brainblocks
+# from icecream import ic
 
 from .utils import *
 
@@ -288,7 +289,7 @@ def draw_bits_by_data(ax: mpl.axes.Axes, encoder, draw_uniform_samples=False, dr
             ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
 
 
-def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1,
+def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1.0,
                             draw_regions=False, draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True,
                             draw_folded_bins=False, label_bins=False, grid_label_size=8, grid_labels=None):
     # constants
@@ -1381,7 +1382,7 @@ def draw_projected_self_similarity(ax, encoder, triangle=False, annot=True, cbar
         bad = cmap(np.ma.masked_invalid([np.nan]))[0]
 
         # under/over values are set for sure when cmap extremes
-        # do not map to the same color as +-inf
+        # do not map to the s1ame color as +-inf
         under = cmap(-np.inf)
         over = cmap(np.inf)
         under_set = under != cmap(0)
@@ -1416,6 +1417,7 @@ def draw_projected_self_similarity(ax, encoder, triangle=False, annot=True, cbar
     # mesh = ax.pcolormesh(plot_data, cmap=cmap, **kws)
 
     # print(len(x_vals), len(y_vals), masked_scores.shape)
+
 
     mesh = ax.pcolormesh(x_vals, y_vals, masked_scores, vmax=max_count, vmin=0, edgecolor='1.0', linewidth=linewidth,
                          cmap=cmap)

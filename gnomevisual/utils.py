@@ -3,6 +3,20 @@ import numpy as np
 __all__ = ["gnome_similarity", "count_similarity", "count_difference", "clip_bin"]
 
 
+
+def matplotlib_to_plotly(cmap, pl_entries):
+    h = 1.0 / (pl_entries - 1)
+    pl_colorscale = []
+
+    for k in range(pl_entries):
+        C = np.array(cmap(k * h)[:3]) * 255
+        C = list(C.astype(np.uint8).astype(np.uint8))
+        pl_colorscale.append([k * h, 'rgb' + str((int(C[0]), int(C[1]), int(C[2])))])
+
+    return pl_colorscale
+
+
+
 def clip_bin(bin_lower, bin_upper, lower_bound, upper_bound):
     """
 
