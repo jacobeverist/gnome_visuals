@@ -526,7 +526,7 @@ class AnimateEncoding(EncoderCollapse):
         # output_code.arrange_in_grid(cols=16, buff=(0.01, 0.01)).scale(0.7).move_to(config.top).shift(0.6 * DOWN)
         output_code.arrange_in_grid(cols=4, buff=(0.01, 0.01)).scale(0.7).align_on_border(RIGHT, buff=0.2)#move_to(config.right_side)
         output_code.add_updater(
-                lambda obj: obj.set_value(subject_encoder.encode(self.tracker.get_value()), anim=False)
+                lambda obj: obj.set_value(subject_encoder.encode(self.tracker.get_value()).reshape(-1), anim=False)
         )
         curr_val = self.tracker.get_value()
         ic(curr_val)
@@ -553,7 +553,9 @@ class AnimateEncoding(EncoderCollapse):
         for cell_i in range(self.curr_id):
             brick_vg = self.whole_blocks[cell_i]
             box = brick_vg[0]
-            cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE, self.colors[cell_i]])
+            # cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE, self.colors[cell_i]])
+            cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE.to_rgb(), self.colors[cell_i]])
+
             one_color = Color(rgb=cell_cmap(1.0)[:3])
             zero_color = Color(rgb=cell_cmap(0.0)[:3])
             box.add_updater(
@@ -562,6 +564,7 @@ class AnimateEncoding(EncoderCollapse):
                     if (obj.sec_lower <= self.tracker.get_value() < obj.sec_upper)
                     else obj.set_fill(zero_color, opacity=1)
             )
+
 
         self.play(self.tracker.animate.set_value(1.001), run_time=1.0,
                   rate_func=rate_functions.linear)
@@ -573,7 +576,7 @@ class AnimateEncoding(EncoderCollapse):
             brick_vg = self.whole_blocks[cell_i]
             box = brick_vg[0]
             box.remove_updater(box.updaters[-1])
-            cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE, self.colors[cell_i]])
+            cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE.to_rgb(), self.colors[cell_i]])
             one_color = Color(rgb=cell_cmap(1.0)[:3])
             box.set_fill(one_color, opacity=1)
 
@@ -602,7 +605,7 @@ class AnimateEncoding(EncoderCollapse):
                 brick_vg2 = brick_sections[brick_i]
                 box = brick_vg2[0]
 
-                cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE, self.colors[cell_i]])
+                cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE.to_rgb(), self.colors[cell_i]])
                 one_color = Color(rgb=cell_cmap(1.0)[:3])
                 cong_color = Color(rgb=cell_cmap(0.2)[:3])
                 zero_color = Color(rgb=cell_cmap(0.0)[:3])
