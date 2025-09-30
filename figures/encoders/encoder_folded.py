@@ -77,11 +77,14 @@ class NumberSlider(VGroup):
         # background_rectangle.add_updater(
         #         lambda obj: obj.next_to(arrow, UP, buff=0*SMALL_BUFF)
         # )
-        background_rectangle.move_to(arrow.get_top()).shift(UP * background_rectangle.height / 2.0).set_x(
-                number_line.n2p(self.tracker.get_value())[0])
+
+        x_val = float(number_line.n2p(self.tracker.get_value())[0])
+        background_rectangle.move_to(arrow.get_top()).shift(UP * background_rectangle.height / 2.0).set_x(x_val)
+        # background_rectangle.move_to(arrow.get_top()).shift(UP * background_rectangle.height / 2.0).set_x(
+        #         float(number_line.n2p(self.tracker.get_value())[0]))
         background_rectangle.add_updater(
                 lambda obj: obj.move_to(arrow.get_top()).shift(UP * background_rectangle.height / 2.0).set_x(
-                        number_line.n2p(self.tracker.get_value())[0])
+                        float(number_line.n2p(self.tracker.get_value())[0]))
         )
 
         # decimal_number.next_to(arrow, UP, buff=SMALL_BUFF)
@@ -179,11 +182,11 @@ class EncoderCollapse(Scene):
 
         text.set_color(BLACK)
 
-        box_height = box.get_height()
-        box_width = box.get_width()
+        box_height = box.height
+        box_width = box.width
 
-        label_height = text.get_height()
-        label_width = text.get_width()
+        label_height = text.height
+        label_width = text.width
 
         # box and label ratio
         box_ratio = box_width / box_height
@@ -570,6 +573,7 @@ class EncoderCollapse(Scene):
 
         return diff_anims
 
+
     def construct(self):
 
         # create floor visual
@@ -608,25 +612,10 @@ class EncoderCollapse(Scene):
         self.play(Wait(1))
 
 
+
 class AnimateEncoding(EncoderCollapse):
 
     def construct(self):
-        # Initialize speech synthesis using Azure's TTS API
-        """
-        self.set_speech_service(
-            AzureService(
-                # voice="en-US-JacobNeural",
-                voice="en-US-GuyNeural", style="newscast",
-                # voice="en-US-JasonNeural", style="friendly",
-                # voice="en-US-DavisNeural", style="friendly",
-                # voice="en-US-TonyNeural", style="friendly",
-                # style="newscast-casual",  # global_speed=1.15
-                # style="friendly",  # global_speed=1.15
-                prosody={"rate": 1.25}
-            )
-        )
-        """
-
         self.camera.background_color = GRAY
 
         self.ut = self.ut * 0.2
@@ -658,22 +647,46 @@ class AnimateEncoding(EncoderCollapse):
         for enc in subject_encoders:
             subject_encoder.add_encoder(enc)
 
+        # gnome code array visual
         num_outputs = len(subject_encoder.bins)
-        output_code = GnomeCode(shape='square', n=num_outputs)  # , cell_stroke_color=GRAY_C)
-        # output_code.arrange_in_grid(cols=16, buff=(0.01, 0.01)).scale(0.7).move_to(config.top).shift(0.6 * DOWN)
+        output_code = GnomeCode(shape='square', n=num_outputs)
+        output_code.set_colors = set_colors
         output_code.arrange_in_grid(cols=4, buff=(0.01, 0.01)).scale(0.7).align_on_border(RIGHT, buff=0.2)
-        # move_to(config.right_side)
         output_code.add_updater(
                 lambda obj: obj.set_value(subject_encoder.encode(self.tracker.get_value()).reshape(-1), anim=False)
         )
+        set_colors = [Color(rgb=self.colors[k]).get_hex() for k in range(num_outputs)]
+
+
+
+        # bin colors
+        # self.colors = sns.color_palette("cet_glasbey_dark", as_cmap=True).colors
+        # block_color = Color(rgb=self.colors[self.curr_id]).get_hex()
+        # set_colors = [Color(rgb=self.colors[k]).get_hex() for k in range(num_outputs)]
+
+        # gnome array colors
+        # colormap = "cet_blues"
+        # cmap = mpl.colormaps.get_cmap(colormap)
+        # cell_cmap = LinearSegmentedColormap.from_list("cell_X", [self.clear_colors[bin_index], self.set_colors[bin_index]])
+        # self.set_colors = [mpl.colors.rgb2hex(self.cmap(1.0)) for k in range(self.num_bins)]
+        # self.set_colors = [mpl.colors.rgb2hex(self.cmap(1.0)) for k in range(self.num_bins)]
+        # self.clear_colors = [mpl.colors.rgb2hex(self.cmap(0.0)) for k in range(self.num_bins)]
+
+        # gnome array colors
+        # self.colormap = "cet_blues"
+        # self.cmap = mpl.colormaps.get_cmap(self.colormap)
+        # cell_color = mpl.colors.rgb2hex(self.cmap(1.0))
+        # self.one_color = mpl.colors.rgb2hex(self.cmap(1.0))
+        # self.zero_color = mpl.colors.rgb2hex(self.cmap(0.0))
+
+
+
+
+        # set state of code from encoding scalar value
         curr_val = self.tracker.get_value()
-        ic(curr_val)
         encode_val = subject_encoder.encode(curr_val)
-        ic(encode_val)
         encode_val = encode_val.reshape(-1)
-        ic(encode_val)
         output_code.set_value(encode_val, anim=False)
-        # output_code.set_value(subject_encoder.encode(self.tracker.get_value()), anim=False)
         self.add(output_code)
 
         # self.slider.scale(0.5)
@@ -682,13 +695,13 @@ class AnimateEncoding(EncoderCollapse):
 
         for enc in subject_encoders:
 
-            unfolded_rect_geoms, draw_min_y, draw_max_y = compute_simple_bins(encoder=enc, box_height=self.uh,
+            unfolded_rect_geoms, draw_max_y = compute_simple_bins(encoder=enc, box_height=self.uh,
                                                                               draw_y=unfolded_draw_y,
                                                                               xmin=0.0, xmax=1.0,
                                                                               clip_on=True, do_folded_bins=False)
             unfolded_draw_y = draw_max_y
 
-            folded_rect_geoms, draw_min_y, draw_max_y = compute_simple_bins(encoder=enc, box_height=self.uh,
+            folded_rect_geoms, draw_max_y = compute_simple_bins(encoder=enc, box_height=self.uh,
                                                                             draw_y=folded_draw_y,
                                                                             xmin=0.0, xmax=1.0,
                                                                             clip_on=True, do_folded_bins=True)
@@ -702,7 +715,7 @@ class AnimateEncoding(EncoderCollapse):
             for k in range(num_bricks):
                 folded_brick = folded_rect_geoms[k]
                 unfolded_brick = unfolded_rect_geoms[k]
-                ic(unfolded_brick, folded_brick)
+                # ic(unfolded_brick, folded_brick)
                 self.add_placed_brick(unfolded_brick, folded_brick)
 
         self.play(Wait(0.2))
@@ -715,6 +728,8 @@ class AnimateEncoding(EncoderCollapse):
         self.play(Wait(0.2))
         self.play(self.tracker.animate.set_value(-0.001), run_time=1.0,
                   rate_func=rate_functions.linear)
+
+        return
 
         self.disable_active_bins()
 

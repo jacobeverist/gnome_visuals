@@ -150,7 +150,7 @@ def compute_bin_arrangement(encoder_w, encoder_bins, box_height=1.0, draw_y=0.0,
         # update draw_y to maximum y so far
         draw_y = max_y
 
-    return bin_rects
+    return bin_rects, draw_y
 
 
 def get_min_max_y_of_bin_rects(bin_rects):
@@ -165,13 +165,14 @@ def get_min_max_y_of_bin_rects(bin_rects):
 
 
 def compute_simple_bins(encoder, box_height, draw_y, xmin=None, xmax=None, clip_on=True, do_folded_bins=False):
-    bin_rects = compute_bin_arrangement(encoder.w, encoder.bins, box_height=box_height, draw_y=draw_y, xmin=xmin, xmax=xmax,
+    bin_rects, max_y = compute_bin_arrangement(encoder.w, encoder.bins, box_height=box_height, draw_y=draw_y, xmin=xmin, xmax=xmax,
                                         clip_on=clip_on,
                                         do_folded_bins=do_folded_bins)
 
-    encoder_min_y, encoder_max_y = get_min_max_y_of_bin_rects(bin_rects)
+    # encoder_min_y, encoder_max_y = get_min_max_y_of_bin_rects(bin_rects)
+    # return bin_rects, encoder_max_y
 
-    return bin_rects, encoder_min_y, encoder_max_y
+    return bin_rects, max_y
 
 
 ### VISUALS
@@ -199,7 +200,7 @@ if __name__ == "__main__":
     draw_folded_bins = True
     fontsize = 8
 
-    result, draw_min_y, draw_max_x = compute_simple_bins(encoder, 1.0, 0.0, xmin=xmin, xmax=xmax, clip_on=False,
+    result, draw_max_x = compute_simple_bins(encoder, 1.0, 0.0, xmin=xmin, xmax=xmax, clip_on=False,
                                                          do_folded_bins=draw_folded_bins)
-    print(draw_min_y, draw_max_x)
+    print(draw_max_x)
     ic(result)

@@ -513,6 +513,10 @@ class GnomeCode(VGroup):
         self.one_color = mpl.colors.rgb2hex(self.cmap(1.0))
         self.zero_color = mpl.colors.rgb2hex(self.cmap(0.0))
 
+        self.set_colors = [mpl.colors.rgb2hex(self.cmap(1.0)) for k in range(self.num_bins)]
+        # self.clear_colors = [mpl.colors.rgb2hex(self.cmap(0.0)) for k in range(self.num_bins)]
+        self.clear_colors = [self.zero_color for k in range(self.num_bins)]
+
         self.colors = sns.color_palette("cet_glasbey_dark", as_cmap=True).colors
 
         # (0.94334, 0.94353, 0.94348, 1.0)
@@ -544,7 +548,9 @@ class GnomeCode(VGroup):
             # this_one_color = Color(rgb=self.colors[bin_index])
             # this_one_color = self.colors[bin_index]
             # cell_cmap = LinearSegmentedColormap.from_list("cell_X", [self.zero_color, this_one_color])
-            cell_cmap = LinearSegmentedColormap.from_list("cell_X", [self.zero_color, self.one_color])
+            # cell_cmap = LinearSegmentedColormap.from_list("cell_X", [self.zero_color, self.one_color])
+
+            cell_cmap = LinearSegmentedColormap.from_list("cell_X", [self.clear_colors[bin_index], self.set_colors[bin_index]])
 
             # value trackers for bit value of element
             val = label.tracker.get_value()
