@@ -2,7 +2,6 @@ import re
 import string
 import textwrap
 
-
 import matplotlib.patches as patches
 import numpy as np
 from matplotlib import ticker
@@ -11,7 +10,6 @@ from matplotlib.transforms import Affine2D
 import matplotlib.pyplot as plt
 import seaborn as sns
 from icecream import ic
-
 
 from gnomecode.encoders import FixedWeightEncoder
 
@@ -31,10 +29,8 @@ def matplotlib_to_color_list(cmap, num_entries):
     return pl_colorscale
 
 
-
-
 def clip_bin(bin_lower, bin_upper, lower_bound, upper_bound):
-    """
+    """Check and resize bin so that it fits within the input interval.
 
     :param bin_lower: lower bound of bin
     :param bin_upper: upper bound of bin
@@ -67,9 +63,9 @@ def clip_bin(bin_lower, bin_upper, lower_bound, upper_bound):
             do_draw = False
 
     # case 3: bin within interval bounds
-    else:
-        # do nothing
-        pass
+    # else:
+    # do nothing
+    # pass
 
     if not do_draw:
         raise Exception("Bin not within clipped input interval.  Has zero width.")
@@ -77,7 +73,6 @@ def clip_bin(bin_lower, bin_upper, lower_bound, upper_bound):
     bin_width = bin_upper - bin_lower
 
     return bin_lower, bin_width
-
 
 
 def new_rect(box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k',
@@ -152,11 +147,243 @@ def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.
     return rect
 
 
+def compute_bin_arrangement(encoder_w, encoder_bins, xmin=0.0, xmax=1.0, clip_on=True, do_folded_bins=False):
+    """
+    Computes arrangements for a set of bins and returns their visual representation as a list of
+    rectangle specifications. The function handles clipping, shrinking, padding, and folding of bins based
+    on the provided parameters.
+
+    Args:
+        encoder_w: Integer, number of simultaneous active bins in the encoder.
+        encoder_bins: List of bins represented as objects with `lower` and `upper` attributes.
+        xmin: Float, the minimum visual x-coordinate boundary. Defaults to 0.0.
+        xmax: Float, the maximum visual x-coordinate boundary. Defaults to 1.0.
+        clip_on: Boolean, determines whether bins are clipped within the [xmin, xmax] range. Defaults to True.
+        do_folded_bins: Boolean, specifies if bins should be folded (stacked vertically in rows). Defaults to False.
+
+    Returns:
+        List[dict]: A list of dictionaries where each dictionary contains parameters for rectangle
+        representation (`box_x`, `box_y`, `box_width`, `box_height`) of a bin.
+
+    Raises:
+        Exception: Raised when clipping fails during bin arrangement.
+    """
+
+    # constants
+    box_height = 1
+
+    # shrink the bins by this amount as a way to create space padding between bins
+    x_shrink = 0.004
+    y_shrink = 0.3
+
+    # FIXME: find and optimize bottleneck for large n
+
+    bin_id_count = 0
+    draw_y = 0.0
+    min_y = 1
+    max_y = 0
+
+    bin_count = 0
+    bin_rects = []
+
+    # base position of where the encoder bins will be drawn
+    encoder_y = draw_y
+
+    # cycle through each bin of this encoder and figure out how to draw them
+    # if overlapping, folded or unfolded
+    for k in range(len(encoder_bins)):
+        bin = encoder_bins[k]
+        bin_upper_bound = bin.upper
+        bin_lower_bound = bin.lower
+
+        box_x = bin_lower_bound
+
+        # if folding, alternate row so they are snug together
+        if do_folded_bins:
+            box_y = encoder_y + (k % encoder_w) * box_height
+        else:
+            box_y = draw_y
+
+        # length of bin
+        box_width = bin_upper_bound - bin_lower_bound
+
+        # clip the bin if it hits visual boundary, or dont draw altogether if beyond range
+        draw_bin = True
+        if clip_on:
+            try:
+                box_x, box_width = clip_bin(bin_lower_bound, bin_upper_bound, xmin, xmax)
+            except Exception as e:
+                draw_bin = False
+
+        # draw bin
+        if draw_bin:
+            box_x_arg = box_x + x_shrink / 2.0
+            box_y_arg = box_y + y_shrink / 2.0
+            box_width_arg = box_width - x_shrink
+            box_height_arg = box_height - y_shrink
+
+            rect_params = dict(box_x=box_x_arg, box_y=box_y_arg, box_width=box_width_arg, box_height=box_height_arg)
+
+            bin_rects.append(rect_params)
+
+        bin_count += 1
+        bin_id_count += 1
+
+        # compute min and max y
+        if box_y < min_y:
+            min_y = box_y
+        if box_y + box_height > max_y:
+            max_y = box_y + box_height
+
+        # if folding, compute the row after this encoder from the max_y
+        # update draw_y to maximum y so far
+        draw_y = max_y
+
+    return bin_rects
 
 
-def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1.0,
-                            draw_regions=False, draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True,
-                            draw_folded_bins=False, label_bins=False, grid_label_size=8, grid_labels=None):
+def draw_interval_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1.0,
+                               draw_regions=False, draw_h_grid=True, draw_region_by_encoder=True,
+                               do_folded_bins=False, label_bins=False, grid_label_size=8):
+    # constants
+    box_height = 1
+
+    encoder_count = 0
+    bin_id_count = 0
+    draw_y = 0.0
+    min_y = 1
+    max_y = 0
+
+    draw_bound_y = 0
+    prev_bound_y = 0
+
+    encoder_boundaries = [draw_bound_y, ]
+
+    bin_count = 0
+    patches = []
+
+    upper_bound = encoder.upper_bound
+    lower_bound = encoder.lower_bound
+
+    if xmax is None:
+        xmax = upper_bound
+    if xmin is None:
+        xmin = lower_bound
+
+    grid_colors = [colors[j] for j in range(n_grids)]
+
+    # convert class name to spaced words and wrap around
+    grid_label = textwrap.fill(
+            "(%d) %s" %
+            (0, re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1',
+                             encoder.__class__.__name__)
+             ),
+            12)
+
+    bin_rects = compute_bin_arrangement(encoder.w, encoder.bins, xmin=xmin, xmax=xmax, clip_on=clip_on,
+                                        do_folded_bins=do_folded_bins)
+
+    for k in range(len(bin_rects)):
+        r = bin_rects[k]
+
+        if label_bins:
+            bin_text_str = str(bin_id_count)
+        else:
+            bin_text_str = None
+
+        rect = add_text_rect(ax, r['box_x'], r['box_y'], r['box_width'], r['box_height'],
+                             alpha=1.0, facecolor=grid_colors[encoder_count],
+                             text_str=bin_text_str, clip_on=clip_on, linewidth=bin_linewidth,
+                             fontsize=fontsize, label=grid_label if bin_count == 0 else None,
+                             add_patch=False)
+        patches.append(rect)
+
+        # compute min and max y
+        if r['box_y'] < min_y:
+            min_y = r['box_y']
+        if r['box_y'] + r['box_height'] > max_y:
+            max_y = r['box_y'] + r['box_height']
+
+        bin_count += 1
+        bin_id_count += 1
+
+        # if folding, compute the row after this encoder from the max_y
+        # update draw_y to maximum y so far
+        # draw_y = max_y
+
+    # drawing boundaries
+    e_boundaries = encoder.region_boundaries
+    draw_bound_y = draw_y
+
+    # draw vertical region boundaries within an encoder section
+    if draw_region_by_encoder:
+        ax.vlines(x=e_boundaries, ymin=prev_bound_y, ymax=draw_bound_y, alpha=0.2, linewidth=0.5, color='k',
+                  zorder=-1)
+
+    # draw horizontal boundaries between bin rows and encoder sections
+    if draw_h_grid:
+
+        # strong line between encoder sections
+        ax.hlines(y=prev_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=1.5, color='k', zorder=-1)
+
+        # weak lines between bin rows, for both folded and unfolded bins
+        curr_y = prev_bound_y
+        while curr_y < draw_bound_y:
+            ax.hlines(y=curr_y, xmin=xmin, xmax=xmax, alpha=0.5, linewidth=0.5, color='k', zorder=-1)
+            curr_y += box_height
+            # print(draw_bound_y, prev_bound_y, curr_y )
+
+    # set the this as boundary line to the next encoder section
+    encoder_boundaries.append(draw_bound_y)
+    prev_bound_y = draw_bound_y
+    encoder_count += 1
+
+    # encoder horizontal dividers and the mid-point between each divider
+    encoder_boundaries = np.array(encoder_boundaries)
+    encoder_centers = encoder_boundaries[:-1] + np.diff(encoder_boundaries) / 2
+
+    # strong line between encoder sections
+    if draw_h_grid:
+        ax.hlines(y=draw_bound_y, xmin=xmin, xmax=xmax, alpha=1.0, linewidth=1.5, color='k', zorder=-1)
+
+    # add any rectangles if they've been collected
+    if len(patches) > 0:
+        ax.add_collection(PatchCollection(patches, match_original=True))
+
+    # draw the composite region boundaries of all the encoders together
+    if draw_regions:
+        boundaries = encoder.region_boundaries
+        for k in range(len(boundaries)):
+            ax.vlines(x=boundaries[k], ymin=0, ymax=max_y, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+            # ax.vlines(x=boundaries[k], ymin=0, ymax=n_bits, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+        # n_bits = encoder.n
+        # for k in range(n_bits + 1):
+        #    ax.hlines(y=k, xmin=xmin, xmax=xmax, alpha=0.2, linewidth=0.5, color='k', zorder=-1)
+
+    # ticks correspond to encoder horizontal dividers and
+    # tick labels are vertically centered to encoder region with an integer label for the i'th encoder
+    ax.yaxis.set_major_locator(ticker.FixedLocator(encoder_boundaries))
+    ax.yaxis.set_major_formatter(ticker.NullFormatter())
+    ax.yaxis.set_minor_locator(ticker.FixedLocator(encoder_centers))
+    ax.yaxis.set_minor_formatter(ticker.FixedFormatter([grid_label,]))
+    # ax.yaxis.set_tick_params(which="minor", labelrotation=-45, labelsize=8)
+    ax.yaxis.set_tick_params(which="minor", labelsize=grid_label_size)
+
+    for tick in ax.yaxis.get_minor_ticks():
+        tick.tick1line.set_markersize(0)
+        tick.tick2line.set_markersize(0)
+    for label in ax.get_yticklabels(minor=True):
+        label.set_verticalalignment('center')
+
+    ax.set_ylim(min_y - 0.1, max_y + 0.1)
+    ax.set_ylabel("Encoding Bins\non Interval")
+
+    return max_y, min_y
+
+
+def draw_periodic_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1.0,
+                               draw_regions=False, draw_h_grid=True, draw_h_border=True, draw_region_by_encoder=True,
+                               draw_folded_bins=False, label_bins=False, grid_label_size=8, grid_labels=None):
     # constants
     bin_alpha = 1
     cong_alpha = 0.3
@@ -178,11 +405,12 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
     if xmin is None:
         xmin = lower_bound
 
-    try:
-        sub_encoders = encoder.encoders
-    except:
-        sub_encoders = [encoder]
+    # try:
+    #     sub_encoders = encoder.encoders
+    # except:
+    #     sub_encoders = [encoder]
 
+    sub_encoders = [encoder]
     n_grids = len(sub_encoders)
     grid_names = string.ascii_uppercase[:n_grids]
 
@@ -275,7 +503,7 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
             # length of bin
             box_width = bin_upper_bound - bin_lower_bound
 
-             # clip the bin if it hits visual boundary, or dont draw altogether if beyond range
+            # clip the bin if it hits visual boundary, or dont draw altogether if beyond range
             draw_bin = True
             if clip_on:
                 try:
@@ -473,7 +701,6 @@ def draw_multi_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=T
 
 
 if __name__ == "__main__":
-
     encoder = FixedWeightEncoder(n=17, w=3)
 
     fig, axes = plt.subplots(2, 1, num=1, figsize=(10, 7), dpi=300, gridspec_kw={'height_ratios': [1, 1]},
@@ -487,7 +714,6 @@ if __name__ == "__main__":
 
     # colors = sns.color_palette("cet_glasbey_dark", as_cmap=True).colors
 
-
     # n_bits = encoder.n
     n_grids = 1
     x_pad = 0.1
@@ -497,15 +723,13 @@ if __name__ == "__main__":
 
     # encoder_colors = plotly_colorscale[0:n_grids]
     # encoder_colors = cmap[0:n_grids]
-    encoder_colors = plotly_colorscale #[0:n_grids]
+    encoder_colors = plotly_colorscale  # [0:n_grids]
     draw_folded_bins = True
     fontsize = 8
 
     # draw encoder bins
-    draw_multi_encoder_bins(ax0, encoder, encoder_colors, fontsize=fontsize, xmin=xmin, xmax=xmax, draw_h_grid=False,
-                            bin_linewidth=0.5, clip_on=False, draw_regions=False, draw_region_by_encoder=False,
-                            draw_h_border=False, draw_folded_bins=draw_folded_bins, label_bins=True)
-
-
+    draw_interval_encoder_bins(ax0, encoder, encoder_colors, fontsize=fontsize, xmin=xmin, xmax=xmax, draw_h_grid=False,
+                               bin_linewidth=0.5, clip_on=False, draw_regions=True, draw_region_by_encoder=False,
+                               do_folded_bins=draw_folded_bins, label_bins=True)
 
     plt.show()
