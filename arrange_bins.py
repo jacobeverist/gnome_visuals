@@ -1,4 +1,5 @@
 import re
+from typing import NamedTuple
 import string
 import textwrap
 
@@ -29,51 +30,59 @@ def matplotlib_to_color_list(cmap, num_entries):
     return pl_colorscale
 
 
-def clip_bin(bin_lower, bin_upper, lower_bound, upper_bound):
+class ClippedBin(NamedTuple):
+    """Represents a clipped bin with its lower bound and width."""
+    lower: float
+    width: float
+
+
+def _is_bin_completely_below_interval(bin_upper: float, interval_lower: float) -> bool:
+    """Check if the bin is completely below the interval's lower bound."""
+    return bin_upper < interval_lower
+
+
+def _is_bin_completely_above_interval(bin_lower: float, interval_upper: float) -> bool:
+    """Check if the bin is completely above the interval's upper bound."""
+    return bin_lower >= interval_upper
+
+
+def clip_bin(bin_lower: float, bin_upper: float, lower_bound: float, upper_bound: float) -> ClippedBin:
     """Check and resize bin so that it fits within the input interval.
 
     :param bin_lower: lower bound of bin
     :param bin_upper: upper bound of bin
     :param lower_bound: lower bound of interval
     :param upper_bound: upper bound of interval
-    :return: 2-tuple (bin_lower, bin_width)
+    :return: ClippedBin with clipped lower bound and bin width
+    :raises ValueError: if bin is completely outside the interval
     """
-
     # FIXME: don't handle case where bin is larger than input interval
 
-    do_draw = True
+    clipped_lower = bin_lower
+    clipped_upper = bin_upper
 
-    # box_x, box_width = self._clip(box_x, box_width, lower_bound, upper_bound, bin_upper_bound)
-    # case 1: bin exceeds lower bound
+    # Case 1: bin exceeds or is below the interval lower bound
     if bin_lower < lower_bound:
-        bin_lower = lower_bound
+        clipped_lower = lower_bound
 
-        # bin completely outside of input interval
-        if bin_upper < lower_bound:
-            bin_upper = lower_bound
-            do_draw = False
+        if _is_bin_completely_below_interval(bin_upper, lower_bound):
+            raise ValueError("Bin is completely below the interval and has zero width after clipping.")
 
-    # case 2: bin exceeds interval upper bound
+        clipped_upper = bin_upper
+
+    # Case 2: bin exceeds or is above the interval upper bound
     elif bin_upper > upper_bound:
-        bin_upper = upper_bound
+        clipped_upper = upper_bound
 
-        # bin completely outside of input interval
-        if bin_lower >= upper_bound:
-            bin_lower = upper_bound
-            do_draw = False
+        if _is_bin_completely_above_interval(bin_lower, upper_bound):
+            raise ValueError("Bin is completely above the interval and has zero width after clipping.")
 
-    # case 3: bin within interval bounds
-    # else:
-    # do nothing
-    # pass
+        clipped_lower = bin_lower
 
-    if not do_draw:
-        raise Exception("Bin not within clipped input interval.  Has zero width.")
+    # Case 3: bin is completely within interval bounds (no adjustment needed)
 
-    bin_width = bin_upper - bin_lower
-
-    return bin_lower, bin_width
-
+    bin_width = clipped_upper - clipped_lower
+    return ClippedBin(lower=clipped_lower, width=bin_width)
 
 def new_rect(box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k',
              facecolor='none', alpha=1.0, clip_on=False, label=None, zorder=1):
@@ -192,9 +201,9 @@ def compute_bin_arrangement(encoder_w, encoder_bins, xmin=0.0, xmax=1.0, clip_on
     # cycle through each bin of this encoder and figure out how to draw them
     # if overlapping, folded or unfolded
     for k in range(len(encoder_bins)):
-        bin = encoder_bins[k]
-        bin_upper_bound = bin.upper
-        bin_lower_bound = bin.lower
+        b = encoder_bins[k]
+        bin_upper_bound = b.upper
+        bin_lower_bound = b.lower
 
         box_x = bin_lower_bound
 
