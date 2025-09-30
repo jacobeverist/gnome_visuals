@@ -101,8 +101,6 @@ def compute_bin_arrangement(encoder_w, encoder_bins, xmin=0.0, xmax=1.0, clip_on
     x_shrink = 0.004
     y_shrink = 0.3
 
-    # FIXME: find and optimize bottleneck for large n
-
     bin_id_count = 0
     draw_y = 0.0
     min_y = 1
@@ -176,6 +174,16 @@ def get_min_max_y_of_bin_rects(bin_rects):
         if r['box_y'] + r['box_height'] > max_y:
             max_y = r['box_y'] + r['box_height']
     return min_y, max_y
+
+def compute_simple_bins(encoder, xmin=None, xmax=None, clip_on=True, do_folded_bins=False):
+
+    bin_rects = compute_bin_arrangement(encoder.w, encoder.bins, xmin=xmin, xmax=xmax, clip_on=clip_on,
+                                        do_folded_bins=do_folded_bins)
+
+    encoder_min_y, encoder_max_y = get_min_max_y_of_bin_rects(bin_rects)
+
+    return bin_rects, encoder_min_y, encoder_max_y
+
 
 
 ### VISUALS
@@ -267,15 +275,6 @@ def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.
 
     return rect
 
-
-def draw_simple_bins(encoder, xmin=None, xmax=None, clip_on=True, do_folded_bins=False):
-
-    bin_rects = compute_bin_arrangement(encoder.w, encoder.bins, xmin=xmin, xmax=xmax, clip_on=clip_on,
-                                        do_folded_bins=do_folded_bins)
-
-    encoder_min_y, encoder_max_y = get_min_max_y_of_bin_rects(bin_rects)
-
-    return bin_rects, encoder_min_y, encoder_max_y
 
 
 def draw_interval_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1.0,
@@ -763,6 +762,6 @@ if __name__ == "__main__":
 
     # plt.show()
 
-    result, draw_min_y, draw_max_x = draw_simple_bins(encoder, xmin=xmin, xmax=xmax, clip_on=False, do_folded_bins=draw_folded_bins)
+    result, draw_min_y, draw_max_x = compute_simple_bins(encoder, xmin=xmin, xmax=xmax, clip_on=False, do_folded_bins=draw_folded_bins)
     print(draw_min_y, draw_max_x)
     ic(result)
