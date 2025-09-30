@@ -166,12 +166,16 @@ def compute_bin_arrangement(encoder_w, encoder_bins, xmin=0.0, xmax=1.0, clip_on
 
     return bin_rects
 
-def get_max_y_of_bin_rects(bin_rects):
-    max_y = 0
+
+def get_min_max_y_of_bin_rects(bin_rects):
+    max_y = 0.0
+    min_y = 1e100
     for r in bin_rects:
+        if r['box_y'] < min_y:
+            min_y = r['box_y']
         if r['box_y'] + r['box_height'] > max_y:
             max_y = r['box_y'] + r['box_height']
-    return max_y
+    return min_y, max_y
 
 
 ### VISUALS
@@ -264,6 +268,16 @@ def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.
     return rect
 
 
+def draw_simple_bins(encoder, xmin=None, xmax=None, clip_on=True, do_folded_bins=False):
+
+    bin_rects = compute_bin_arrangement(encoder.w, encoder.bins, xmin=xmin, xmax=xmax, clip_on=clip_on,
+                                        do_folded_bins=do_folded_bins)
+
+    encoder_min_y, encoder_max_y = get_min_max_y_of_bin_rects(bin_rects)
+
+    return bin_rects, encoder_min_y, encoder_max_y
+
+
 def draw_interval_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1.0,
                                draw_regions=False, draw_h_grid=True, draw_region_by_encoder=True,
                                do_folded_bins=False, label_bins=False, grid_label_size=8):
@@ -272,7 +286,6 @@ def draw_interval_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_o
 
     encoder_count = 0
     bin_id_count = 0
-    draw_y = 0.0
     min_y = 1
     max_y = 0
 
@@ -305,8 +318,9 @@ def draw_interval_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_o
     bin_rects = compute_bin_arrangement(encoder.w, encoder.bins, xmin=xmin, xmax=xmax, clip_on=clip_on,
                                         do_folded_bins=do_folded_bins)
 
-    draw_y = get_max_y_of_bin_rects(bin_rects)
-
+    encoder_min_y, encoder_max_y = get_min_max_y_of_bin_rects(bin_rects)
+    min_y = min(min_y, encoder_min_y)
+    max_y = max(max_y, encoder_max_y)
 
     for k in range(len(bin_rects)):
         r = bin_rects[k]
@@ -323,22 +337,12 @@ def draw_interval_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_o
                              add_patch=False)
         patches.append(rect)
 
-        # compute min and max y
-        if r['box_y'] < min_y:
-            min_y = r['box_y']
-        if r['box_y'] + r['box_height'] > max_y:
-            max_y = r['box_y'] + r['box_height']
-
         bin_count += 1
         bin_id_count += 1
 
-        # if folding, compute the row after this encoder from the max_y
-        # update draw_y to maximum y so far
-        # draw_y = max_y
-
     # drawing boundaries
     e_boundaries = encoder.region_boundaries
-    draw_bound_y = draw_y
+    draw_bound_y = max_y
 
     # draw vertical region boundaries within an encoder section
     if draw_region_by_encoder:
@@ -757,4 +761,8 @@ if __name__ == "__main__":
                                bin_linewidth=0.5, clip_on=False, draw_regions=True, draw_region_by_encoder=False,
                                do_folded_bins=draw_folded_bins, label_bins=True)
 
-    plt.show()
+    # plt.show()
+
+    result, draw_min_y, draw_max_x = draw_simple_bins(encoder, xmin=xmin, xmax=xmax, clip_on=False, do_folded_bins=draw_folded_bins)
+    print(draw_min_y, draw_max_x)
+    ic(result)
