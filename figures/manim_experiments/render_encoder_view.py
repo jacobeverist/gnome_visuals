@@ -44,7 +44,7 @@ class EncoderTetrisView(Scene):
                 stroke_width=4
         ).align_on_border(DOWN, buff=0.15)
 
-        self.floor_line = Rectangle(color=Color(hex=LIGHT_BROWN),
+        self.floor_line = Rectangle(color=LIGHT_BROWN,
                                     width=global_config.frame_width,
                                     height=0.05,
                                     stroke_width=0,

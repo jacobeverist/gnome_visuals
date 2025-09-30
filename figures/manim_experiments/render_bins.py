@@ -27,10 +27,10 @@ import numpy as np
 
 class RectangleSeparationExample(Scene):
     def construct(self):
-        bin1 = Rectangle(color=Color(hex=RED), width=4, stroke_width=1, stroke_color=WHITE, fill_opacity=0.8)
+        bin1 = Rectangle(color=RED, width=4, stroke_width=1, stroke_color=WHITE, fill_opacity=0.8)
         bin1.move_to([-4, 0, 0])
 
-        bin2 = Rectangle(color=Color(hex=BLUE), width=1, stroke_width=1, stroke_color=WHITE, fill_opacity=0.8)
+        bin2 = Rectangle(color=BLUE, width=1, stroke_width=1, stroke_color=WHITE, fill_opacity=0.8)
         bin2.move_to(bin1.get_center())
         # bin2.shift(UP * 0.5)
 
@@ -68,13 +68,11 @@ class BrickSplitExample(Scene):
         stroke_width = 1
         stroke_color = WHITE
 
-        brick1 = Rectangle(color=Color(hex=RED), width=4, stroke_width=stroke_width, stroke_color=stroke_color,
-                           fill_opacity=0.8)
+        brick1 = Rectangle(color=RED, width=4, stroke_width=stroke_width, stroke_color=stroke_color, fill_opacity=0.8)
         brick1.move_to([0, -2, 0])
         # brick2 = Rectangle(color=BLUE, width=4, stroke_width=stroke_width, stroke_color=stroke_color, fill_opacity=0.8)
         # brick2.move_to([1, 2, 0])
-        brick2 = Rectangle(color=Color(hex=BLUE), width=6, stroke_width=stroke_width, stroke_color=stroke_color,
-                           fill_opacity=0.8)
+        brick2 = Rectangle(color=BLUE, width=6, stroke_width=stroke_width, stroke_color=stroke_color, fill_opacity=0.8)
         brick2.move_to([0, 2, 0])
 
         # brick fall
@@ -251,7 +249,7 @@ class SingleLevelTetrisBricksExample(Scene):
         ).align_on_border(DOWN, buff=0.15)
         self.add(nl)
 
-        floor_line = Rectangle(color=Color(hex=LIGHT_BROWN),
+        floor_line = Rectangle(color=LIGHT_BROWN,
                                width=global_config.frame_width,
                                height=0.05,
                                stroke_width=0,
@@ -260,14 +258,14 @@ class SingleLevelTetrisBricksExample(Scene):
         self.add(floor_line)
 
         # first brick on floor
-        brick1 = self.create_textbox("0", color=Color(hex=RED), width=4, height=uh, stroke_width=stroke_width,
+        brick1 = self.create_textbox("0", color=RED, width=4, height=uh, stroke_width=stroke_width,
                                      stroke_color=stroke_color, fill_opacity=0.8)
 
         brick1.next_to(floor_line, UP, buff=0)
         self.add(brick1)
 
         # second brick in sky
-        brick2 = self.create_textbox("1", color=Color(hex=BLUE), width=6, height=uh, stroke_width=stroke_width,
+        brick2 = self.create_textbox("1", color=BLUE, width=6, height=uh, stroke_width=stroke_width,
                                      stroke_color=stroke_color, fill_opacity=0.8)
         self.add(brick2)
 
@@ -471,7 +469,7 @@ class TetrisBricksExample(Scene):
         ).align_on_border(DOWN, buff=0.15)
         self.add(nl)
 
-        floor_line = Rectangle(color=Color(hex=LIGHT_BROWN),
+        floor_line = Rectangle(color=LIGHT_BROWN,
                                width=global_config.frame_width,
                                height=0.05,
                                stroke_width=0,
@@ -480,14 +478,14 @@ class TetrisBricksExample(Scene):
         self.add(floor_line)
 
         # first brick on floor
-        brick1 = self.create_textbox("0", color=Color(hex=RED), width=4, height=self.uh, stroke_width=self.stroke_width,
+        brick1 = self.create_textbox("0", color=RED, width=4, height=self.uh, stroke_width=self.stroke_width,
                                      stroke_color=self.stroke_color, fill_opacity=0.8)
 
         brick1.next_to(floor_line, UP, buff=0)
         self.add(brick1)
 
         # second brick in sky
-        brick2 = self.create_textbox("1", color=Color(hex=BLUE), width=6, height=self.uh,
+        brick2 = self.create_textbox("1", color=BLUE, width=6, height=self.uh,
                                      stroke_width=self.stroke_width,
                                      stroke_color=self.stroke_color, fill_opacity=0.8)
         self.add(brick2)
@@ -542,7 +540,7 @@ class TetrisBricksExample(Scene):
 
 
         # third brick in sky
-        brick3 = self.create_textbox("2", color=Color(hex=GREEN), width=8, height=self.uh,
+        brick3 = self.create_textbox("2", color=GREEN, width=8, height=self.uh,
                                      stroke_width=self.stroke_width,
                                      stroke_color=self.stroke_color, fill_opacity=0.8)
         self.add(brick3)

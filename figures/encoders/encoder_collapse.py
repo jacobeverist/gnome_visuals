@@ -573,10 +573,16 @@ class AnimateEncoding(EncoderCollapse):
         output_code.arrange_in_grid(cols=16, buff=(0.01, 0.01)).scale(0.7).move_to(config.top).shift(0.6 * DOWN)
         # output_code.add_background(buff=1.3 * SMALL_BUFF)
         # output_code.background_rectangle.set_sheen(-0.3, UL)
+
+        # curr_val = self.tracker.get_value()
+        # encode_val = subject_encoder.encode(curr_val)
+        # encode_val = encode_val.reshape(-1)
+        # output_code.set_value(encode_val, anim=False)
+
         output_code.add_updater(
-                lambda obj: obj.set_value(subject_encoder.encode(self.tracker.get_value()), anim=False)
+                lambda obj: obj.set_value(subject_encoder.encode(self.tracker.get_value()).reshape(-1), anim=False)
         )
-        output_code.set_value(subject_encoder.encode(self.tracker.get_value()), anim=False)
+        output_code.set_value(subject_encoder.encode(self.tracker.get_value()).reshape(-1), anim=False)
         self.add(output_code)
 
         # return
@@ -590,7 +596,19 @@ class AnimateEncoding(EncoderCollapse):
         for cell_i in range(self.curr_id):
             brick_vg = self.whole_blocks[cell_i]
             box = brick_vg[0]
-            cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE, self.colors[cell_i]])
+
+            # self.colors = sns.color_palette("cet_glasbey_dark", as_cmap=True).colors
+
+            # cmap = sns.light_palette((0.826214657892039, 0.28182798426159617, 0.0, 1.0), as_cmap=True)
+
+            ic(WHITE.to_rgb())
+            ic(self.colors[cell_i])
+
+
+            cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE.to_rgb(), self.colors[cell_i]])
+            # cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE, self.colors[cell_i]])
+            # cell_cmap = self.colors
+
             one_color = Color(rgb=cell_cmap(1.0)[:3])
             # zero_color = Color(rgb=cell_cmap(0.3)[:3])
             zero_color = Color(rgb=cell_cmap(0.0)[:3])
@@ -611,7 +629,7 @@ class AnimateEncoding(EncoderCollapse):
             brick_vg = self.whole_blocks[cell_i]
             box = brick_vg[0]
             box.remove_updater(box.updaters[-1])
-            cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE, self.colors[cell_i]])
+            cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE.to_rgb(), self.colors[cell_i]])
             one_color = Color(rgb=cell_cmap(1.0)[:3])
             box.set_fill(one_color, opacity=1)
             # box.clear_updaters()
@@ -647,7 +665,7 @@ class AnimateEncoding(EncoderCollapse):
                 brick_vg2 = brick_sections[brick_i]
                 box = brick_vg2[0]
 
-                cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE, self.colors[cell_i]])
+                cell_cmap = LinearSegmentedColormap.from_list("cell_%d" % cell_i, [WHITE.to_rgb(), self.colors[cell_i]])
                 one_color = Color(rgb=cell_cmap(1.0)[:3])
                 cong_color = Color(rgb=cell_cmap(0.2)[:3])
                 zero_color = Color(rgb=cell_cmap(0.0)[:3])

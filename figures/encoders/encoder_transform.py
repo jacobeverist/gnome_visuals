@@ -14,6 +14,7 @@ import seaborn as sns
 # from manim_voiceover import VoiceoverScene
 # from manim_voiceover.services.azure import AzureService
 from gnomecode.encoders import *
+from icecream import ic
 
 
 sys.path.append("../../")
@@ -47,8 +48,8 @@ class NumberSlider(VGroup):
         decimal_number = DecimalNumber(self.tracker.get_value(), num_decimal_places=2)
         decimal_number.set_fill(BLACK)
 
-        num_height = decimal_number.get_height()
-        num_width = decimal_number.get_width()
+        num_height = decimal_number.height
+        num_width = decimal_number.width
 
         background_rectangle = Rectangle(fill_color=WHITE, fill_opacity=1.0,
                                          height=num_height + 2 * SMALL_BUFF,
@@ -133,7 +134,7 @@ class EncoderCollapse(Scene):
 
         self.nl = self.slider.nl
 
-        self.floor_line = Rectangle(color=Color(hex=LIGHT_BROWN),
+        self.floor_line = Rectangle(color=LIGHT_BROWN,
                                     width=global_config.frame_width,
                                     height=0.05,
                                     stroke_width=0,
@@ -527,7 +528,14 @@ class AnimateEncoding(EncoderCollapse):
         output_code.add_updater(
                 lambda obj: obj.set_value(subject_encoder.encode(self.tracker.get_value()), anim=False)
         )
-        output_code.set_value(subject_encoder.encode(self.tracker.get_value()), anim=False)
+        curr_val = self.tracker.get_value()
+        ic(curr_val)
+        encode_val = subject_encoder.encode(curr_val)
+        ic(encode_val)
+        encode_val = encode_val.reshape(-1)
+        ic(encode_val)
+        output_code.set_value(encode_val, anim=False)
+        # output_code.set_value(subject_encoder.encode(self.tracker.get_value()), anim=False)
         self.add(output_code)
 
         # self.slider.scale(0.5)
