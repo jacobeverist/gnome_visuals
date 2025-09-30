@@ -15,20 +15,7 @@ from icecream import ic
 from gnomecode.encoders import FixedWeightEncoder
 
 
-def matplotlib_to_color_list(cmap, num_entries):
-    h = 1.0 / (num_entries - 1)
-    pl_colorscale = []
-
-    for k in range(num_entries):
-        # C = np.array(cmap(k * h)[:3]) * 255
-        C = cmap(k * h)
-        # C = np.array(cmap(k * h)) * 255
-        # C = list(C.astype(np.uint8).astype(np.uint8))
-        # pl_colorscale.append([k * h, 'rgb' + str((int(C[0]), int(C[1]), int(C[2])))])
-        pl_colorscale.append(C)
-
-    return pl_colorscale
-
+### GEOMETRY OF ARRANGING BINS
 
 class ClippedBin(NamedTuple):
     """Represents a clipped bin with its lower bound and width."""
@@ -83,77 +70,6 @@ def clip_bin(bin_lower: float, bin_upper: float, lower_bound: float, upper_bound
 
     bin_width = clipped_upper - clipped_lower
     return ClippedBin(lower=clipped_lower, width=bin_width)
-
-def new_rect(box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k',
-             facecolor='none', alpha=1.0, clip_on=False, label=None, zorder=1):
-    # add rectangle at corner position and rotate by angle
-    return patches.Rectangle((box_x, box_y), box_width, box_height, angle=angle, linewidth=linewidth,
-                             edgecolor=edgecolor,
-                             facecolor=facecolor, clip_on=clip_on, alpha=alpha, label=label, zorder=zorder)
-
-
-def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k', fontsize=8,
-                  facecolor='none', text_str=None, aligned_text=False, alpha=1.0, text_v_offset=-0.01, clip_on=False,
-                  label=None, zorder=1, add_patch=True):
-    # Add Rectangle
-
-    # create rectangle
-    rect = new_rect(box_x, box_y, box_width, box_height, angle=angle, linewidth=linewidth,
-                    edgecolor=edgecolor, facecolor=facecolor, alpha=alpha, clip_on=clip_on,
-                    label=label, zorder=zorder)
-    # add to axes
-    if add_patch:
-        ax.add_patch(rect)
-
-    # Add Text
-    if text_str is not None:
-
-        # data space coordinates to find new point after rotated
-        fixed_point_rotation = Affine2D().rotate_deg_around(box_x, box_y, angle)
-
-        # put angle within +180/-180
-        normalized_angle = angle
-        if angle > 0:
-            while normalized_angle > 180:
-                normalized_angle -= 360
-        elif angle < 0:
-            while normalized_angle < -180:
-                normalized_angle += 360
-
-        # angle the textbox nicely
-        if aligned_text:
-            text_angle = normalized_angle
-            if abs(text_angle) > 90:
-                text_angle += 180
-        else:
-            text_angle = 0
-
-        # space the text box nicely so it fits no matter orientation
-        # nice centering depends on orientation of text in the figure
-        if aligned_text:
-
-            # upper quadrants and bottom quadrants have different text orientation and adjustment
-            if abs(normalized_angle) > 90:
-                # upper quadrant adjustment
-                rect_center_pos = [box_x + box_width / 2, box_y + box_height * 0.5 - text_v_offset]
-            else:
-                # bottom quadrant adjustment
-                rect_center_pos = [box_x + box_width / 2, box_y + box_height * 0.5 + text_v_offset]
-        else:
-            rect_center_pos = [box_x + box_width / 2, box_y + box_height * 0.5]
-
-        # rotate around rectangle corner
-        text_pos = fixed_point_rotation.transform(rect_center_pos)
-
-        # unaligned text uses standard vertical offset in axes frame
-        if not aligned_text:
-            text_pos[1] += text_v_offset
-
-        # add text box to center of rectangle
-        ax.text(text_pos[0], text_pos[1], text_str, rotation=text_angle, rotation_mode='anchor',
-                fontsize=fontsize, va='center', ha='center', clip_on=clip_on, alpha=alpha, zorder=zorder + 2)
-
-    return rect
 
 
 def compute_bin_arrangement(encoder_w, encoder_bins, xmin=0.0, xmax=1.0, clip_on=True, do_folded_bins=False):
@@ -250,6 +166,103 @@ def compute_bin_arrangement(encoder_w, encoder_bins, xmin=0.0, xmax=1.0, clip_on
 
     return bin_rects
 
+def get_max_y_of_bin_rects(bin_rects):
+    max_y = 0
+    for r in bin_rects:
+        if r['box_y'] + r['box_height'] > max_y:
+            max_y = r['box_y'] + r['box_height']
+    return max_y
+
+
+### VISUALS
+
+
+def matplotlib_to_color_list(cmap, num_entries):
+    h = 1.0 / (num_entries - 1)
+    pl_colorscale = []
+
+    for k in range(num_entries):
+        # C = np.array(cmap(k * h)[:3]) * 255
+        C = cmap(k * h)
+        # C = np.array(cmap(k * h)) * 255
+        # C = list(C.astype(np.uint8).astype(np.uint8))
+        # pl_colorscale.append([k * h, 'rgb' + str((int(C[0]), int(C[1]), int(C[2])))])
+        pl_colorscale.append(C)
+
+    return pl_colorscale
+
+
+def new_rect(box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k',
+             facecolor='none', alpha=1.0, clip_on=False, label=None, zorder=1):
+    # add rectangle at corner position and rotate by angle
+    return patches.Rectangle((box_x, box_y), box_width, box_height, angle=angle, linewidth=linewidth,
+                             edgecolor=edgecolor,
+                             facecolor=facecolor, clip_on=clip_on, alpha=alpha, label=label, zorder=zorder)
+
+
+def add_text_rect(ax, box_x, box_y, box_width, box_height, angle=0, linewidth=1.5, edgecolor='k', fontsize=8,
+                  facecolor='none', text_str=None, aligned_text=False, alpha=1.0, text_v_offset=-0.01, clip_on=False,
+                  label=None, zorder=1, add_patch=True):
+    # Add Rectangle
+
+    # create rectangle
+    rect = new_rect(box_x, box_y, box_width, box_height, angle=angle, linewidth=linewidth,
+                    edgecolor=edgecolor, facecolor=facecolor, alpha=alpha, clip_on=clip_on,
+                    label=label, zorder=zorder)
+    # add to axes
+    if add_patch:
+        ax.add_patch(rect)
+
+    # Add Text
+    if text_str is not None:
+
+        # data space coordinates to find new point after rotated
+        fixed_point_rotation = Affine2D().rotate_deg_around(box_x, box_y, angle)
+
+        # put angle within +180/-180
+        normalized_angle = angle
+        if angle > 0:
+            while normalized_angle > 180:
+                normalized_angle -= 360
+        elif angle < 0:
+            while normalized_angle < -180:
+                normalized_angle += 360
+
+        # angle the textbox nicely
+        if aligned_text:
+            text_angle = normalized_angle
+            if abs(text_angle) > 90:
+                text_angle += 180
+        else:
+            text_angle = 0
+
+        # space the text box nicely so it fits no matter orientation
+        # nice centering depends on orientation of text in the figure
+        if aligned_text:
+
+            # upper quadrants and bottom quadrants have different text orientation and adjustment
+            if abs(normalized_angle) > 90:
+                # upper quadrant adjustment
+                rect_center_pos = [box_x + box_width / 2, box_y + box_height * 0.5 - text_v_offset]
+            else:
+                # bottom quadrant adjustment
+                rect_center_pos = [box_x + box_width / 2, box_y + box_height * 0.5 + text_v_offset]
+        else:
+            rect_center_pos = [box_x + box_width / 2, box_y + box_height * 0.5]
+
+        # rotate around rectangle corner
+        text_pos = fixed_point_rotation.transform(rect_center_pos)
+
+        # unaligned text uses standard vertical offset in axes frame
+        if not aligned_text:
+            text_pos[1] += text_v_offset
+
+        # add text box to center of rectangle
+        ax.text(text_pos[0], text_pos[1], text_str, rotation=text_angle, rotation_mode='anchor',
+                fontsize=fontsize, va='center', ha='center', clip_on=clip_on, alpha=alpha, zorder=zorder + 2)
+
+    return rect
+
 
 def draw_interval_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_on=True, fontsize=8, bin_linewidth=1.0,
                                draw_regions=False, draw_h_grid=True, draw_region_by_encoder=True,
@@ -285,12 +298,15 @@ def draw_interval_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_o
     grid_label = textwrap.fill(
             "(%d) %s" %
             (0, re.sub(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))', r' \1',
-                             encoder.__class__.__name__)
+                       encoder.__class__.__name__)
              ),
             12)
 
     bin_rects = compute_bin_arrangement(encoder.w, encoder.bins, xmin=xmin, xmax=xmax, clip_on=clip_on,
                                         do_folded_bins=do_folded_bins)
+
+    draw_y = get_max_y_of_bin_rects(bin_rects)
+
 
     for k in range(len(bin_rects)):
         r = bin_rects[k]
@@ -374,7 +390,7 @@ def draw_interval_encoder_bins(ax, encoder, colors, xmin=None, xmax=None, clip_o
     ax.yaxis.set_major_locator(ticker.FixedLocator(encoder_boundaries))
     ax.yaxis.set_major_formatter(ticker.NullFormatter())
     ax.yaxis.set_minor_locator(ticker.FixedLocator(encoder_centers))
-    ax.yaxis.set_minor_formatter(ticker.FixedFormatter([grid_label,]))
+    ax.yaxis.set_minor_formatter(ticker.FixedFormatter([grid_label, ]))
     # ax.yaxis.set_tick_params(which="minor", labelrotation=-45, labelsize=8)
     ax.yaxis.set_tick_params(which="minor", labelsize=grid_label_size)
 
