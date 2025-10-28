@@ -1,0 +1,99 @@
+/* Custom styles for GNOME Encoder Dashboard */
+
+.navbar-brand {
+    font-weight: bold;
+    color: #2c3e50 !important;
+}
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 10px 10px 0 0 !important;
+}
+
+.slider-container {
+    padding: 10px 0;
+}
+
+.control-label {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Custom slider styling */
+._dash-slider .rc-slider-track {
+    background: #667eea;
+}
+
+._dash-slider .rc-slider-handle {
+    border-color: #667eea;
+    background: #667eea;
+}
+
+._dash-slider .rc-slider-handle:hover {
+    border-color: #5a67d8;
+    box-shadow: 0 0 0 5px rgba(90, 103, 216, 0.2);
+}
+
+/* Tab styling */
+.nav-tabs .nav-link {
+    color: #667eea;
+    border-color: transparent;
+}
+
+.nav-tabs .nav-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+}
+
+/* Loading indicator */
+.dash-spinner {
+    color: #667eea;
+}
+
+/* Button styling */
+.btn-secondary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6c5ce7 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+
+    .card-body {
+        padding: 15px;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+    }
+}
+
+/* Animation for smooth transitions */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

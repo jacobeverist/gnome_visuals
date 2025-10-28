@@ -1,0 +1,12 @@
+
+# math packages
+numpy>=1.23.5
+
+# visualization packages
+colorcet>=3.0.1
+
+colour>=0.1.5
+manim>=0.17.3
+pygments
+
+

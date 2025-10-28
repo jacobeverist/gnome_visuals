@@ -6,7 +6,17 @@ out/
 # manim output files
 media/
 
+# Generated outputs directory
+outputs/
+
+# Generated media in specific directories (keep figures/gallery/)
+experiments/encoders/media/
+figures/*/media/
+experiments/*/media/
+publications/*/media/
+
 # MacOS filesystem artifact
+.DS_Store
 .DS_Store/
 
 # Byte-compiled / optimized / DLL files
