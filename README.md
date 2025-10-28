@@ -2,6 +2,14 @@
 
 Visualization toolkit for Gnome Codes - scalar encoding using binary population codes.
 
+This is a modernization and migration from the
+original [legacy visual gallery](https://github.com/jacobeverist/legacy_gnome_gallery)
+and [visualization code](https://github.com/jacobeverist/legacy_gnome_visuals) repositories.
+
+This toolkit mostly makes use of the [gnomecode](https://github.com/jacobeverist/gnomecode) package which implements
+detailed control of encoders and analysis of their properties. The visualization code provided here illustrates all of
+that information in interesting and insightful ways.
+
 ## Overview
 
 This repository provides comprehensive visualization tools across three main technologies:
@@ -14,7 +22,8 @@ This repository provides comprehensive visualization tools across three main tec
 
 ### Prerequisites
 
-This package requires Python 3.8 or later and depends on the separate `gnomecode` package.
+This package requires Python 3.8 or later and depends on the
+separate [gnomecode](https://github.com/jacobeverist/gnomecode) package.
 
 ### Standard Installation
 
@@ -140,6 +149,7 @@ plt.show()
 from manim import *
 from gnomevisual.manim import GnomeCode
 
+
 class MyScene(Scene):
     def construct(self):
         gnome = GnomeCode(n=32, w=8, shape="square")
@@ -199,6 +209,7 @@ python -m line_profiler_pycharm script.py
 ## Gallery
 
 Example visualizations can be found in:
+
 - `figures/examples/` - Gallery of polished examples
 - `docs/animation_examples/` - Manim animation examples
 - `docs/plot_examples/` - Matplotlib plot examples
@@ -221,9 +232,9 @@ If you use this visualization toolkit in your research, please cite:
 
 ```bibtex
 @software{gnome_visuals,
-  author = {Everist, Jacob},
-  title = {Gnome Visuals: Visualization Toolkit for Gnome Codes},
-  year = {2024},
-  url = {https://github.com/jacobeverist/gnome_visuals}
+    author = {Everist, Jacob},
+    title = {Gnome Visuals: Visualization Toolkit for Gnome Codes},
+    year = {2024},
+    url = {https://github.com/jacobeverist/gnome_visuals}
 }
 ```
