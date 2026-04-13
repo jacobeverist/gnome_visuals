@@ -22,7 +22,7 @@ class Count(Animation):
 
 
 class GnomeCode(VGroup):
-    def __init__(self, shape="square", n=32, w=8, **kwargs):
+    def __init__(self, shape="square", n=32, w=8, init_code=None, **kwargs):
         super().__init__(**kwargs)
 
         if shape in ["square", "circle"]:
@@ -36,7 +36,7 @@ class GnomeCode(VGroup):
         self.bins = []
         self.rng = np.random.default_rng(0)
 
-        self.__init_array()
+        self.__init_array(init_code)
 
     def __update_array(self):
         """updater member function called by inline-defined 'updater_func(mob)' in '__add_updater(self)' """
@@ -72,11 +72,14 @@ class GnomeCode(VGroup):
         self.__updater_func = updater_func
         self.add_updater(self.__updater_func)
 
-    def __init_array(self) -> None:
+    def __init_array(self, init_code=None) -> None:
         """ gnome code animation of mobjects """
 
         # array of values from 0 to 1 for each textbox
-        self.trackers = [ValueTracker(0).set(index=k) for k in range(self.num_bins)]
+        if init_code is None:
+            self.trackers = [ValueTracker(0).set(index=k) for k in range(self.num_bins)]
+        else:
+            self.trackers = [ValueTracker(init_code[k]).set(index=k) for k in range(self.num_bins)]
 
         # cell and text grouped to textbox
         for k in range(0, self.num_bins):
@@ -84,16 +87,30 @@ class GnomeCode(VGroup):
             # size = self.rng.uniform(0.8, 1.2)
             size = 1
 
+            cell_val = self.trackers[k].get_value()
+
+            # change cell background color
+            cell_rgb = [(1.0 - cell_val) for _ in range(3)]
+            fill_color = rgb_to_color(cell_rgb)
+
             # cell of a binary array
             # if k % 2 == 0:
             if self.shape == "square":
-                cell = Square(side_length=1, stroke_color=BLACK, stroke_opacity=1, fill_color=WHITE,
+                cell = Square(side_length=1, stroke_color=BLACK, stroke_opacity=1, fill_color=fill_color,
                               fill_opacity=1).scale(size)
             elif self.shape == "circle":
                 cell = Dot(radius=0.5, stroke_color=BLACK, stroke_opacity=1, stroke_width=DEFAULT_STROKE_WIDTH,
-                           fill_color=WHITE, fill_opacity=1).scale(size)
+                           fill_color=fill_color, fill_opacity=1).scale(size)
             else:
                 cell = None
+            # if self.shape == "square":
+            #     cell = Square(side_length=1, stroke_color=BLACK, stroke_opacity=1, fill_color=WHITE,
+            #                   fill_opacity=1).scale(size)
+            # elif self.shape == "circle":
+            #     cell = Dot(radius=0.5, stroke_color=BLACK, stroke_opacity=1, stroke_width=DEFAULT_STROKE_WIDTH,
+            #                fill_color=WHITE, fill_opacity=1).scale(size)
+            # else:
+            #     cell = None
 
             num_digits = len(str(k))
             # print(num_digits)
@@ -125,8 +142,17 @@ class GnomeCode(VGroup):
         """
         # return AnimationGroup(*[self.trackers[k].animate.set_value(new_code[k]) for k in range(self.num_bins)])
 
-        return AnimationGroup(*[self.trackers[k].animate(rate_func=rate_functions.there_and_back).set_value(new_code[k]) for k in
-                  range(self.num_bins)])
+        # return AnimationGroup(
+        #     *[self.trackers[k].animate(rate_func=rate_functions.there_and_back).set_value(new_code[k]) for k in
+        #       range(self.num_bins)])
+
+        # return AnimationGroup(
+        #         *[self.trackers[k].animate(rate_func=rate_functions.there_and_back_with_pause).set_value(new_code[k])
+        #           for k in range(self.num_bins)])
+        return AnimationGroup(
+                *[self.trackers[k].animate(rate_func=rate_functions.linear).set_value(new_code[k])
+                  for k in range(self.num_bins)])
+
         # return AnimationGroup(*[self.trackers[k].animate(rate_func=rate_functions.linear).set_value(new_code[k]) for k in
         #                         range(self.num_bins)])
         # return AnimationGroup(*[self.trackers[k].animate(rate_func=rate_functions.ease_in_expo).set_value(new_code[k]) for k in
@@ -141,7 +167,7 @@ class GnomeCode(VGroup):
         permutated_indices = list(range(self.num_bins))
         np.random.shuffle(permutated_indices)
         # permutated_bins = [self.bins[i].copy() for i in permutated_indices]
-        #permutated_bins = [self.bins[i] for i in permutated_indices]
+        # permutated_bins = [self.bins[i] for i in permutated_indices]
         permutated_locations = [self.bins[i].get_center() for i in permutated_indices]
 
         # matching submobjects transformation
@@ -215,20 +241,36 @@ class GnomeShuffle(MovingCameraScene):
         self.rng = np.random.default_rng(1)
 
         # frame configuration
-        self.camera.background_color = GREY_C
+        # self.camera.background_color = GREY_C
 
         # Create Decimal Number and add it to scene
         number = DecimalNumber().set_color(BLACK).to_corner()
         # Add an updater to keep the DecimalNumber centered as its value changes
         number.add_updater(lambda number: number.to_corner())
 
+
+
+        num_bins = 64
+        w = 8
+        sparse_elements = [0, ] * (num_bins - w) + [1, ] * w
+        init_code = self.rng.choice(sparse_elements, num_bins, replace=False, shuffle=True)
+
         # initialize gnome code array animation mobject and add to scene
-        #code = GnomeCode(n=1024, w=128)
-        code = GnomeCode(n=128, w=16)
+        # code = GnomeCode(n=1024, w=128)
+        # code = GnomeCode(n=128, w=16)
+        # code = GnomeCode(n=64, w=16)
+        code = GnomeCode(shape="circle", n=num_bins, w=w, init_code=init_code)
         self.add(code)
 
+        print([tracker.get_value() for tracker in code.trackers])
+
+
+        # sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
+        # init_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+
         # group bins into array, arranged from left to right, and center it to screen
-        num_cols = 32
+        # num_cols = 32
+        num_cols = 8
         # code.arrange_in_grid(cols=num_cols, buff=(0.1,0.1)).center()
         # code.arrange_in_grid(rows=num_cols, buff=(0.1,0.1)).center()
         code.arrange_in_grid(buff=(0.1, 0.1)).center()
@@ -255,18 +297,31 @@ class GnomeShuffle(MovingCameraScene):
 
         # self.camera.frame.set(height=code.height * 1.5)
 
-        sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
-        for j in range(10):
-            # generate new code with w random activated bits
+        # for j in range(20):
+
+        all_codes = [init_code,]
+
+        for j in range(1, 10):
             new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
-            print(new_code)
-            self.play(code.set_value(new_code), run_time=0.2)
-            # self.wait(0.5)
+            all_codes.append(new_code)
 
+        all_codes.append(init_code)
 
+        for curr_code in all_codes:
+            self.play(code.set_value(curr_code), run_time=0.001)
+            self.wait(0.00001)
+
+        # for j in range(10):
+        #     # generate new code with w random activated bits
+        #     new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        #     print(new_code)
+        #     # self.play(code.set_value(new_code), run_time=0.17) # frame duration for 60fps
+        #     # self.play(code.set_value(new_code), run_time=0.08)
+        #     self.play(code.set_value(new_code), run_time=0.001)
+        #     self.wait(0.00001)
 
         # permutate the array
-        #self.play(code.permutate(), run_time=1)
+        # self.play(code.permutate(), run_time=1)
 
         # rearrange grid layout
         # self.play(code.animate.arrange_in_grid(cols=num_cols+1, buff=0.1).center(), run_time=1)
@@ -275,13 +330,13 @@ class GnomeShuffle(MovingCameraScene):
         # self.wait(2)
 
         # for j in range(1):
-            # generate new code with w random activated bits
-            # sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
-            # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
-            # print(new_code)
-            # set encoding
-            # self.play(code.set_value(new_code), run_time=0.4)
-            # self.wait(0.5)
+        # generate new code with w random activated bits
+        # sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
+        # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        # print(new_code)
+        # set encoding
+        # self.play(code.set_value(new_code), run_time=0.4)
+        # self.wait(0.5)
 
         # permutate the array
         # self.play(code.permutate())
@@ -293,13 +348,13 @@ class GnomeShuffle(MovingCameraScene):
         # self.play(code.permutate())
 
         # for j in range(1):
-            # generate new code with w random activated bits
-            # sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
-            # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
-            # print(new_code)
-            # set encoding
-            # self.play(code.set_value(new_code), run_time=0.4)
-            # self.wait(0.5)
+        # generate new code with w random activated bits
+        # sparse_elements = [0, ] * (code.num_bins - code.w) + [1, ] * code.w
+        # new_code = self.rng.choice(sparse_elements, code.num_bins, replace=False, shuffle=True)
+        # print(new_code)
+        # set encoding
+        # self.play(code.set_value(new_code), run_time=0.4)
+        # self.wait(0.5)
 
         # code2 = GnomeCode()
         # code2.arrange_in_grid(cols=num_cols+2, buff=0.1).center()
