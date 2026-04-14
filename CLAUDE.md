@@ -38,12 +38,12 @@ gnome_visuals/
 ├── experiments/                    # Topic-organized experiments
 │   ├── encoder_basics/            # Basic encoder behavior
 │   │   ├── manim/                 # Manim scripts for this topic
-│   │   ├── matplotlib/            # Matplotlib scripts
 │   │   └── plotly/                # Plotly experiments
+│   ├── encoders/                  # Encoder component experiments
+│   ├── discrete_neurons/          # Discrete neuron visualizations
 │   ├── neural_networks/           # Neural network visualizations
-│   ├── hypergrid_transforms/      # Transform visualizations
-│   ├── similarity_analysis/       # Similarity/distance experiments
-│   └── parameter_sweeps/          # Parameter space exploration
+│   ├── hypergrid_transform/       # Hypergrid transform visualizations
+│   └── manim/                     # Standalone manim experiments
 │
 ├── apps/                          # Standalone applications
 │   └── dash_encoder/              # Interactive encoder dashboard
@@ -53,6 +53,7 @@ gnome_visuals/
 │
 ├── scripts/                       # Utility scripts
 │   ├── plot_encoders.py
+│   ├── arrange_bins.py
 │   ├── stitch_images.py
 │   └── resize_images.py
 │
@@ -95,11 +96,14 @@ python -c "from gnomevisual.manim import GnomeCode; print('Success!')"
 # Generate matplotlib plots (outputs to outputs/figures/)
 python scripts/plot_encoders.py
 
-# Run manim animations (outputs to outputs/videos/ or media/)
-manim experiments/encoder_basics/manim/encoder_collapse.py
+# Run manim animations - low quality preview (fast, outputs to media/)
+manim -pql experiments/encoder_basics/manim/encoder_collapse.py SceneName
 
-# Example with specific scene
-manim experiments/encoder_basics/manim/render_bins.py AnimationScene
+# High quality render
+manim -pqh experiments/encoder_basics/manim/render_bins.py AnimationScene
+
+# List all scenes in a file
+manim --list_scenes experiments/encoder_basics/manim/render_bins.py
 
 # Launch interactive Dash web app
 cd apps/dash_encoder
@@ -116,8 +120,8 @@ python run_app.py --port 8080 --debug
 # Copy a template to start
 cp examples/templates/manim_template.py experiments/encoder_basics/manim/my_experiment.py
 
-# Edit and run
-manim experiments/encoder_basics/manim/my_experiment.py MyScene
+# Edit and run (low quality preview)
+manim -pql experiments/encoder_basics/manim/my_experiment.py MyScene
 ```
 
 ### Development Tools
@@ -125,12 +129,6 @@ manim experiments/encoder_basics/manim/my_experiment.py MyScene
 Development dependencies are installed with `pip install -e ".[dev]"`.
 
 ```bash
-# Run tests
-pytest
-
-# Run tests with coverage
-pytest --cov=gnomevisual --cov-report=html
-
 # Format code (automatically fixes formatting)
 black gnomevisual/
 
@@ -147,7 +145,6 @@ python -m line_profiler_pycharm scripts/plot_encoders.py
 **Tool Configuration**: All tools are configured in `pyproject.toml`:
 - Black: 100 character line length, excludes media/outputs
 - isort: Compatible with Black, skips generated directories
-- pytest: Runs tests in `tests/`, includes coverage reporting
 
 ## Architecture Notes
 
