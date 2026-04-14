@@ -24,7 +24,7 @@ This repository provides comprehensive visualization tools across three main tec
 <tr>
   <td align="center">
     <a href="gallery/animation_examples/">
-        <img src="blob/main/gallery/animation_examples/GnomeShuffle.gif" width="240"/><br/>
+        <img src="https://raw.githubusercontent.com/jacobeverist/gnome_visuals/main/gallery/animation_examples/GnomeShuffle.gif" width="240"/><br/>
         <b>Gnome bins shuffled and reordered</b>
     </a>
   </td>
