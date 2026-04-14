@@ -23,11 +23,12 @@ This repository provides comprehensive visualization tools across three main tec
 
 <table>
 <tr>
-  <td align="center">
-    <a href="gallery/animation_examples/">
-        ![anim](gallery/animation_examples/SquareArrayScene.gif)<br/>
-        <b>Animated binary codes</b>
-    </a>
+    <td align="center" width="200">
+    <a href="gallery/time_series_examples/">
+      <img src="gallery/time_series_examples/binary_states2.png" width="180"/><br/>
+      <b>Time Series &amp; State Vectors</b>
+    </a><br/>
+    BrainBlocks / Sparsey experiments
   </td>
   <td align="center">
     <a href="gallery/periodic_scalar_encoder_examples/">
