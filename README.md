@@ -23,12 +23,11 @@ This repository provides comprehensive visualization tools across three main tec
 
 <table>
 <tr>
-    <td align="center" width="200">
-    <a href="gallery/time_series_examples/">
-      <img src="gallery/time_series_examples/binary_states2.png" width="180"/><br/>
-      <b>Time Series &amp; State Vectors</b>
-    </a><br/>
-    BrainBlocks / Sparsey experiments
+  <td align="center">
+    <a href="gallery/samples/">
+    <img src="gallery/samples/10_PeriodicCellEncoder.png" width="240"/><br/>
+    <b>Periodic cell encoder (n=10)</b>
+    </a>
   </td>
   <td align="center">
     <a href="gallery/periodic_scalar_encoder_examples/">
@@ -56,11 +55,13 @@ This repository provides comprehensive visualization tools across three main tec
     <b>Fixed weight encoder features (n=40, w=2)</b>
     </a>
   </td>
-  <td align="center">
-    <a href="gallery/samples/">
-    <img src="gallery/samples/10_PeriodicCellEncoder.png" width="240"/><br/>
-    <b>Periodic cell encoder (n=10)</b>
-    </a>
+
+<td align="center">
+    <a href="gallery/time_series_examples/">
+      <img src="gallery/time_series_examples/binary_states2.png" width="240"/><br/>
+      <b>Time Series &amp; State Vectors</b>
+    </a><br/>
+    BrainBlocks / Sparsey experiments
   </td>
 </tr>
 </table>
