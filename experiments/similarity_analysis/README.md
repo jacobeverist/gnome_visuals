@@ -11,9 +11,9 @@ Analysis and visualization of similarity relationships between encoded values.
 
 ## Experiments
 
-Currently no experiments in this topic. This is a placeholder for future work.
+> **Aspirational**: No experiments exist in this topic yet. This directory is a placeholder for future work.
 
-### Potential Experiments
+### Potential Experiments *(not yet implemented)*
 - Self-similarity heatmaps for different encoder configurations
 - Distance metric comparisons (Hamming, Jaccard, etc.)
 - Similarity degradation analysis

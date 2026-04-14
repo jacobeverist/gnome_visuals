@@ -15,15 +15,15 @@ An interactive web-based visualization tool for exploring GNOME encoder configur
 
 ## Installation
 
-1. Install dependencies:
+1. Install dependencies from the repo root:
 ```bash
-cd ..
-pip install -r requirements.txt
+pip install -e .
 ```
 
 2. Ensure gnomecode is available:
 ```bash
-# The requirements.txt should handle this via the editable install
+# Install gnomecode in editable mode if developing both packages
+pip install -e /path/to/gnomecode
 ```
 
 ## Usage
@@ -32,7 +32,7 @@ pip install -r requirements.txt
 
 1. Launch the application:
 ```bash
-cd dash_encoder_app
+cd apps/dash_encoder
 python run_app.py
 ```
 
@@ -65,7 +65,7 @@ Options:
 #### Visualization Tabs
 1. **Encoder Visualization**: Shows encoding bins and feature heatmap
 2. **Similarity Heatmap**: Interactive similarity matrix between input values
-3. **3D Analysis**: Parameter response surfaces (future enhancement)
+3. **3D Analysis**: Parameter response surfaces *(aspirational — not yet implemented)*
 
 #### Preset Configurations
 - **2^n Equal Period**: Classic power-of-2 configuration
@@ -127,7 +127,9 @@ Run with `--debug` flag to enable:
 - Complex parameter sweeps may take a few seconds
 - Consider reducing sample sizes for faster response times
 
-## Future Enhancements
+## Aspirational / Future Enhancements
+
+> These features are planned but not yet implemented.
 
 - [ ] Export functionality for plots and configurations
 - [ ] Comparison mode for multiple encoder configurations

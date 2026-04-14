@@ -11,9 +11,9 @@ Systematic exploration of encoder parameter spaces.
 
 ## Experiments
 
-Currently no experiments in this topic. This is a placeholder for future work.
+> **Aspirational**: No experiments exist in this topic yet. This directory is a placeholder for future work.
 
-### Potential Experiments
+### Potential Experiments *(not yet implemented)*
 - 2D parameter sweeps (e.g., n vs w)
 - 3D response surfaces
 - Parameter sensitivity analysis

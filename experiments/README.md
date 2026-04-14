@@ -24,18 +24,18 @@ Neural network visualizations with encoder integration:
 - Synapse and connection visualizations
 - Network architecture diagrams
 
-### hypergrid_transforms/
+### hypergrid_transform/
 Hypergrid transformation visualizations:
 - Geometric transformations
 - Parameter space mappings
 
-### similarity_analysis/
+### similarity_analysis/ *(placeholder — no experiments yet)*
 Similarity and distance analysis between encodings:
 - Self-similarity matrices
 - Distance metrics
 - Comparison visualizations
 
-### parameter_sweeps/
+### parameter_sweeps/ *(placeholder — no experiments yet)*
 Exploration of parameter spaces:
 - Systematic parameter variation
 - Response surface analysis
