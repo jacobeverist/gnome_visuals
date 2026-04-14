@@ -18,6 +18,53 @@ This repository provides comprehensive visualization tools across three main tec
 - **Matplotlib**: Static plots and quantitative analysis
 - **Dash/Plotly**: Interactive web-based exploration
 
+## Gallery
+
+<table>
+<tr>
+  <td align="center">
+    <a href="gallery/animation_examples/">
+        <img src="gallery/animation_examples/GnomeShuffle.gif" width="240"/><br/>
+        <b>Gnome bins shuffled and reordered</b>
+    </a>
+  </td>
+  <td align="center">
+    <a href="gallery/periodic_scalar_encoder_examples/">
+    <img src="gallery/periodic_scalar_encoder_examples/v6/Features_Compact_PeriodicScalar_w3.png" width="240"/><br/>
+    <b>Periodic scalar encoder features (w=3)</b>
+    </a>
+  </td>
+  <td align="center">
+    <a href="gallery/plot_examples/">
+    <img src="gallery/plot_examples/Comparison_010_0115_Similarity_Matrix_Projected_to_Real_Space_PeriodicCellEncoder.png" width="240"/><br/>
+    <b>Periodic cell encoder similarity matrix</b>
+    </a>
+  </td>
+</tr>
+<tr>
+  <td align="center">
+    <a href="gallery/manim_examples/">
+    <img src="gallery/manim_examples/NeuronsOperationsScene_ManimCE_v0.17.2.png" width="240"/><br/>
+    <b>Discrete population neural network</b>
+    </a>
+  </td>
+  <td align="center">
+    <a href="gallery/fixed_weight_encoder_examples/">
+    <img src="gallery/fixed_weight_encoder_examples/040_0002_Features_FixedWeightEncoder.png" width="240"/><br/>
+    <b>Fixed weight encoder features (n=40, w=2)</b>
+    </a>
+  </td>
+  <td align="center">
+    <a href="gallery/samples/">
+    <img src="gallery/samples/10_PeriodicCellEncoder.png" width="240"/><br/>
+    <b>Periodic cell encoder (n=10)</b>
+    </a>
+  </td>
+</tr>
+</table>
+
+Browse the full [gallery/](gallery/) for all examples.
+
 ## Installation
 
 ### Prerequisites
@@ -207,41 +254,6 @@ python -m line_profiler_pycharm script.py
 - **[CLAUDE.md](CLAUDE.md)**: Comprehensive architecture and development guide
 - **[experiments/README.md](experiments/README.md)**: Guide to experiments organization
 - **Topic READMEs**: Each experiment topic has its own README explaining research questions
-
-## Gallery
-
-<table>
-<tr>
-  <td align="center">
-    <img src="gallery/animation_examples/GnomeShuffle.gif" width="240"/><br/>
-    <em>Gnome bins shuffled and reordered</em>
-  </td>
-  <td align="center">
-    <img src="gallery/periodic_scalar_encoder_examples/v6/Features_Compact_PeriodicScalar_w3.png" width="240"/><br/>
-    <em>Periodic scalar encoder features (w=3)</em>
-  </td>
-  <td align="center">
-    <img src="gallery/plot_examples/Comparison_010_0115_Similarity_Matrix_Projected_to_Real_Space_PeriodicCellEncoder.png" width="240"/><br/>
-    <em>Periodic cell encoder similarity matrix</em>
-  </td>
-</tr>
-<tr>
-  <td align="center">
-    <img src="gallery/manim_examples/NetworkScene_ManimCE_v0.17.3.png" width="240"/><br/>
-    <em>Discrete population neural network</em>
-  </td>
-  <td align="center">
-    <img src="gallery/fixed_weight_encoder_examples/040_0002_Features_FixedWeightEncoder.png" width="240"/><br/>
-    <em>Fixed weight encoder features (n=40, w=2)</em>
-  </td>
-  <td align="center">
-    <img src="gallery/samples/10_PeriodicCellEncoder.png" width="240"/><br/>
-    <em>Periodic cell encoder (n=10)</em>
-  </td>
-</tr>
-</table>
-
-Browse the full [gallery/](gallery/) for all examples.
 
 ## Contributing
 
