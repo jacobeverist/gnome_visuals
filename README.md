@@ -25,7 +25,7 @@ This repository provides comprehensive visualization tools across three main tec
   <td align="center">
     <a href="gallery/animation_examples/">
         <img src="gallery/animation_examples/SquareArrayScene.gif" width="240"/><br/>
-        <b>Gnome bins shuffled and reordered</b>
+        <b>Animated binary codes</b>
     </a>
   </td>
   <td align="center">
