@@ -46,7 +46,7 @@ This repository provides comprehensive visualization tools across three main tec
   <td align="center">
     <a href="gallery/manim_examples/">
     <img src="gallery/manim_examples/NeuronsOperationsScene_ManimCE_v0.17.2.png" width="240"/><br/>
-    <b>Discrete population neural network</b>
+    <b>Discrete Neuron Model</b>
     </a>
   </td>
   <td align="center">
