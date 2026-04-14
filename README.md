@@ -20,6 +20,8 @@ This repository provides comprehensive visualization tools across three main tec
 
 ## Gallery
 
+![anim](gallery/animation_examples/SquareArrayScene.gif)
+
 <table>
 <tr>
   <td align="center">
