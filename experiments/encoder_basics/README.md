@@ -11,7 +11,7 @@ Visualizations exploring fundamental encoder behavior and properties.
 
 ## Experiments
 
-### Manim Animations
+### Manim Animations (`manim/`)
 - `encoder_collapse.py` - Animation of encoder collapsing/folding
 - `encoder_folded.py` - Folded encoder visualization
 - `encoder_transform.py` - Transformation visualizations
@@ -21,7 +21,7 @@ Visualizations exploring fundamental encoder behavior and properties.
 - `render_shuffle.py` - Bin shuffling and reordering
 - `test_opacity.py` - Testing opacity and layering effects
 
-### Plotly/Dash Interactive
+### Plotly/Dash Interactive (`plotly/`)
 - `advanced_visualizations.py` - Advanced interactive plots
 - `anim_example.py` - Animation examples with Plotly
 - `unequal_blocks_plotly.py` - Visualization of unequal bin sizes

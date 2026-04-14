@@ -112,19 +112,21 @@ gnome_visuals/
 ├── gnomevisual/          # Core reusable package
 │   ├── matplotlib/       # Matplotlib components (axesplots, layouts)
 │   ├── manim/           # Manim components (GnomeCode, Synapse, etc.)
-│   ├── plotly/          # Plotly/Dash components
+│   ├── plotly/          # Plotly/Dash components (early stage)
 │   └── utils.py         # General utilities
 ├── experiments/          # Topic-organized experiments
 │   ├── encoder_basics/
 │   ├── neural_networks/
-│   ├── hypergrid_transforms/
-│   ├── similarity_analysis/
-│   └── parameter_sweeps/
+│   ├── hypergrid_transform/
+│   ├── discrete_neurons/
+│   ├── similarity_analysis/  # placeholder, no experiments yet
+│   └── parameter_sweeps/     # placeholder, no experiments yet
 ├── apps/                # Standalone applications
 │   └── dash_encoder/
+├── gallery/             # Example output images and animations
 ├── publications/        # Publication-specific projects
 ├── scripts/            # Utility scripts
-├── examples/           # Templates and gallery
+├── examples/           # Templates
 └── outputs/            # Generated content (gitignored)
 ```
 
@@ -210,9 +212,12 @@ python -m line_profiler_pycharm script.py
 
 Example visualizations can be found in:
 
-- `figures/examples/` - Gallery of polished examples
-- `docs/animation_examples/` - Manim animation examples
-- `docs/plot_examples/` - Matplotlib plot examples
+- `gallery/` - Gallery of polished example images and animations
+  - `gallery/manim_examples/` - Manim animation examples
+  - `gallery/plot_examples/` - Matplotlib plot examples
+  - `gallery/periodic_scalar_encoder_examples/` - Periodic scalar encoder images
+  - `gallery/periodic_cell_encoder_examples/` - Periodic cell encoder images
+  - `gallery/fixed_weight_encoder_examples/` - Fixed weight encoder images
 
 ## Contributing
 
